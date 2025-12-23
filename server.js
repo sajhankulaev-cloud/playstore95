@@ -659,7 +659,7 @@ app.post("/api/admin/games/add", requireAdmin, (req, res) => {
   }
 });
 
-app.get("/admin", (req, res) => res.sendFile(path.join(__dirname, "public", "admin.html")));
+app.get("/ps95_manage", (req, res) => res.sendFile(path.join(__dirname, "public", "admin.html")));
 app.use("/", express.static(path.join(__dirname, "public")));
 
 const PORT = Number(process.env.PORT || ENV.PORT || 3000);
