@@ -10,7 +10,7 @@ COPY package*.json ./
 # Устанавливаем зависимости (без dev)
 # Если нет package-lock.json, npm сам выполнит обычный install
 RUN npm install --omit=dev
-
+RUN npx playwright install chromium
 # Копируем остальной код
 COPY . .
 
