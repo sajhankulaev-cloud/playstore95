@@ -254,11 +254,13 @@ function readJson(p, fallback) { try { return JSON.parse(fs.readFileSync(p, "utf
 function writeJson(p, obj) { fs.writeFileSync(p, JSON.stringify(obj, null, 2), "utf-8"); }
 
 function requireAdmin(req, res, next) {
-  const user = ENV.ADMIN_USER;
-  const pass = ENV.ADMIN_PASS;
-if (!user || !pass) {
-  console.error("ADMIN_USER or ADMIN_PASS is not set in environment variables");
-}
+  const user = ENV.ADMIN_USER || "Sayhan2305";
+  const pass = ENV.ADMIN_PASS || "Sayhan1994";
+  const header = req.headers.authorization || "";
+  if (!header.startsWith("Basic ")) {
+    res.setHeader("WWW-Authenticate", 'Basic realm="PlayStore95 Admin"');
+    return res.status(401).json({ error: "auth_required" });
+  }
   const decoded = Buffer.from(header.slice(6), "base64").toString("utf-8");
   const [u, p] = decoded.split(":");
   if (u === user && p === pass) return next();
