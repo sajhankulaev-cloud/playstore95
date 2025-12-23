@@ -1,0 +1,350 @@
+<!doctype html><html lang="ru"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>PlayStore 95 — Admin</title><link rel="stylesheet" href="/styles.css"/></head>
+<body><div class="layout">
+<aside class="side"><h2>PlayStore 95 — Admin</h2>
+<div class="nav">
+  <a class="active" href="#import">Импорт</a>
+  <a href="#games">Игры</a>
+  <a href="#rates">Курсы</a>
+  <a href="#settings">Настройки</a>
+  <a href="/" target="_blank">Каталог</a>
+</div>
+<div style="margin-top:18px;font-size:12px;color:#9ca3af;line-height:1.4">Доступ защищён Basic Auth.<br/>Логин/пароль в <b>.env</b></div></aside>
+
+<main class="main">
+
+<div class="adminCard" id="import">
+  <div style="font-weight:950;font-size:16px;">Добавить игру по ссылке (PS Store)</div>
+  <div class="small">Вставь ссылку на страницу игры PS Store (с <b>/product/...</b>). Импорт пытается взять: название, обложку, скидку%, дату конца, цену.</div>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;align-items:flex-end;">
+    <div style="flex:1;min-width:280px;">
+      <div class="small">Ссылка</div>
+      <input id="importUrl" class="input" type="text" placeholder="https://store.playstation.com/.../product/EP..." />
+    </div>
+    <div style="min-width:200px;">
+      <div class="small">Дата скидки (вручную)</div>
+      <input id="manualUntil" class="input" type="date" /> <span id="manualUntilPreview" class="small" style="margin-left:10px; opacity:.85;"></span>
+    </div>
+    <div><button class="btnDark" id="btnImport">Импортировать</button></div>
+  </div>
+
+  <div id="importResult" style="display:none;margin-top:12px;">
+    <div class="small" id="importHttp"></div>
+    <div class="small">Предпросмотр (можно поправить):</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;">
+      <div style="width:140px;">
+        <div class="coverWrap" style="border-radius:12px;">
+          <img id="impCover" src="" alt="" referrerpolicy="no-referrer" style="display:none"/>
+          <div id="impNoCover" style="font-weight:900;font-size:12px;opacity:.9">NO COVER</div>
+        </div>
+      </div>
+      <div style="flex:1;min-width:280px;">
+        <div class="small">Название</div>
+        <input id="impName" class="input" type="text" />
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;">
+          <div style="flex:1;min-width:180px;">
+            <div class="small">Платформа</div>
+            <select id="impPlatform" class="select" style="width:100%;">
+              <option value="PS4 / PS5">PS4 / PS5</option>
+              <option value="PS5">PS5</option>
+              <option value="PS4">PS4</option>
+            </select>
+          </div>
+          <div style="flex:1;min-width:180px;">
+            <div class="small">ID (product)</div>
+            <input id="impId" class="input" type="text" />
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+          <div style="border:1px solid var(--border);border-radius:12px;padding:10px;">
+            <div style="font-weight:900;">TR</div>
+            <div class="small">Цена (TL)</div><input id="impTrPrice" class="input" type="number" step="0.01"/>
+            <div class="small" style="margin-top:8px;">Скидка %</div><input id="impTrDisc" class="input" type="number" step="1"/>
+            <div class="small" style="margin-top:8px;">Дата конца</div><input id="impTrUntil" class="input" type="text" placeholder="YYYY-MM-DD"/>
+          </div>
+          <div style="border:1px solid var(--border);border-radius:12px;padding:10px;">
+            <div style="font-weight:900;">UA</div>
+            <div class="small">Цена</div><input id="impUaPrice" class="input" type="number" step="0.01"/>
+            <div class="small" style="margin-top:8px;">Скидка %</div><input id="impUaDisc" class="input" type="number" step="1"/>
+            <div class="small" style="margin-top:8px;">Дата конца</div><input id="impUaUntil" class="input" type="text" placeholder="YYYY-MM-DD"/>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
+          <button class="btnDark" id="btnAddGame">Добавить на сайт</button>
+          <span class="small" id="importStatus"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="adminCard" id="games">
+  <div style="font-weight:950;font-size:16px;">Игры на сайте</div>
+  <div class="small">Поиск и удаление игр.</div>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;align-items:center;">
+    <input id="gamesSearch" class="input" style="min-width:260px" placeholder="Поиск по названию"/>
+    <button class="btnGhost" id="refreshGames">Обновить</button>
+    <span class="small" id="gamesCount"></span>
+  </div>
+  <div style="margin-top:12px;overflow:auto;">
+    <table>
+      <thead><tr><th>ID</th><th>Название</th><th>Платформа</th><th>Действия</th></tr></thead>
+      <tbody id="gamesBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="adminCard" id="rates">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+<div><div style="font-weight:950;font-size:16px;">Курсы по диапазонам</div><div class="small">TR/UA • Округление вверх.</div></div>
+<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+<select id="regionSel" class="select"><option value="TR">Турция (TR)</option><option value="UA">Украина (UA)</option></select>
+<button class="btnGhost" id="addRow">+ Диапазон</button><button class="btnDark" id="saveRates">Сохранить</button>
+</div></div>
+<div style="margin-top:12px;overflow:auto;">
+<table><thead><tr><th>От</th><th>До</th><th>Курс</th><th>Действия</th></tr></thead><tbody id="ratesBody"></tbody></table></div></div>
+
+<div class="adminCard" id="settings"><div style="font-weight:950;font-size:16px;">Настройки</div>
+<div class="small">WhatsApp ссылка и округление.</div>
+<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;">
+<div style="flex:1;min-width:220px;"><div class="small">Округление</div>
+<select id="roundStep" class="select" style="width:100%;"><option value="50">до 50 ₽ (вверх)</option><option value="100">до 100 ₽ (вверх)</option></select></div>
+<div style="flex:2;min-width:260px;"><div class="small">WhatsApp ссылка</div><input id="wa" class="input" type="text" placeholder="https://wa.me/..."/></div>
+<div style="align-self:flex-end;"><button class="btnDark" id="saveSettings">Сохранить</button></div>
+</div></div>
+
+</main></div>
+
+<script>
+  // --- Persist "manualUntil" date (localStorage + server settings.defaultDiscountUntil) ---
+  const LS_KEY_UNTIL = "ps95_manualUntil_iso"; // yyyy-mm-dd
+
+  const RU_MONTHS = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+  function formatRuDate(iso){
+    if(!iso) return "";
+    // expects yyyy-mm-dd
+    const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if(!m) return iso;
+    const y = Number(m[1]);
+    const mon = Number(m[2]);
+    const d = Number(m[3]);
+    if(!(y && mon>=1 && mon<=12 && d>=1 && d<=31)) return iso;
+    return `${d} ${RU_MONTHS[mon-1]} ${y}`;
+  }
+
+  function updateUntilPreview(){
+    const el = document.getElementById("manualUntil");
+    const pv = document.getElementById("manualUntilPreview");
+    if(!pv) return;
+    const iso = (el && el.value) ? el.value.trim() : "";
+    pv.textContent = iso ? ("Дата скидки: " + formatRuDate(iso)) : "";
+  }
+
+  async function loadUntil(){
+    const el = document.getElementById("manualUntil");
+    if(!el) return;
+
+    // 1) load instantly from localStorage so it never resets on refresh
+    const cached = localStorage.getItem(LS_KEY_UNTIL);
+    if(cached && !el.value){
+      el.value = cached;
+    }
+    updateUntilPreview();
+
+    // 2) try server settings (best-effort)
+    try{
+      const r = await fetch("/api/admin/settings", { credentials: "include" });
+      const j = await r.json().catch(()=>null);
+      if(r.ok && j && j.ok){
+        const v = (j.settings && j.settings.defaultDiscountUntil) ? String(j.settings.defaultDiscountUntil) : "";
+        if(v){
+          el.value = v;
+          localStorage.setItem(LS_KEY_UNTIL, v);
+        }
+      }
+    }catch(e){}
+    updateUntilPreview();
+  }
+
+  async function saveUntil(){
+    const el = document.getElementById("manualUntil");
+    if(!el) return;
+    const v = (el.value || "").trim(); // yyyy-mm-dd
+
+    // always store locally
+    if(v) localStorage.setItem(LS_KEY_UNTIL, v);
+    else localStorage.removeItem(LS_KEY_UNTIL);
+
+    updateUntilPreview();
+
+    // save to server (best-effort)
+    try{
+      await fetch("/api/admin/settings", {
+        method:"POST",
+        credentials:"include",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ defaultDiscountUntil: v })
+      });
+    }catch(e){}
+  }
+
+
+  // --- Persist default discount date in store.json (server-side) ---
+  async function loadSettings(){
+    try{
+      const r = await fetch("/api/admin/settings");
+      const j = await r.json();
+      if(!r.ok || !j.ok) return;
+      if(typeof j.settings?.defaultDiscountUntil !== "undefined"){
+        const el = document.getElementById("defaultDiscountUntil");
+        if(el){
+          el.value = j.settings.defaultDiscountUntil || "";
+        }
+      }
+    }catch(e){}
+  }
+
+  async function saveDefaultDate(){
+    const el = document.getElementById("defaultDiscountUntil");
+    if(!el) return;
+    try{
+      await fetch("/api/admin/settings", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ defaultDiscountUntil: (el.value||"").trim() })
+      });
+    }catch(e){}
+  }
+
+
+function rowTemplate(min="", max="", rate=""){const tr=document.createElement("tr");
+tr.innerHTML=`<td><input class="input" type="number" step="1" value="${min}"></td>
+<td><input class="input" type="number" step="1" value="${max}"></td>
+<td><input class="input" type="number" step="0.01" value="${rate}"></td>
+<td><button class="btnGhost">Удалить</button></td>`;
+tr.querySelector("button").onclick=()=>tr.remove();return tr;}
+
+async function loadRates(region){const j=await fetch(`/api/admin/rates?region=${region}`).then(r=>r.json());
+const body=document.getElementById("ratesBody");body.innerHTML="";(j.rules||[]).forEach(rule=>body.appendChild(rowTemplate(rule.min, rule.max??"", rule.rate)));}
+async function saveRates(){const region=document.getElementById("regionSel").value;
+const rules=[...document.querySelectorAll("#ratesBody tr")].map(tr=>{const i=tr.querySelectorAll("input");
+const min=Number(i[0].value);const maxRaw=i[1].value.trim();const max=maxRaw===""?null:Number(maxRaw);const rate=Number(i[2].value);return {min,max,rate};});
+const j=await fetch(`/api/admin/rates`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({region,rules})}).then(r=>r.json());
+alert(j.ok?"Сохранено":"Ошибка");}
+async function loadSettings(){const j=await fetch(`/api/admin/settings`).then(r=>r.json());
+document.getElementById("roundStep").value=String(j.roundStep||50);document.getElementById("wa").value=j.whatsappLink||"";}
+async function saveSettings(){const roundStep=document.getElementById("roundStep").value;
+const whatsappLink=document.getElementById("wa").value.trim();
+const j=await fetch(`/api/admin/settings`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({roundStep,whatsappLink})}).then(r=>r.json());
+alert(j.ok?"Сохранено":"Ошибка");}
+
+async function loadGamesList(){
+  const j=await fetch("/api/admin/games/list").then(r=>r.json());
+  window.__games = (j.items||[]);
+  document.getElementById("gamesCount").textContent = "Всего: " + window.__games.length;
+  renderGames();
+}
+function renderGames(){
+  const q=(document.getElementById("gamesSearch").value||"").trim().toLowerCase();
+  const body=document.getElementById("gamesBody");
+  body.innerHTML="";
+  const rows=(window.__games||[]).filter(g=>!q || String(g.name||"").toLowerCase().includes(q));
+  for(const g of rows){
+    const tr=document.createElement("tr");
+    tr.innerHTML = `<td>${g.id}</td><td>${g.name||""}</td><td>${g.platform||""}</td><td><button class="btnGhost">Удалить</button></td>`;
+    tr.querySelector("button").onclick=async ()=>{
+      if(!confirm(`Удалить "${g.name}"?`)) return;
+      const resp=await fetch("/api/admin/games/"+encodeURIComponent(g.id), {method:"DELETE"});
+      const jj=await resp.json();
+      if(jj.ok){ await loadGamesList(); }
+      else alert("Ошибка: "+(jj.error||""));
+    };
+    body.appendChild(tr);
+  }
+}
+document.getElementById("gamesSearch").addEventListener("input", renderGames);
+document.getElementById("refreshGames").onclick=loadGamesList;
+
+async function doImport(){
+  const url=document.getElementById("importUrl").value.trim();
+  if(!url){alert("Вставь ссылку");return;}
+  document.getElementById("importStatus").textContent="Импорт...";
+  const j=await fetch("/api/admin/import",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url})}).then(r=>r.json());
+  if(!j.ok){document.getElementById("importStatus").textContent="Ошибка: "+(j.error||"");return;}
+  document.getElementById("importHttp").textContent = `HTTP TR:${j.status.TR} UA:${j.status.UA}`;
+  if(j.parsed?.TR?.blocked || j.parsed?.UA?.blocked){alert("PS Store заблокировал импорт (captcha/blocked). Попробуй другой VPN/сервер.");}
+
+  const pid=j.productId||"";
+  const name=(j.parsed?.TR?.name)|| (j.parsed?.UA?.name)|| "";
+  const cover=(j.parsed?.TR?.cover)|| (j.parsed?.UA?.cover)|| "";
+  document.getElementById("impId").value=pid;
+  document.getElementById("impName").value=name||"";
+  if(cover){
+    document.getElementById("impCover").src=cover;
+    document.getElementById("impCover").style.display="block";
+    document.getElementById("impNoCover").style.display="none";
+  }else{
+    document.getElementById("impCover").style.display="none";
+    document.getElementById("impNoCover").style.display="block";
+  }
+  document.getElementById("impTrPrice").value=j.parsed?.TR?.salePrice ?? "";
+  document.getElementById("impUaPrice").value=j.parsed?.UA?.salePrice ?? "";
+  document.getElementById("impTrDisc").value=j.parsed?.TR?.discPerc ?? 0;
+  document.getElementById("impUaDisc").value=j.parsed?.UA?.discPerc ?? 0;
+  // дату со Store не тянем — ставим вручную из поля выше
+  document.getElementById("impTrUntil").value="";
+  document.getElementById("impUaUntil").value="";
+  const manualUntil = document.getElementById("manualUntil")?.value || "";
+  if(manualUntil){
+    document.getElementById("impTrUntil").value = manualUntil;
+    document.getElementById("impUaUntil").value = manualUntil;
+  }
+  document.getElementById("importResult").style.display="block";
+  document.getElementById("importStatus").textContent="Готово. Проверь и нажми 'Добавить'.";
+}
+
+async function addGame(){
+  const manualUntil = document.getElementById("manualUntil")?.value || "";
+  if(manualUntil){
+    if(!document.getElementById("impTrUntil").value) document.getElementById("impTrUntil").value = manualUntil;
+    if(!document.getElementById("impUaUntil").value) document.getElementById("impUaUntil").value = manualUntil;
+  }
+  const g={
+    id: document.getElementById("impId").value.trim(),
+    name: document.getElementById("impName").value.trim(),
+    cover: document.getElementById("impCover").style.display==="block" ? document.getElementById("impCover").src : null,
+    platform: document.getElementById("impPlatform").value,
+    regions:{
+      TR:{ salePrice:Number(document.getElementById("impTrPrice").value||0), discPerc:Number(document.getElementById("impTrDisc").value||0), discountedUntil: (document.getElementById("impTrUntil").value.trim()||null)},
+      UA:{ salePrice:Number(document.getElementById("impUaPrice").value||0), discPerc:Number(document.getElementById("impUaDisc").value||0), discountedUntil: (document.getElementById("impUaUntil").value.trim()||null)}
+    }
+  };
+  document.getElementById("importStatus").textContent="Добавление...";
+  const j=await fetch(`/api/admin/games/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(g)}).then(r=>r.json());
+  if(j.ok){
+    document.getElementById("importStatus").textContent="Добавлено. Всего игр: "+j.count;
+    await loadGamesList();
+  }else{
+    document.getElementById("importStatus").textContent="Ошибка: "+(j.error||"");
+  }
+}
+
+document.getElementById("btnImport").onclick=doImport;
+document.getElementById("btnAddGame").onclick=addGame;
+document.getElementById("regionSel").onchange=e=>loadRates(e.target.value);
+document.getElementById("addRow").onclick=()=>document.getElementById("ratesBody").appendChild(rowTemplate());
+document.getElementById("saveRates").onclick=saveRates;
+document.getElementById("saveSettings").onclick=saveSettings;
+loadRates("TR");loadSettings();loadGamesList();
+
+loadUntil();
+
+  const _mu = document.getElementById("manualUntil");
+  if(_mu){
+    _mu.addEventListener("change", saveUntil);
+    _mu.addEventListener("blur", saveUntil);
+  }
+</script></body></html>
