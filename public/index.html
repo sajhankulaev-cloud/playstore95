@@ -115,7 +115,7 @@ document.getElementById("apply").onclick=()=>{
 };
 let __searchTimer=null;
 document.getElementById("search").addEventListener("input",()=>{
-  state.search=(document.getElementById("search").value||"").trim();
+  state.search=(document.getElementById("search").value||"");
   state.page=1;
   clearTimeout(__searchTimer);
   __searchTimer=setTimeout(()=>load(),250);
