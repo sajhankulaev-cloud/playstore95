@@ -61,7 +61,7 @@ function buildCard(game, whatsapp, showUntil){
       </div>
     </div>`;
   div.querySelector(".buyBtn").onclick=()=>{
-    const msg=encodeURIComponent(`Здравствуйте!\nХочу купить игру: ${game.name}\nРегион: ${state.region}\nЦена: ${fmtRub(game.finalPriceRub)}`);
+    const msg=encodeURIComponent(`Хочу купить игру: ${game.name}\nРегион: ${state.region}\nЦена: ${fmtRub(game.finalPriceRub)}`);
     const base=whatsapp||"https://wa.me/+79659556300";
     window.open(base+(base.includes("?")?"&":"?")+"text="+msg,"_blank");
   };
