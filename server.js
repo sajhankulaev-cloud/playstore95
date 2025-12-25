@@ -464,7 +464,7 @@ app.get("/api/games", (req, res) => {
     const region = String(req.query.region || "TR").toUpperCase();
     const sort = String(req.query.sort || "pop");
     const page = Math.max(1, parseInt(String(req.query.page || "1"), 10));
-    const perPage = 2;
+    const perPage = 36;
     const q = String(req.query.q || "").trim();
     const platform = String(req.query.platform || "").trim();
 
