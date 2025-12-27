@@ -1,0 +1,204 @@
+<!doctype html><html lang="ru"><head>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800&display=swap" rel="stylesheet">
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>PlayStore 95 — Скидки</title><link rel="stylesheet" href="/styles.css"/></head>
+<body>
+<div class="topbar"><div class="container topbarInner">
+  <div class="topbarHeader">
+    <div class="brand">PlayStore 95</div>
+    <div class="headerActions">
+      <div class="searchWrap" id="searchWrap">
+        <button class="searchToggle" id="searchToggle" type="button" aria-label="Поиск">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M10 4a6 6 0 104.472 10.03l4.249 4.249a1 1 0 001.414-1.414l-4.249-4.249A6 6 0 0010 4zm0 2a4 4 0 110 8 4 4 0 010-8z"></path>
+          </svg>
+        </button>
+        <div class="searchPanel" id="searchPanel" aria-hidden="true">
+          <input id="search" class="input searchInput" placeholder="Поиск по названию" autocomplete="off"/>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="filters">
+    <select id="region" class="select"><option value="TR">TR</option><option value="UA">UA</option></select>
+    <select id="platform" class="select"><option value="">PS4/PS5</option><option value="PS4">PS4</option><option value="PS5">PS5</option></select>
+    <button id="reset" class="btnGhost" type="button">Сброс</button>
+  </div>
+</div></div>
+
+<div class="container">
+  <div class="resultsBar" aria-label="Результаты">
+    <div class="resultsCount" id="gamesTotal">Нашли игр: 0</div>
+    <div class="resultsSort">
+      <span class="resultsSortLabel">Цена: </span>
+      <select id="sort" class="sortSelect" aria-label="Сортировка">
+        <option value="pop">по умолчанию</option>
+        <option value="price_asc">Цена: Низкая</option>
+        <option value="price_desc">Цена: Высокая</option>
+      </select>
+    </div>
+  </div>
+  <div id="emptyBox" class="card" style="display:none;padding:12px;margin-top:14px;">
+    Игры еще не добавлены
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="pager" id="pager"></div>
+</div>
+
+<script>
+const state={region:"TR",sort:"pop",platform:"",page:1,search:""};
+
+// Search UI (лупа справа вверху → раскрывающееся поле)
+const searchWrapEl=document.getElementById("searchWrap");
+const searchToggleEl=document.getElementById("searchToggle");
+const searchPanelEl=document.getElementById("searchPanel");
+function setSearchOpen(isOpen){
+  if(!searchWrapEl) return;
+  searchWrapEl.classList.toggle("open", !!isOpen);
+  if(searchPanelEl) searchPanelEl.setAttribute("aria-hidden", String(!isOpen));
+  if(isOpen){
+    const input=document.getElementById("search");
+    if(input){
+      // небольшой таймаут, чтобы анимация начала раскрываться
+      setTimeout(()=>input.focus({preventScroll:true}), 0);
+    }
+  }
+}
+if(searchToggleEl){
+  searchToggleEl.addEventListener("click",(e)=>{
+    e.preventDefault();
+    const isOpen=searchWrapEl?.classList.contains("open");
+    setSearchOpen(!isOpen);
+  });
+}
+document.addEventListener("click",(e)=>{
+  if(!searchWrapEl) return;
+  if(!searchWrapEl.classList.contains("open")) return;
+  if(searchWrapEl.contains(e.target)) return;
+  setSearchOpen(false);
+});
+document.addEventListener("keydown",(e)=>{
+  if(e.key==="Escape") setSearchOpen(false);
+});
+
+// restore state from URL query (shareable links)
+const urlQS=new URLSearchParams(location.search);
+if(urlQS.get("region")) state.region=urlQS.get("region");
+if(urlQS.get("page")) state.page=Math.max(1, parseInt(urlQS.get("page"),10)||1);
+if(urlQS.get("sort")) state.sort=urlQS.get("sort");
+if(urlQS.get("platform")) state.platform=urlQS.get("platform");
+if(urlQS.get("q")) state.search=urlQS.get("q");
+
+// restore last selected region on refresh
+
+try{
+  const savedRegion = localStorage.getItem("ps95_region");
+  if(savedRegion && !urlQS.get("region")) state.region = savedRegion;
+}catch(e){}
+
+function fmtRub(n){try{return new Intl.NumberFormat("ru-RU").format(n)+" ₽";}catch(e){return n+" ₽";}}
+function formatDateDMY(dateStr) {
+  if (!dateStr) return "";
+  const s = String(dateStr).trim();
+
+  // YYYY-MM-DD (например: 2026-01-07)
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return `до ${m[3]}.${m[2]}.${m[1]}`;
+
+  // DD.MM.YYYY (если вдруг уже так)
+  const m2 = s.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if (m2) return `до ${m2[1]}.${m2[2]}.${m2[3]}`;
+
+  return "";
+}
+function buildCard(game, whatsapp, showUntil){
+  const div=document.createElement("div");div.className="card";
+  const until = (showUntil && game.discountedUntil) ? formatDateDMY(game.discountedUntil) : "";
+  div.innerHTML=`
+    <div class="coverWrap">
+      <div class="platformStrip">${game.platform||"PS4 / PS5"}</div>
+      ${game.cover?`<img src="${game.cover}" alt="" referrerpolicy="no-referrer" onerror="this.style.display='none'">`:"<div style='font-weight:900;font-size:12px;opacity:.9'>NO COVER</div>"}
+    </div>
+    <div class="body">
+      <p class="title">${game.name||""}</p>
+      <div class="bottom">
+      <div class="row"><div class="discount">${game.discPerc?("-"+game.discPerc+"%"):""}</div><div class="until">${until}</div></div>
+      <div class="row"><div class="price">${fmtRub(game.finalPriceRub)}</div><button class="buyBtn">Купить</button></div>
+      </div>
+    </div>`;
+  div.querySelector(".buyBtn").onclick=()=>{
+    const msg=encodeURIComponent(`Хочу купить игру: ${game.name}\nРегион: ${state.region}\nЦена: ${fmtRub(game.finalPriceRub)}`);
+    const base=whatsapp||"https://wa.me/+79659556300";
+    window.open(base+(base.includes("?")?"&":"?")+"text="+msg,"_blank");
+  };
+  return div;
+}
+async function load(){
+  // keep filters selected across pagination
+  document.getElementById("region").value=state.region;
+  document.getElementById("sort").value=state.sort;
+  if(document.getElementById("platform")) document.getElementById("platform").value=state.platform||"";
+  document.getElementById("search").value=state.search||"";
+  // если поиск задан из URL/сохранённого состояния — покажем поле раскрытым
+  if(state.search) setSearchOpen(true);
+  const meta=await fetch("/api/meta").then(r=>r.json());
+  // Счётчик общего количества игр, добавленных на сайт
+  const totalEl=document.getElementById("gamesTotal");
+  if(totalEl && meta && typeof meta.total!=="undefined") totalEl.textContent=`Нашли игр: ${meta.total}`;
+  const whatsapp=meta.settings?.whatsappLink||"https://wa.me/+79659556300";
+  const showUntil=!!(meta.hasAnyUntil && meta.hasAnyUntil[state.region]);
+
+  const qs=new URLSearchParams({region:state.region,page:String(state.page),sort:state.sort});
+  // keep current state in URL (so refresh keeps page/filters)
+  
+  if(state.platform) qs.set("platform", state.platform);
+  if(state.search)qs.set("q",state.search);
+  // keep current state in URL (so refresh keeps page/filters)
+  try{history.replaceState(null,"",`?${qs.toString()}`);}catch(_){}
+  const j=await fetch("/api/games?"+qs.toString()).then(r=>r.json());
+
+  // If user switched region and current page became empty, jump to last available page
+  if(j && (j.total||0)>0 && (j.items||[]).length===0 && state.page>1){
+    const lastPage=Math.max(1, Math.ceil((j.total||0)/(j.perPage||36)));
+    if(lastPage!==state.page){ state.page=lastPage; return load(); }
+  }
+
+  const grid=document.getElementById("grid");grid.innerHTML="";
+  (j.items||[]).forEach(g=>grid.appendChild(buildCard(g,whatsapp,showUntil)));
+  document.getElementById("emptyBox").style.display = (j.total===0) ? "block" : "none";
+
+  const pager=document.getElementById("pager");pager.innerHTML="";
+  const mk=(label,page,disabled=false)=>{const b=document.createElement("button");b.textContent=label;b.disabled=disabled;b.onclick=()=>{state.page=page;load();scrollTo(0,0)};return b;};
+  pager.appendChild(mk("«",Math.max(1,state.page-1),state.page===1));
+  pager.appendChild(mk(String(state.page),state.page,true));
+  pager.appendChild(mk("»",state.page+1,false));
+}
+document.getElementById("region").onchange=e=>{state.region=e.target.value;try{localStorage.setItem("ps95_region",state.region);}catch(_){};load();};
+document.getElementById("sort").onchange=e=>{state.sort=e.target.value;state.page=1;load();};
+let __searchTimer=null;
+document.getElementById("search").addEventListener("input",()=>{
+  state.search=(document.getElementById("search").value||"");
+  state.page=1;
+  clearTimeout(__searchTimer);
+  __searchTimer=setTimeout(()=>load(),250);
+});
+
+document.getElementById("platform").onchange=()=>{state.platform=document.getElementById("platform").value;state.page=1;load();};
+document.getElementById("sort").onchange=()=>{state.sort=document.getElementById("sort").value;state.page=1;load();};
+
+document.getElementById("reset").onclick=()=>{
+  state.search="";
+  state.platform="";
+  state.sort="pop";
+  state.page=1;
+  document.getElementById("search").value="";
+  document.getElementById("platform").value="";
+  document.getElementById("sort").value="pop";
+  setSearchOpen(false);
+  load();
+};
+
+load();
+</script></body></html>
