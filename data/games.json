@@ -1,0 +1,258 @@
+{
+  "updatedAt": "2025-12-28T23:00:09.691Z",
+  "items": [
+    {
+      "id": "UP0006-PPSA27360_00-26STANDARDBUNDLE",
+      "name": "EA SPORTS FC™ 26 Standard Edition PS4 & PS5",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202507/1617/2e757ffb0a6bb4b91af84db64e0183d725e56e5354f45eba.png",
+      "platform": "PS4 / PS5",
+      "popRank": 1,
+      "regions": {
+        "TR": {
+          "salePrice": 1159.99,
+          "discPerc": 60,
+          "discountedUntil": "2026-01-07"
+        },
+        "UA": {
+          "salePrice": 959.6,
+          "discPerc": 60,
+          "discountedUntil": "2026-01-07"
+        }
+      }
+    },
+    {
+      "id": "EP0002-PPSA07950_00-CODBO7CROSSGEN01",
+      "name": "Call of Duty®: Black Ops 7 - Cross-Gen Bundle",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202508/2119/8c163e488e9e46b842889e773a8d6807b52f9d0e00b05652.png",
+      "platform": "PS4 / PS5",
+      "popRank": 2,
+      "regions": {
+        "TR": {
+          "salePrice": 2239.3,
+          "discPerc": 30,
+          "discountedUntil": "2026-01-07"
+        },
+        "UA": {
+          "salePrice": 2379.3,
+          "discPerc": 30,
+          "discountedUntil": "2026-01-07"
+        }
+      }
+    },
+    {
+      "id": "UP6312-PPSA22327_00-0629872585919347",
+      "name": "Forza Horizon 5 Standard Edition",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202501/2717/42b3ee6b1b2094212231b0b0a82824f687fc5c4dc9bde31c.png",
+      "platform": "PS5",
+      "popRank": 3,
+      "regions": {
+        "TR": {
+          "salePrice": 924.6,
+          "discPerc": 40,
+          "discountedUntil": "2026-01-07"
+        },
+        "UA": {
+          "salePrice": 719.4,
+          "discPerc": 40,
+          "discountedUntil": "2026-01-07"
+        }
+      }
+    },
+    {
+      "id": "EP1004-CUSA08519_00-REDEMPTIONFULL02",
+      "name": "Red Dead Redemption 2",
+      "cover": "https://image.api.playstation.com/cdn/UP1004/CUSA03041_00/Hpl5MtwQgOVF9vJqlfui6SDB5Jl4oBSq.png",
+      "platform": "PS4 / PS5",
+      "popRank": 4,
+      "regions": {
+        "TR": {
+          "salePrice": 524.75,
+          "discPerc": 75,
+          "discountedUntil": "2026-01-07"
+        },
+        "UA": {
+          "salePrice": 649.75,
+          "discPerc": 75,
+          "discountedUntil": "2026-01-07"
+        }
+      }
+    },
+    {
+      "id": "EP9000-PPSA08338_00-MARVELSPIDERMAN2",
+      "name": "Marvel’s Spider-Man 2",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202306/1219/1c7b75d8ed9271516546560d219ad0b22ee0a263b4537bd8.png",
+      "platform": "PS4 / PS5",
+      "popRank": 5,
+      "regions": {
+        "TR": {
+          "salePrice": 1399.5,
+          "discPerc": 50,
+          "discountedUntil": "2026-01-07"
+        },
+        "UA": {
+          "salePrice": 1149.5,
+          "discPerc": 50,
+          "discountedUntil": "2026-01-07"
+        }
+      }
+    },
+    {
+      "id": "EP7579-PPSA17599_00-EXP33000000PS5EU",
+      "name": "Clair Obscur: Expedition 33",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202501/2217/e5833a53529ff9879e87689f1e8b04d45ba7e6c97fa791e2.png",
+      "platform": "PS4 / PS5",
+      "popRank": 6,
+      "regions": {
+        "TR": {
+          "salePrice": 1399.2,
+          "discPerc": 20,
+          "discountedUntil": "2026-01-07"
+        },
+        "UA": {
+          "salePrice": 1199.2,
+          "discPerc": 20,
+          "discountedUntil": "2026-01-07"
+        }
+      }
+    },
+    {
+      "id": "EP0700-PPSA04609_00-ELDENRING0000000",
+      "name": "ELDEN RING PS4 & PS5",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202108/0410/0Jz6uJLxOK7JOMMfcfHFBi1D.png",
+      "platform": "PS4 / PS5",
+      "popRank": 7,
+      "regions": {
+        "TR": {
+          "salePrice": 974.35,
+          "discPerc": 35,
+          "discountedUntil": "2026-01-07"
+        },
+        "UA": {
+          "salePrice": 1169.35,
+          "discPerc": 35,
+          "discountedUntil": "2026-01-07"
+        }
+      }
+    },
+    {
+      "id": "EP0006-PPSA02343_00-ITTAKESTWORETAIL",
+      "name": "It Takes Two PS4™ &amp; PS5™",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202012/0815/7CRynuLSAb0vysSC4TmZy5e4.png",
+      "platform": "PS4 / PS5",
+      "edition": "Standard Edition",
+      "popRank": 8,
+      "regions": {
+        "TR": {
+          "salePrice": 299.99,
+          "discPerc": 80,
+          "discountedUntil": "2026-01-07",
+          "ru": "text",
+          "sub": "eaplay"
+        },
+        "UA": {
+          "salePrice": 279.8,
+          "discPerc": 80,
+          "discountedUntil": "2026-01-07",
+          "ru": "text",
+          "sub": ""
+        }
+      }
+    },
+    {
+      "id": "UP6312-PPSA22327_00-0810100104879906",
+      "name": "Forza Horizon 5",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202502/0323/d808653f2c2453e79433628e31f673ef3976c6771d39228a.png",
+      "platform": "PS5",
+      "edition": "Premium Edition",
+      "popRank": 9,
+      "regions": {
+        "TR": {
+          "salePrice": 1542,
+          "discPerc": 40,
+          "discountedUntil": "2026-01-07",
+          "ru": "text",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 1199.4,
+          "discPerc": 40,
+          "discountedUntil": "2026-01-07",
+          "ru": "text",
+          "sub": ""
+        }
+      }
+    },
+    {
+      "id": "EP9000-PPSA08330_00-GOWRAGNAROK00000",
+      "name": "God of War Ragnarök",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202503/2016/b69c06fb108299866057126b0d3a0530bdf96a39d2ce1cb9.png",
+      "platform": "PS5",
+      "edition": "Standard Edition",
+      "popRank": 10,
+      "regions": {
+        "TR": {
+          "salePrice": 1035.63,
+          "discPerc": 63,
+          "discountedUntil": "2026-01-07",
+          "ru": "text",
+          "sub": "psplus_extra"
+        },
+        "UA": {
+          "salePrice": 851,
+          "discPerc": 63,
+          "discountedUntil": "2026-01-07",
+          "ru": "voice",
+          "sub": ""
+        }
+      }
+    },
+    {
+      "id": "EP9000-PPSA07642_00-THELASTOFUSPART1",
+      "name": "The Last of Us™ Part I",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202206/0720/eEczyEMDd2BLa3dtkGJVE9Id.png",
+      "platform": "PS5",
+      "edition": "Standard Edition",
+      "popRank": 11,
+      "regions": {
+        "TR": {
+          "salePrice": 1724.5,
+          "discPerc": 50,
+          "discountedUntil": "2026-01-07",
+          "ru": "voice",
+          "sub": "psplus_extra"
+        },
+        "UA": {
+          "salePrice": 1149.5,
+          "discPerc": 50,
+          "discountedUntil": "2026-01-07",
+          "ru": "voice",
+          "sub": ""
+        }
+      }
+    },
+    {
+      "id": "EP0006-PPSA07784_00-APPLEJACKGAME000",
+      "name": "STAR WARS Jedi: Survivor™",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202304/1016/47becbe467e18575f71429abbaec9af707865744b825f34d.png",
+      "platform": "PS5",
+      "edition": "Standard Edition",
+      "popRank": 12,
+      "regions": {
+        "TR": {
+          "salePrice": 435,
+          "discPerc": 85,
+          "discountedUntil": "2026-01-07",
+          "ru": "none",
+          "sub": "eaplay"
+        },
+        "UA": {
+          "salePrice": 359.85,
+          "discPerc": 85,
+          "discountedUntil": "2026-01-07",
+          "ru": "none",
+          "sub": ""
+        }
+      }
+    }
+  ]
+}
