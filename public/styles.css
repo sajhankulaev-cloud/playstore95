@@ -107,7 +107,7 @@ tr:last-child td{border-bottom:none;}
 .discountTabBtn{
   appearance:none;
   border:1px solid var(--border);
-  background:#fff;
+  background:#0e192b;
   border-radius:14px;
   padding:10px 12px;
   min-height:44px;
