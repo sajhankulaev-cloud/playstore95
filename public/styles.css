@@ -265,7 +265,7 @@ tr:last-child td{border-bottom:none;}
 .modalGrid{display:flex;align-items:flex-start;gap:16px;flex-wrap:nowrap;}
 .modalLeft{display:flex;flex-direction:column;align-items:flex-start;flex:0 0 220px; width:220px;}
 .modalCover{width:220px;height:220px;object-fit:cover;border-radius:14px;display:block;}
-.modalPlatforms{width:220px;max-width:100%;display:flex;justify-content:center;align-items:center;margin-top:12px;}
+.modalPlatforms{width:220px;max-width:100%;display:flex;justify-content:center;align-items:center;}
 .modalRight{flex:1;min-width:0;overflow:hidden;}
 .modalTitle,.modalEdition,.modalRu,.modalSub,.modalUntil,.modalPrice{min-width:0;word-break:break-word;}
 
@@ -280,7 +280,7 @@ tr:last-child td{border-bottom:none;}
 /* 400px and below: further shrink */
 @media (max-width:400px){
   .modalLeft{flex:0 0 120px; width:120px;}
-  .modalCover{width:120px;height:120px;}
+  .modalCover{width:120px;height:140px;}
   .modalPlatforms{width:120px;}
 }
 
