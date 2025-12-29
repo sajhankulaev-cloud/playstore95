@@ -34,7 +34,7 @@ body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantare
 .searchPanel{max-width:0;opacity:0;overflow:hidden;pointer-events:none;transition:max-width .25s ease, opacity .2s ease;}
 .searchWrap.open .searchPanel{max-width:320px;opacity:1;pointer-events:auto;}
 .searchInput{min-width:240px; background: #0b1220 !important;}
-
+.colorA{font-size:14px; padding:0 0 3px 0;}
 @media (max-width:640px){
   .topbarHeader{flex-wrap:nowrap;}
   .searchPanel{position:absolute;left:16px;right:16px;top:52px;max-width:none;opacity:0;transform:translateY(-8px);transition:opacity .2s ease, transform .2s ease;overflow:visible;}
