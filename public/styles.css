@@ -293,8 +293,9 @@ tr:last-child td{border-bottom:none;}
 }
 
 .buyBtn--card {
+  width: 100%;
   padding: 6px 6px;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .buyBtn--modal {
