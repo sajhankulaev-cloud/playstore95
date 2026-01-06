@@ -147,8 +147,8 @@ function buildCard(game, whatsapp, showUntil){
     <div class="body">
       <p class="title">${game.name||""}</p>
       <div class="bottom">
-      <div class="row"><div class="discount">${game.discPerc?("-"+game.discPerc+"%"):""}</div><div class="until">${until}</div></div>
-      <div class="row"><div class="price">${fmtRub(game.finalPriceRub)}</div><button class="buyBtn buyBtn--card">Купить</button></div>
+      <div class="row"><div class="discount">${game.discPerc?("-"+game.discPerc+"%"):""}</div><div class="price">${fmtRub(game.finalPriceRub)}</div></div>
+      <div class="row"><button class="buyBtn buyBtn--card">Купить</button></div>
       </div>
     </div>`;
   const cw = div.querySelector(".coverWrap");
