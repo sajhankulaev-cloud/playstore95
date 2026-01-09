@@ -1225,6 +1225,11 @@ app.get("/api/games", (req, res) => {
     let computed = all.map(g => {
       const reg = (g.regions && g.regions[region]) ? g.regions[region] : null;
       const storePrice = reg ? Number(reg.salePrice || 0) : 0;
+
+      // Hide the game ONLY in the selected region when that region's price is 0 (or missing/invalid).
+      // Example: TR=450 -> visible in TR; UA=0 -> hidden in UA.
+      if (!Number.isFinite(storePrice) || storePrice <= 0) return null;
+
       const rate = pickRate(rules, storePrice);
       const rub = roundUp(storePrice * rate, step);
       const trSub = (g.regions && g.regions.TR && g.regions.TR.sub) ? String(g.regions.TR.sub) : "";
@@ -1251,6 +1256,9 @@ app.get("/api/games", (req, res) => {
       if(q) base._score = relevanceScore(g.name || "", q);
       return base;
     });
+
+    // Remove games that were excluded for the selected region (e.g., region price is 0).
+    computed = computed.filter(Boolean);
 
     if (until) {
       const norm = (v) => String(v || "").split("T")[0];
