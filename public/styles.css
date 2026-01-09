@@ -3,7 +3,7 @@
 body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;background:var(--bg);color:var(--text);}
 .topbar{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--border);}
 .container{max-width:1200px;margin:0 auto;padding: 6px 16px 8px 16px;}
-.brand{color: #38384d;font-family: "Orbitron", system-ui, sans-serif;font-weight:990;font-size:20px;letter-spacing: 0.06em;text-transform: uppercase;}
+.brand{text-decoration:none;color: #38384d;font-family: "Orbitron", system-ui, sans-serif;font-weight:990;font-size:20px;letter-spacing: 0.06em;text-transform: uppercase;}
 .badge{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid var(--border);font-size:12px;background:#fff;}
 .filters{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px;}
 .select,.input{padding:6px 4px;border:1px solid var(--border);border-radius:10px;background:#fff;color:var(--text);}
