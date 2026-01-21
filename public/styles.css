@@ -500,6 +500,9 @@ hr{border-color:var(--border)!important;}
   background: rgb(22 32 49) !important;
   color: var(--text) !important;
   border: 1px solid #1b2a41 !important;
+  padding: 8px 7px;
+  border-radius: 12px;
+  cursor: pointer;
 }
 .btnGhost1:hover{
   background: rgba(11 18 32) !important;
