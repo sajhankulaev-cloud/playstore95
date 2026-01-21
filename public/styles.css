@@ -1118,7 +1118,7 @@ body[data-tab="discounts"][data-discounts-view="overview"] .resultsBar{
 body[data-tab="discounts"][data-discounts-view="overview"] .resultsBar{ display:none; }
 
 .allDeals{
-  margin-top: 40px;
+  margin-top: 50px;
 }
 
 .allDealsHead{
@@ -1131,12 +1131,13 @@ body[data-tab="discounts"][data-discounts-view="overview"] .resultsBar{ display:
 }
 
 .allDealsTitle{
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   letter-spacing: .2px;
 }
 
 .allDealsViewAll{
+  font-size: 14px;
   color: #8ab4ff;
   text-decoration:none;
   font-weight: 700;
