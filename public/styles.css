@@ -505,7 +505,7 @@ hr{border-color:var(--border)!important;}
   cursor: pointer;
 }
 .btnGhost1:hover{
-  background: rgba(11 18 32) !important;
+  background: rgb(22 32 49) !important;
   border-color: rgba(77,163,255,.35) !important;
 }
 .btnGhost1:active{ transform: translateY(1px); }
