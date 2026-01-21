@@ -496,6 +496,16 @@ hr{border-color:var(--border)!important;}
   border-color: rgba(77,163,255,.35) !important;
 }
 .btnGhost:active{ transform: translateY(1px); }
+.btnGhost1{
+  background: rgb(22 32 49) !important;
+  color: var(--text) !important;
+  border: 1px solid #1b2a41 !important;
+}
+.btnGhost1:hover{
+  background: rgba(11 18 32) !important;
+  border-color: rgba(77,163,255,.35) !important;
+}
+.btnGhost1:active{ transform: translateY(1px); }
 
 /* Pager buttons */
 .pager button{
