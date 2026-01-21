@@ -858,7 +858,7 @@ hr{border-color:var(--border)!important;}
   but allow horizontal swipe/scroll if tabs don't fit.
 */
 @media (max-width: 720px){
-  .siteTabsShell{ padding: 10px 12px 14px 12px; }
+  .siteTabsShell{ padding: 10px 12px 0px 12px; }
 
   .siteTabs{
     justify-content: flex-start;
@@ -1355,7 +1355,7 @@ body[data-tab="discounts"][data-discounts-view="overview"] .discountTabs{
   flex-wrap: wrap !important;
   justify-content: center !important;
   align-items: flex-start !important;
-  gap: 24px !important;
+  gap: 10px !important;
   width: 100% !important;
 }
 
