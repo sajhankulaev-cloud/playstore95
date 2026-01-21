@@ -1,0 +1,1530 @@
+{
+  "updatedAt": "2026-01-19T23:31:55.325Z",
+  "items": [
+    {
+      "id": "JP5784-PPSA34054_00-WSDELUXEEDITION0",
+      "name": "Wandering Sword Deluxe Edition",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202510/1009/79736934c1e5ff6f7dac970ae7b8801cd3e68064c4c515b2.png",
+      "platform": "PS5",
+      "edition": "Deluxe Edition",
+      "releaseDate": "2026-05-24",
+      "productIds": {
+        "TR": "JP5784-PPSA34054_00-WSDELUXEEDITION0",
+        "UA": "JP5784-PPSA34054_00-WSDELUXEEDITION0"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 1949,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 1349,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10017362"
+    },
+    {
+      "id": "JP5784-PPSA34054_00-WANDERINGSWORD00",
+      "name": "Wandering Sword",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202510/1009/8f707b69e8ca4d9d4e466d08e7be3d294007acbb98620f84.png",
+      "platform": "PS5",
+      "edition": "Standard Edition",
+      "releaseDate": "2026-05-27",
+      "productIds": {
+        "TR": "JP5784-PPSA34054_00-WANDERINGSWORD00",
+        "UA": "JP5784-PPSA34054_00-WANDERINGSWORD00"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 1499,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 1049,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10017362"
+    },
+    {
+      "id": "EP0700-PPSA22827_00-TOBREDLXEDITION0",
+      "name": "Aradığınız şey bu olmayabilir...",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202510/2716/f76bb64e880346cb67c3bc847bc75dac9abff7eea67de028.png",
+      "platform": "PS5",
+      "edition": "Deluxe Edition",
+      "releaseDate": "2026-02-26",
+      "productIds": {
+        "TR": "EP0700-PPSA22827_00-TOBREDLXEDITION0",
+        "UA": "EP0700-PPSA22827_00-TOBREDLXEDITION0"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 2579,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 1799,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10010906"
+    },
+    {
+      "id": "EP0700-PPSA22827_00-TALESOFBERSERIAR",
+      "name": "Tales of Berseria Remastered",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202510/2716/9741a54551347dd5cc3c05984a2fc5ec0ab74bf50fb44cb0.png",
+      "platform": "PS5",
+      "edition": "Standard Edition",
+      "releaseDate": "2026-02-26",
+      "productIds": {
+        "TR": "EP0700-PPSA22827_00-TALESOFBERSERIAR",
+        "UA": "EP0700-PPSA22827_00-TALESOFBERSERIAR"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 1749,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 1199,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10010906"
+    },
+    {
+      "id": "UB1685-PPSA30648_00-STARTREKDELUXEP5",
+      "name": "Star Trek: Voyager - Across the Unknown - Deluxe Edition",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202511/2617/5cdf40b07a69398a1c15a76b903fddd2380ffc2b636c7806.png",
+      "platform": "PS5",
+      "edition": "Deluxe Edition",
+      "releaseDate": "2026-02-18",
+      "productIds": {
+        "TR": "UB1685-PPSA30648_00-STARTREKDELUXEP5",
+        "UA": "UB1685-PPSA30648_00-STARTREKDELUXEP5"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 2149,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 1499,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10014966"
+    },
+    {
+      "id": "UB1685-PPSA30648_00-0552541582882578",
+      "name": "Star Trek: Voyager - Across the Unknown",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202601/1309/62298b207155bc345db10cde09d24a859cc19edd689e9f8b.png",
+      "platform": "PS5",
+      "edition": "Standard Edition",
+      "releaseDate": "2026-02-18",
+      "productIds": {
+        "TR": "UB1685-PPSA30648_00-0552541582882578",
+        "UA": "UB1685-PPSA30648_00-0552541582882578"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 1749,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 1199,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10014966"
+    },
+    {
+      "id": "UP4713-PPSA22094_00-0031403133314193",
+      "name": "Showgunners Platinum Edition",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202511/1310/ac4fa7fa96c236fb62424fa6494a7c0a96416245c58e658c.png",
+      "platform": "PS5",
+      "edition": "Platinum Edition",
+      "releaseDate": "2026-02-19",
+      "productIds": {
+        "TR": "UP4713-PPSA22094_00-0031403133314193",
+        "UA": "UP4713-PPSA22094_00-0031403133314193"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 1499,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 1109,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10010621"
+    },
+    {
+      "id": "EP4356-PPSA26092_00-SCREAMERDELUXEED",
+      "name": "Screamer - Digital Deluxe Edition",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202512/0108/8c5858cb62b1bc08f60522ae84dbf9b176c915a78105a390.png",
+      "platform": "PS5",
+      "edition": "Digital Deluxe Edition",
+      "releaseDate": "2026-03-22",
+      "productIds": {
+        "TR": "EP4356-PPSA26092_00-SCREAMERDELUXEED",
+        "UA": "EP4356-PPSA26092_00-SCREAMERDELUXEED"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 3449,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 2199,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10012598"
+    },
+    {
+      "id": "EP4356-PPSA26092_00-SCREAMERFULLGAME",
+      "name": "Screamer",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202507/1715/f51e6b875423548e4557d79d5f00d40df9473a302e97108f.png",
+      "platform": "PS5",
+      "edition": "Standard Edition",
+      "releaseDate": "2026-03-25",
+      "productIds": {
+        "TR": "EP4356-PPSA26092_00-SCREAMERFULLGAME",
+        "UA": "EP4356-PPSA26092_00-SCREAMERFULLGAME"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 2999,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 1999,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10012598"
+    },
+    {
+      "id": "EP4356-PPSA21725_00-RIDE6ULTIMATE000",
+      "name": "RIDE 6 - Ultimate Edition",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202510/2110/777a2f2222d716763149341d3ff88338c3e720d1489b5eff.png",
+      "platform": "PS5",
+      "edition": "Ultimate Edition",
+      "releaseDate": "2026-02-08",
+      "productIds": {
+        "TR": "EP4356-PPSA21725_00-RIDE6ULTIMATE000",
+        "UA": "EP4356-PPSA21725_00-RIDE6ULTIMATE000"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 4749,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 2799,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10010475"
+    },
+    {
+      "id": "UP6360-PPSA27214_00-0491578894232718",
+      "name": "Never Grave: The Witch and The Curse（PS5 &amp; PS4）Standard Edition+Soundtrack",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202506/2709/16d765460d37e578a08e9b2801b219b4ca4b00277e9fa27f.png",
+      "platform": "PS5",
+      "edition": "Standard Edition",
+      "releaseDate": "2026-03-01",
+      "productIds": {
+        "TR": "UP6360-PPSA27214_00-0491578894232718",
+        "UA": "UP6360-PPSA27214_00-0491578894232718"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 816,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 619,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10012944"
+    },
+    {
+      "id": "UP6360-PPSA27214_00-0177496337080693",
+      "name": "Never Grave: The Witch and The Curs",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202506/2709/16d765460d37e578a08e9b2801b219b4ca4b00277e9fa27f.png",
+      "platform": "PS5",
+      "edition": "Standard Edition",
+      "releaseDate": "2026-03-04",
+      "productIds": {
+        "TR": "UP6360-PPSA27214_00-0177496337080693",
+        "UA": "UP6360-PPSA27214_00-0177496337080693"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 730,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 549,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10012944"
+    },
+    {
+      "id": "EP0700-PPSA26174_00-MHAAJDLXEDITION0",
+      "name": "MY HERO ACADEMIA: All’s Justice - Deluxe Edition",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202509/0709/f088765fb44ca91fbde2b5e74107a459e0796c7afe72b73d.png",
+      "platform": "PS5",
+      "edition": "Deluxe Edition",
+      "releaseDate": "2026-02-05",
+      "productIds": {
+        "TR": "EP0700-PPSA26174_00-MHAAJDLXEDITION0",
+        "UA": "EP0700-PPSA26174_00-MHAAJDLXEDITION0"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 3849,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 2399,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10012661"
+    },
+    {
+      "id": "EP0700-PPSA26174_00-MAINGAME00000000",
+      "name": "MY HERO ACADEMIA: All’s Justice",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202509/0709/5cb2399631fdf449036447e24193fcf434b0733c3e30e9bf.png",
+      "platform": "PS5",
+      "edition": "Standard Edition",
+      "releaseDate": "2026-02-05",
+      "productIds": {
+        "TR": "EP0700-PPSA26174_00-MAINGAME00000000",
+        "UA": "EP0700-PPSA26174_00-MAINGAME00000000"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 2999,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 1999,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10012661"
+    },
+    {
+      "id": "JP0102-PPSA26873_00-MHST30000PREMIUM",
+      "name": "Monster Hunter Stories 3: Twisted Reflection Premium Deluxe Sürüm",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202510/1700/b5197afb6c95afd9d799e18c3be35dc8d313e868aec869b1.png",
+      "platform": "PS5",
+      "edition": "Premium Deluxe Edition",
+      "releaseDate": "2026-03-12",
+      "productIds": {
+        "TR": "JP0102-PPSA26873_00-MHST30000PREMIUM",
+        "UA": "JP0102-PPSA26873_00-MHST30000PREMIUM"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 4299,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 2599,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10013075"
+    },
+    {
+      "id": "JP0102-PPSA26873_00-MHST300000DELUXE",
+      "name": "Monster Hunter Stories 3: Twisted Reflection Deluxe Sürüm",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202510/1609/62c9579907144edad22ce0bfae8114a17602c43375bb0189.png",
+      "platform": "PS5",
+      "edition": "Deluxe Edition",
+      "releaseDate": "2026-03-12",
+      "productIds": {
+        "TR": "JP0102-PPSA26873_00-MHST300000DELUXE",
+        "UA": "JP0102-PPSA26873_00-MHST300000DELUXE"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 3849,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 2399,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10013075"
+    },
+    {
+      "id": "JP0102-PPSA26873_00-FULLGAME00000001",
+      "name": "Monster Hunter Stories 3: Twisted Reflection",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202510/1005/d3bddde70d5167a8df11eb231c2ec045f7b8dcb89559ad6c.png",
+      "platform": "PS5",
+      "edition": "Standard Edition",
+      "releaseDate": "2026-03-12",
+      "productIds": {
+        "TR": "JP0102-PPSA26873_00-FULLGAME00000001",
+        "UA": "JP0102-PPSA26873_00-FULLGAME00000001"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 2999,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 1999,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10013075"
+    },
+    {
+      "id": "JP0102-PPSA32239_00-FULLGAME00000000",
+      "name": "Mega Man Star Force Legacy Collection PS4 &amp; PS5",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202510/2104/a990a9599bea482ad33e32fc14898b3545795eb0dc6f9444.png",
+      "platform": "PS5",
+      "edition": "Standard Edition",
+      "releaseDate": "2026-03-26",
+      "productIds": {
+        "TR": "JP0102-PPSA32239_00-FULLGAME00000000",
+        "UA": "JP0102-PPSA32239_00-FULLGAME00000000"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 1749,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 1399,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10016383"
+    },
+    {
+      "id": "EP4133-PPSA08254_00-TOXICCOMMANBLOOD",
+      "name": "John Carpenter's Toxic Commando - Blood Edition",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202511/2615/b2a9c6fc3f08bdedda071a2035e3781424cfd6e437ce4007.png",
+      "platform": "PS5",
+      "edition": "Blood Edition",
+      "releaseDate": "2026-03-12",
+      "productIds": {
+        "TR": "EP4133-PPSA08254_00-TOXICCOMMANBLOOD",
+        "UA": "EP4133-PPSA08254_00-TOXICCOMMANBLOOD"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 2149,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 1499,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10004956"
+    },
+    {
+      "id": "UP2908-PPSA30568_00-INVINCIBLEVSDLXE",
+      "name": "Invincible VS - Deluxe Edition",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202512/0223/abfbdf49a3f1c4b091eaeaa64d910c9cb7a1d150325941d9.png",
+      "platform": "PS5",
+      "edition": "Deluxe Edition",
+      "releaseDate": "2026-04-30",
+      "productIds": {
+        "TR": "UP2908-PPSA30568_00-INVINCIBLEVSDLXE",
+        "UA": "UP2908-PPSA30568_00-INVINCIBLEVSDLXE"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 2999,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 2299,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10015370"
+    },
+    {
+      "id": "UP2908-PPSA30568_00-INVINCIBLEVSMAIN",
+      "name": "Invincible VS",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202512/0223/1914db8ba62ff41798d0a89159d4028d927fe5b1e492dc67.png",
+      "platform": "PS5",
+      "edition": "Standard Edition",
+      "releaseDate": "2026-04-30",
+      "productIds": {
+        "TR": "UP2908-PPSA30568_00-INVINCIBLEVSMAIN",
+        "UA": "UP2908-PPSA30568_00-INVINCIBLEVSMAIN"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 2149,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 1699,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10015370"
+    },
+    {
+      "id": "JP0106-PPSA32802_00-CRIBATTFFFDDXEDT",
+      "name": "FATAL FRAME II: Crimson Butterfly REMAKE Digital Deluxe Edition",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202510/1003/822ce48b1bd905148d5db7d4281a35695a5cd9d5d9bf2e70.png",
+      "platform": "PS5",
+      "edition": "Digital Deluxe Edition",
+      "releaseDate": "2026-03-11",
+      "productIds": {
+        "TR": "JP0106-PPSA32802_00-CRIBATTFFFDDXEDT",
+        "UA": "JP0106-PPSA32802_00-CRIBATTFFFDDXEDT"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 2799,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 1899,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10016680"
+    },
+    {
+      "id": "JP0106-PPSA32802_00-CRIBATTFFF000020",
+      "name": "FATAL FRAME II: Crimson Butterfly REMAKE",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202510/0907/5d0a671d665608f495779fb0ee4113b8c1c7146835a5d9f4.png",
+      "platform": "PS5",
+      "edition": "Standard Edition",
+      "releaseDate": "2026-03-11",
+      "productIds": {
+        "TR": "JP0106-PPSA32802_00-CRIBATTFFF000020",
+        "UA": "JP0106-PPSA32802_00-CRIBATTFFF000020"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 2149,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 1499,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10016680"
+    },
+    {
+      "id": "EP0082-PPSA17942_00-DQ7RE00000000000",
+      "name": "DRAGON QUEST VII Reimagined",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202508/2811/b2e2d208028f8ab569e95d58f3903a9e7147ea8708b6d9c3.png",
+      "platform": "PS5",
+      "edition": "Deluxe Edition",
+      "releaseDate": "2026-02-04",
+      "productIds": {
+        "TR": "EP0082-PPSA17942_00-DQ7RE00000000000",
+        "UA": "EP0082-PPSA17942_00-DQ7RE00000000000"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 2999,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 1999,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10008842"
+    },
+    {
+      "id": "JP0211-PPSA26148_00-0103363365947797",
+      "name": "Coffee Talk Tokyo - Deluxe Edition",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202506/1703/fff2fe38bac794c2646bd44f6d991822c00ed83ccf424298.png",
+      "platform": "PS5",
+      "edition": "Deluxe Edition",
+      "releaseDate": "2026-03-01",
+      "productIds": {
+        "TR": "JP0211-PPSA26148_00-0103363365947797",
+        "UA": "JP0211-PPSA26148_00-0103363365947797"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 774,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 589,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10012616"
+    },
+    {
+      "id": "JP0211-PPSA26148_00-0217192219511128",
+      "name": "Coffee Talk Tokyo",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202506/1703/fff2fe38bac794c2646bd44f6d991822c00ed83ccf424298.png",
+      "platform": "PS5",
+      "edition": "Standard Edition",
+      "releaseDate": "2026-03-04",
+      "productIds": {
+        "TR": "JP0211-PPSA26148_00-0217192219511128",
+        "UA": "JP0211-PPSA26148_00-0217192219511128"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 649,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 499,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10012616"
+    },
+    {
+      "id": "UB0473-PPSA29714_00-BBEEXDELUXE00000",
+      "name": "BlazBlue Entropy Effect X Deluxe Edition",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202511/2710/c00db97ec086f19a44694dad1ce202c4d09d816c2f9dc80f.png",
+      "platform": "PS5",
+      "edition": "Deluxe Edition",
+      "releaseDate": "2026-02-11",
+      "productIds": {
+        "TR": "UB0473-PPSA29714_00-BBEEXDELUXE00000",
+        "UA": "UB0473-PPSA29714_00-BBEEXDELUXE00000"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 1499,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 1109,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10013958"
+    },
+    {
+      "id": "UB0473-PPSA29714_00-GREATACTGAMEBBEE",
+      "name": "BlazBlue Entropy Effect X",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202511/2710/c00db97ec086f19a44694dad1ce202c4d09d816c2f9dc80f.png",
+      "platform": "PS5",
+      "edition": "Standard Edition",
+      "releaseDate": "2026-02-11",
+      "productIds": {
+        "TR": "UB0473-PPSA29714_00-GREATACTGAMEBBEE",
+        "UA": "UB0473-PPSA29714_00-GREATACTGAMEBBEE"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 1079,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 799,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10013958"
+    },
+    {
+      "id": "UB0018-PPSA18538_00-ZMDPS5PREGL00001",
+      "name": "Arknights: Endfield(Free to Play) Ön Sipariş Paketi",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202511/1910/f6427c6aa4f476f9e6a837559e627f94d8892f07f5edd1b7.png",
+      "platform": "PS5",
+      "edition": "Standard Edition",
+      "releaseDate": "2026-01-22",
+      "productIds": {
+        "TR": "UB0018-PPSA18538_00-ZMDPS5PREGL00001",
+        "UA": "UB0018-PPSA18538_00-ZMDPS5PREGL00001"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 429,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 329,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10009205"
+    },
+    {
+      "id": "EP4133-PPSA08254_00-TOXICCOMMANDO000",
+      "name": "John Carpenter’s Toxic Commando",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202507/2213/a0e5bee7119d42ef10f1ce0b861d3a797d7bebe143ec5fe1.png",
+      "platform": "PS5",
+      "edition": "Standard Edition",
+      "releaseDate": "2026-03-12",
+      "productIds": {
+        "TR": "EP4133-PPSA08254_00-TOXICCOMMANDO000",
+        "UA": "EP4133-PPSA08254_00-TOXICCOMMANDO000"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 1749,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 1199,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10004956"
+    },
+    {
+      "id": "UB1428-PPSA31881_00-CARMAGEDDONRS000",
+      "name": "Carmageddon: Rogue Shift",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202511/1714/3f78a37dde382b002376da32e851ada061c8549d6feffa56.png",
+      "platform": "PS5",
+      "edition": "Standard Edition",
+      "releaseDate": "2026-02-05",
+      "productIds": {
+        "TR": "UB1428-PPSA31881_00-CARMAGEDDONRS000",
+        "UA": "UB1428-PPSA31881_00-CARMAGEDDONRS000"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 1749,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 1399,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10016169"
+    },
+    {
+      "id": "JP0128-PPSA32236_00-TOKYOXTREMERACER",
+      "name": "Tokyo Xtreme Racer",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202510/2405/f68470f70ea45ab399e08556e2b654592154dbb2c70e43e1.png",
+      "platform": "PS5",
+      "edition": "Standard Edition",
+      "releaseDate": "2026-02-25",
+      "productIds": {
+        "TR": "JP0128-PPSA32236_00-TOKYOXTREMERACER",
+        "UA": "JP0128-PPSA32236_00-TOKYOXTREMERACER"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 2149,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 1699,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10016323"
+    },
+    {
+      "id": "EP6665-PPSA28835_00-STYX3DELUXE00001",
+      "name": "Styx: Blades of Greed - Quartz Edition",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202511/1311/051b340cb9b1e167000035c32db529cb2a0a5673851edbb9.png",
+      "platform": "PS5",
+      "edition": "Quartz Edition",
+      "releaseDate": "2026-02-17",
+      "productIds": {
+        "TR": "EP6665-PPSA28835_00-STYX3DELUXE00001",
+        "UA": "EP6665-PPSA28835_00-STYX3DELUXE00001"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 2579,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 1799,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10013900"
+    },
+    {
+      "id": "UP0102-PPSA02530_00-PRAGMATA00000000",
+      "name": "PRAGMATA",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202511/2605/3d57b6ae9b22a4982f0272ef1c716ebbfee59b7ea1fe60af.png",
+      "platform": "PS5",
+      "edition": "Standard Edition",
+      "releaseDate": "2026-04-23",
+      "productIds": {
+        "TR": "UP0102-PPSA02530_00-PRAGMATA00000000",
+        "UA": "UP0102-PPSA02530_00-PRAGMATA00000000"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 2579,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 1799,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10002075"
+    },
+    {
+      "id": "UP3024-PPSA30094_00-0334583576730525",
+      "name": "High On Life 2",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202505/2223/5d9328392c4b258f76f9496bed0884c3bfa24fed24588ad4.png",
+      "platform": "PS5",
+      "edition": "Standard Edition",
+      "releaseDate": "2026-02-13",
+      "productIds": {
+        "TR": "UP3024-PPSA30094_00-0334583576730525",
+        "UA": "UP3024-PPSA30094_00-0334583576730525"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 2579,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 1799,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10012995"
+    },
+    {
+      "id": "EP6665-PPSA28835_00-STYX3DELUXE00002",
+      "name": "Styx: Master of Stealth Collection",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202511/2809/5c85ac4d5c3da15ad2f9cd8d6a65d68a3376499ba0f7adda.png",
+      "platform": "PS5",
+      "edition": "Styx Collection",
+      "releaseDate": "2026-02-17",
+      "productIds": {
+        "TR": "EP6665-PPSA28835_00-STYX3DELUXE00002",
+        "UA": "EP6665-PPSA28835_00-STYX3DELUXE00002"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 2999,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 1999,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10013900"
+    },
+    {
+      "id": "EP4356-PPSA21725_00-RIDE6FULLGAME000",
+      "name": "RIDE 6",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202512/1010/f3e1293fd32c6d4ab71d9d2b8150c84c669dfa9204acf79e.png",
+      "platform": "PS5",
+      "edition": "Standard Edition",
+      "releaseDate": "2026-02-11",
+      "productIds": {
+        "TR": "EP4356-PPSA21725_00-RIDE6FULLGAME000",
+        "UA": "EP4356-PPSA21725_00-RIDE6FULLGAME000"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 2999,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 1999,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10010475"
+    },
+    {
+      "id": "UP6312-PPSA26136_00-0074184226734561",
+      "name": "Avowed Premium Edition",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202512/0816/2725ad4603bc98109472a1082db7d7e03515c13eec9177d2.png",
+      "platform": "PS5",
+      "edition": "Premium Edition",
+      "releaseDate": "2026-02-17",
+      "productIds": {
+        "TR": "UP6312-PPSA26136_00-0074184226734561",
+        "UA": "UP6312-PPSA26136_00-0074184226734561"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 2499,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 1899,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10012632"
+    },
+    {
+      "id": "UP0102-PPSA02530_00-PRAGMATADX000000",
+      "name": "PRAGMATA Deluxe Edition",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202511/2606/0a423fc5de05545ed000d9814909fb723722b5936f4ebbc1.png",
+      "platform": "PS5",
+      "edition": "Deluxe Edition",
+      "releaseDate": "2026-04-23",
+      "productIds": {
+        "TR": "UP0102-PPSA02530_00-PRAGMATADX000000",
+        "UA": "UP0102-PPSA02530_00-PRAGMATADX000000"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 2999,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 1999,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10002075"
+    },
+    {
+      "id": "UP1018-PPSA16833_00-LEGOBATMAN000000",
+      "name": "LEGO® Batman™: Legacy of the Dark Knight",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202508/1316/3302f35b66691aa405aee31624c0c95fe73081be8e0c75bb.png",
+      "platform": "PS5",
+      "edition": "Standard Edition",
+      "releaseDate": "2026-05-28",
+      "productIds": {
+        "TR": "UP1018-PPSA16833_00-LEGOBATMAN000000",
+        "UA": "UP1018-PPSA16833_00-LEGOBATMAN000000"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 2999,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 1999,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10008537"
+    },
+    {
+      "id": "EP0700-PPSA23908_00-MAINGAME00000000",
+      "name": "Code Vein II",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202508/2218/40f9f75ccd8c0b4f627b94b6f18d15ef7df96e4a7c595f09.png",
+      "platform": "PS5",
+      "edition": "Standard Edition",
+      "releaseDate": "2026-01-29",
+      "productIds": {
+        "TR": "EP0700-PPSA23908_00-MAINGAME00000000",
+        "UA": "EP0700-PPSA23908_00-MAINGAME00000000"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 2999,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 1999,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10011448"
+    },
+    {
+      "id": "EP9000-PPSA07631_00-SAROS00000000000",
+      "name": "SAROS",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202509/2318/78549217df5077bea107700e077d04be6a9a4b0dfbcd821a.png",
+      "platform": "PS5",
+      "edition": "Premium Edition",
+      "releaseDate": "2026-04-29",
+      "productIds": {
+        "TR": "EP9000-PPSA07631_00-SAROS00000000000",
+        "UA": "EP9000-PPSA07631_00-SAROS00000000000"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 3449,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 2199,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10005069"
+    },
+    {
+      "id": "UP6312-PPSA26136_00-0827146390058176",
+      "name": "Avowed",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202511/2510/eec2078ddc4a341c2c300315d91a15b0820decb74e58c300.png",
+      "platform": "PS5",
+      "edition": "Standard Edition",
+      "releaseDate": "2026-02-17",
+      "productIds": {
+        "TR": "UP6312-PPSA26136_00-0827146390058176",
+        "UA": "UP6312-PPSA26136_00-0827146390058176"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 2099,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 1599,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10012632"
+    },
+    {
+      "id": "EP0082-PPSA17942_00-DQ7RE0000000DE00",
+      "name": "DRAGON QUEST VII Reimagined Digital Deluxe Edition",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202508/2811/b2e2d208028f8ab569e95d58f3903a9e7147ea8708b6d9c3.png",
+      "platform": "PS5",
+      "edition": "Digital Deluxe Edition",
+      "releaseDate": "2026-02-02",
+      "productIds": {
+        "TR": "EP0082-PPSA17942_00-DQ7RE0000000DE00",
+        "UA": "EP0082-PPSA17942_00-DQ7RE0000000DE00"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 3649,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 2299,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10008842"
+    },
+    {
+      "id": "EP9000-PPSA07631_00-SAROSDELUXE00000",
+      "name": "SAROS Digital Deluxe Sürüm",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202512/0216/9a367523a9611a45d632a37fde6534eb56023e73112a3727.png",
+      "platform": "PS5",
+      "edition": "Digital Deluxe Edition",
+      "releaseDate": "2026-04-27",
+      "productIds": {
+        "TR": "EP9000-PPSA07631_00-SAROSDELUXE00000",
+        "UA": "EP9000-PPSA07631_00-SAROSDELUXE00000"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 3849,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 2399,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10005069"
+    },
+    {
+      "id": "EP4356-PPSA21725_00-RIDE6DELUXE00000",
+      "name": "RIDE 6 - Deluxe Edition",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202510/2815/05b70ffb22d0093d59cbc8636114184dc50e19d446d298cb.png",
+      "platform": "PS5",
+      "edition": "Deluxe Edition",
+      "releaseDate": "2026-02-11",
+      "productIds": {
+        "TR": "EP4356-PPSA21725_00-RIDE6DELUXE00000",
+        "UA": "EP4356-PPSA21725_00-RIDE6DELUXE00000"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 3849,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 2399,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10010475"
+    },
+    {
+      "id": "EP0700-PPSA23908_00-CHRNSDLXEDITION0",
+      "name": "CODE VEIN II Deluxe Edition",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202508/2219/bb0c2dcf0301bc1f34b85592a1e53a9883b53607da0a2093.png",
+      "platform": "PS5",
+      "edition": "Deluxe Edition",
+      "releaseDate": "2026-01-26",
+      "productIds": {
+        "TR": "EP0700-PPSA23908_00-CHRNSDLXEDITION0",
+        "UA": "EP0700-PPSA23908_00-CHRNSDLXEDITION0"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 3849,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 2399,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10011448"
+    },
+    {
+      "id": "EP4389-PPSA23372_00-REANIMALDIGDELUX",
+      "name": "REANIMAL – Digital Deluxe Edition",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202510/2113/5f8114f5db01bf9788fdae80046d33ed972290b1af53ee33.png",
+      "platform": "PS5",
+      "edition": "Digital Deluxe Edition",
+      "releaseDate": "2026-02-13",
+      "productIds": {
+        "TR": "EP4389-PPSA23372_00-REANIMALDIGDELUX",
+        "UA": "EP4389-PPSA23372_00-REANIMALDIGDELUX"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 2579,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 1799,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10010999"
+    },
+    {
+      "id": "EP0700-PPSA23908_00-CHRNSULTEDITION0",
+      "name": "CODE VEIN II Ultimate Edition",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202508/2220/b3e8631005b4c6cb1c924184ff761ff36322c6e51088141c.png",
+      "platform": "PS5",
+      "edition": "Ultimate Edition",
+      "releaseDate": "2026-01-26",
+      "productIds": {
+        "TR": "EP0700-PPSA23908_00-CHRNSULTEDITION0",
+        "UA": "EP0700-PPSA23908_00-CHRNSULTEDITION0"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 4299,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 2599,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10011448"
+    },
+    {
+      "id": "EP4108-PPSA32785_00-NIOH300000000000",
+      "name": "Nioh 3",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202509/0401/835b207c01d1b02c29229e73fba0da13b914148c8b8bd4ed.png",
+      "platform": "PS5",
+      "edition": "Standard Edition",
+      "releaseDate": "2026-02-05",
+      "productIds": {
+        "TR": "EP4108-PPSA32785_00-NIOH300000000000",
+        "UA": "EP4108-PPSA32785_00-NIOH300000000000"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 3449,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 2199,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10014010"
+    },
+    {
+      "id": "EP0700-PPSA26174_00-MHAAJULTEDITION0",
+      "name": "MY HERO ACADEMIA: All’s Justice - Ultimate Edition",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202509/0710/d03ee81a6d5e18b1d37d3666b89fe3930ea9b0d86c4ddc5f.png",
+      "platform": "PS5",
+      "edition": "Ultimate Edition",
+      "releaseDate": "2026-02-05",
+      "productIds": {
+        "TR": "EP0700-PPSA26174_00-MHAAJULTEDITION0",
+        "UA": "EP0700-PPSA26174_00-MHAAJULTEDITION0"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 4749,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 2799,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10012661"
+    },
+    {
+      "id": "EP4108-PPSA32785_00-NIOH3DDX00000000",
+      "name": "Nioh 3 Dijital Deluxe Sürümü",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202509/0402/977f4a278e37b4311d916d85680160bea2bd5f148ad1dbe7.png",
+      "platform": "PS5",
+      "edition": "Digital Deluxe Edition",
+      "releaseDate": "2026-02-05",
+      "productIds": {
+        "TR": "EP4108-PPSA32785_00-NIOH3DDX00000000",
+        "UA": "EP4108-PPSA32785_00-NIOH3DDX00000000"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 5149,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 2999,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10014010"
+    },
+    {
+      "id": "UP4162-PPSA25286_00-0655875232157653",
+      "name": "Crimson Desert",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202509/0508/35d8dd891379a8fb31f93a1733e07cd0a4f8b6e58b45f7e8.png",
+      "platform": "PS5",
+      "edition": "Standard Edition",
+      "releaseDate": "2026-03-19",
+      "productIds": {
+        "TR": "UP4162-PPSA25286_00-0655875232157653",
+        "UA": "UP4162-PPSA25286_00-0655875232157653"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 3449,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 2799,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10002363"
+    },
+    {
+      "id": "UP4162-PPSA25286_00-0470822165475407",
+      "name": "Crimson Desert",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202508/2905/0a3fc6d3f858e52566fe0390b13387a29243ddeecc70293f.png",
+      "platform": "PS5",
+      "edition": "Standard Edition",
+      "releaseDate": "2026-03-19",
+      "productIds": {
+        "TR": "UP4162-PPSA25286_00-0470822165475407",
+        "UA": "UP4162-PPSA25286_00-0470822165475407"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 2999,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 2449,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10002363"
+    },
+    {
+      "id": "UP1018-PPSA16833_00-LEGOBATMANDLXEDT",
+      "name": "LEGO® Batman™: Legacy of the Dark Knight Deluxe Edition",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202511/1118/04a1dccd62834eabfac097824ab1c352ea2b39ca8a092228.png",
+      "platform": "PS5",
+      "edition": "Deluxe Edition",
+      "releaseDate": "2026-05-25",
+      "productIds": {
+        "TR": "UP1018-PPSA16833_00-LEGOBATMANDLXEDT",
+        "UA": "UP1018-PPSA16833_00-LEGOBATMANDLXEDT"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 3849,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 2399,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10008537"
+    },
+    {
+      "id": "EP6665-PPSA28835_00-STYX300000000000",
+      "name": "Styx: Blades of Greed",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202509/0808/a9bccabff2827e97d5797a2760b5f8a9013ffd62ed4eaf84.png",
+      "platform": "PS5",
+      "edition": "Standard Edition",
+      "releaseDate": "2026-02-19",
+      "productIds": {
+        "TR": "EP6665-PPSA28835_00-STYX300000000000",
+        "UA": "EP6665-PPSA28835_00-STYX300000000000"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 2149,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 1499,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10013900"
+    },
+    {
+      "id": "EP3969-PPSA11386_00-007FIRSTLIGHT000",
+      "name": "007 First Light",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202507/0215/f98041a10ccc22d45fc2f6eded09eec50abd106d01547a5d.png",
+      "platform": "PS5",
+      "edition": "Deluxe Edition",
+      "releaseDate": "2026-05-25",
+      "productIds": {
+        "TR": "EP3969-PPSA11386_00-007FIRSTLIGHT000",
+        "UA": "EP9000-CUSA00897_00-UNLOCKCOSTUME000"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 2999,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 0,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10006560"
+    },
+    {
+      "id": "EP4389-PPSA23372_00-ANIMALGAMEGLOBAL",
+      "name": "REANIMAL",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202508/2109/25422d8bda53b48e35f690b9d68590ab3f5eb4df8755c84f.png",
+      "platform": "PS5",
+      "edition": "Standard Edition",
+      "releaseDate": "2026-02-13",
+      "productIds": {
+        "TR": "EP4389-PPSA23372_00-ANIMALGAMEGLOBAL",
+        "UA": "EP4389-PPSA23372_00-ANIMALGAMEGLOBAL"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 1749,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 1199,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10010999"
+    },
+    {
+      "id": "EP0002-PPSA08595_00-DIVLOHCOMBO00000",
+      "name": "Diablo® IV: Age of Hatred Collection",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202511/1222/3dc096ad91dfb6a8d4c48b0cbedc4f90717b806221d4c9e9.png",
+      "platform": "PS4 / PS5",
+      "edition": "Standard Edition",
+      "releaseDate": "2026-04-27",
+      "productIds": {
+        "TR": "EP0002-PPSA08595_00-DIVLOHCOMBO00000",
+        "UA": "EP0002-PPSA08595_00-DIVLOHCOMBO00000"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 2799,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 2999,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "231761"
+    },
+    {
+      "id": "EP0102-PPSA31246_00-REREQUIEMDX00000",
+      "name": "Resident Evil Requiem Deluxe Edition",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202512/1205/105d7f8217227e89606084d19db0b3d9afc3cb49ee97bce6.png",
+      "platform": "PS5",
+      "edition": "Deluxe Edition",
+      "releaseDate": "2026-02-26",
+      "productIds": {
+        "TR": "EP0102-PPSA31246_00-REREQUIEMDX00000",
+        "UA": "EP0102-PPSA31246_00-REREQUIEMDX00000"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 3849,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 2399,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10015533"
+    },
+    {
+      "id": "EP0102-PPSA31246_00-REREQUIEM0000000",
+      "name": "Resident Evil Requiem",
+      "cover": "https://image.api.playstation.com/vulcan/ap/rnd/202512/1205/79661d7a2bdb9784749b4e57e1456ca89f7ac7bed8615aee.png",
+      "platform": "PS5",
+      "edition": "Standard Edition",
+      "releaseDate": "2026-02-26",
+      "productIds": {
+        "TR": "EP0102-PPSA31246_00-REREQUIEM0000000",
+        "UA": "EP0102-PPSA31246_00-REREQUIEM0000000"
+      },
+      "regions": {
+        "TR": {
+          "salePrice": 3449,
+          "ru": "unknown",
+          "sub": ""
+        },
+        "UA": {
+          "salePrice": 2199,
+          "ru": "unknown",
+          "sub": ""
+        }
+      },
+      "conceptId": "10015533"
+    }
+  ]
+}

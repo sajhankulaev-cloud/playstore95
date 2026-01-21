@@ -1,0 +1,1390 @@
+:root{--bg:#f3f5f7;--card:#fff;--text:#0f172a;--muted:#64748b;--accent:#16a34a;--danger:#ef4444;--border:#e5e7eb;}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;background:var(--bg);color:var(--text);}
+.topbar{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--border);}
+.container{max-width:1200px;margin:0 auto;padding: 6px 16px 8px 16px;}
+.brand{text-decoration:none;color: #38384d;font-family: "Orbitron", system-ui, sans-serif;font-weight:990;font-size:clamp(20px, 2.6vw, 26px);letter-spacing: 0.06em;text-transform: uppercase;}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid var(--border);font-size:12px;background:#fff;}
+.filters{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px;}
+.select,.input{padding:6px 4px;border:1px solid var(--border);border-radius:10px;background:#fff;color:var(--text);}
+
+/* Results bar (счётчик слева + сортировка справа) */
+.resultsBar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;padding:2px 2px;}
+.resultsCount{font-size:13px;color:var(--text);}
+.resultsSort{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text);}
+.resultsSortLabel{color:var(--text);}
+.sortSelect{border:0;background:transparent;color:var(--text);font-size:13px;cursor:pointer;padding:1px 8px 0px 3px;border-radius:8px;appearance:none;-webkit-appearance:none;-moz-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%230f172a' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 0px center;background-size:12px 12px;}
+.sortSelect:focus{outline:2px solid rgba(15,23,42,.18);outline-offset:2px;}
+
+@media (max-width:640px){
+  .resultsBar{flex-wrap:wrap;gap:10px;}
+  .resultsSort{margin-left:auto;}
+}
+
+/* Search (top-right icon + раскрывающаяся строка поиска) */
+.topbarInner{position:relative;}
+.topbarHeader{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.headerActions{display:flex;align-items:center;}
+.searchWrap{display:flex;align-items:center;gap:8px;}
+.searchToggle{width:33px;height:33px;border-radius:12px;border:1px solid var(--border);background:#fff;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;}
+.searchToggle svg{width:18px;height:18px;fill:currentColor;opacity:.85;}
+.searchToggle:active{transform:translateY(1px);}
+.searchPanel{max-width:0;opacity:0;overflow:hidden;pointer-events:none;transition:max-width .25s ease, opacity .2s ease;}
+.searchWrap.open .searchPanel{max-width:320px;opacity:1;pointer-events:auto;}
+.searchInput{min-width:240px; background: #0b1220 !important;}
+.colorA{font-size:clamp(14px, 1.8vw, 18px); padding:0 0 3px 0;}
+@media (max-width:640px){
+  .topbarHeader{flex-wrap:nowrap;}
+  .searchPanel{position:absolute;left:16px;right:16px;top:52px;max-width:none;opacity:0;transform:translateY(-8px);transition:opacity .2s ease, transform .2s ease;overflow:visible;}
+  .searchWrap.open .searchPanel{opacity:1;transform:translateY(0);}
+  .searchInput{width:100%;min-width:0;}
+}
+.grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px;padding:16px 0 28px;}
+@media (max-width:1200px){.grid{grid-template-columns:repeat(4,1fr);}}
+@media (max-width:900px){.grid{grid-template-columns:repeat(3,1fr);}}
+@media (max-width:640px){.grid{grid-template-columns:repeat(2,1fr);}}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 1px 1px rgba(0,0,0,.03);display: flex;flex-direction: column;height: 100%;}
+.coverWrap{position:relative;width:100%;background:#111827;display:flex;align-items:center;justify-content:center;color:#fff;}
+.coverWrap img{width:100%;height:100%;object-fit:cover;display:block;}
+.platformStrip{position:absolute;border: 2px solid;left:6px;bottom:6px;color:#fff;font-weight:700;padding:3px 6px;font-size:10px;text-transform:uppercase;letter-spacing:.4px;background: rgba(0, 0, 0, .55);}
+.body{padding:12px;flex:1;display:flex;flex-direction:column;}
+.title{color: #3f3532;display: -webkit-box;-webkit-line-clamp: 2;-webkit-box-orient: vertical;overflow: hidden;font-weight:600;font-size:14px;line-height:1.25;margin:0 0 5px;min-height:36px;}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin: 0 0 8px;display: flex;align-items: center;justify-content: space-between;margin-top: auto;}
+.discount{font-weight:900;color:var(--danger);font-size:14px;}
+.until{font-size:12px;color:var(--muted);}
+.price{font-weight:650;font-size:16px;}
+.buyBtn{border:none;background:var(--accent);color:#fff;font-weight:900;padding:10px 12px;border-radius:12px;cursor:pointer;font-size:11px;}
+
+/* Preorders card (separate styling, same structure as regular cards) */
+.card--preorder .preorderBadge{
+  align-items:center;
+  color:#e5e7eb;
+  font-weight:500;
+  font-size:8px;
+  letter-spacing:.6px;
+  text-transform:uppercase;
+  margin:0 0 4px 0;
+}
+
+/* On preorders list: price should be left-aligned */
+.card--preorder .priceRow{
+  justify-content:flex-start;
+}
+.card--preorder .priceRow .price{
+  margin-right:auto;
+}
+
+/* Modal: RU status */
+.modalRu.ruUnknown{opacity:.9;}
+
+/* Modal: release date line */
+.modalRelease{
+  margin: 0px 0px 10px 0px;
+  font-size:13px;
+  color:var(--muted);
+}
+.pager{display:flex;gap:8px;justify-content:center;padding:10px 0 30px;flex-wrap:wrap;}
+.pager button{border:1px solid var(--border);background:#fff;padding:8px 10px;border-radius:10px;cursor:pointer;}
+.pager button[disabled]{opacity:.55;cursor:not-allowed;}
+.layout{display:grid;grid-template-columns:260px 1fr;min-height:100vh;}
+.side{background:#0b1220;color:#e5e7eb;padding:18px;position:sticky;top:0;height:100vh;}
+.side h2{margin:0 0 14px;font-size:16px; color: #fff !important;}
+.selecColor{background: rgba(255, 255, 255, .03) !important;border: 1px solid var(--border) !important;color: #0f172a !important;padding: 6px 4px;border-radius: 10px;}
+.selecColor1{background: rgba(255, 255, 255, .03) !important;border: 1px solid var(--border) !important;color: #fff !important;padding: 6px 4px;border-radius: 10px;}
+.colValue{background:#0e192b;}
+.nav a{display:block;color:#fff !important;text-decoration:none;padding:10px 10px;border-radius:10px;margin:6px 0;}
+.nav a.active,.nav a:hover{background:#111b31; color:#fff !important}
+.main{padding:18px;}
+.adminCard{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:14px;margin-bottom:14px;}
+.btnDark{background:#111827;color:#fff;border:none;padding:10px 12px;border-radius:12px;font-weight:900;cursor:pointer;}
+.btnGhost{background:#fff;color:#111827;border:1px solid var(--border);padding:8px 7px;border-radius:12px;cursor:pointer;}
+table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+th,td{padding:10px;border-bottom:1px solid var(--border);font-size:13px;text-align:left;}
+th{background:#f8fafc;font-weight:900;}
+tr:last-child td{border-bottom:none;}
+.small{font-size:12px;color:var(--muted);}
+.update-info,
+.last-update,
+.badge{display: none !important;}
+.btnDanger{background:#ef4444;color:#fff !important;border:none;border-radius:12px;padding:10px 14px;font-weight:900;cursor:pointer}
+.btnDanger:hover{filter:brightness(0.95)}
+.selectAdm{color:#000000 !important;}
+.bottom{margin-top:auto;}
+
+/* Admin: groups by discount date */
+.groupCard{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:12px;margin-bottom:12px;}
+.groupHead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px;}
+.groupTitle{font-weight:950;font-size:14px;}
+
+
+}
+
+}
+
+}
+
+/* Discount date buttons (adaptive) */
+.discountTabs{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  align-items:stretch;
+  margin:12px 0 16px 0;
+}
+.discountTabBtn{
+  appearance:none;
+  border:1px solid var(--border);
+  background:#0e192b;
+  border-radius:14px;
+  padding:10px 12px;
+  min-height:44px;
+  cursor:pointer;
+  display:flex;
+  flex-direction:row;
+  justify-content:center;
+  align-items:center;
+  text-align:center;
+  user-select:none;
+  transition:transform .08s ease, box-shadow .12s ease, background .12s ease, border-color .12s ease, color .12s ease;
+  box-shadow:0 4px 14px rgba(15,23,42,.06);
+}
+.discountTabBtn:hover{
+  box-shadow:0 10px 26px rgba(15,23,42,.10);
+  transform:translateY(-1px);
+}
+.discountTabBtn.active{
+  background:#ef4444;
+  color:#fff;
+  border-color:#ef4444;
+}
+.discountTabBtn .dtText{
+  font-size:13px;
+  font-weight:850;
+  letter-spacing:.2px;
+  line-height:1.1;
+  opacity:.95;
+}
+.discountTabs.two .discountTabBtn{
+  flex:1 1 calc(50% - 12px);
+  min-width:260px;
+}
+@media(max-width:560px){
+  .discountTabs{gap:10px;margin:10px 0 14px 0;}
+  .discountTabs.two .discountTabBtn{flex:1 1 100%;min-width:0;}
+  .discountTabBtn{width:100%;}
+  .discountTabBtn{padding:10px 8px;}
+  .discountTabBtn .dtText{font-size:11px;}
+}
+
+
+.modalOpen{overflow:hidden;}
+.modalOverlay{
+  position:fixed;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  padding:16px;
+  background:rgba(0,0,0,.55);
+  z-index:9999;
+}
+.modalCard{
+  width:min(780px, 96vw);
+  background:#0b1220;
+  color:#fff;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:16px;
+  box-shadow:0 20px 60px rgba(0,0,0,.6);
+  position:relative;
+  padding:16px;
+}
+.modalClose{
+  position:absolute;top:10px;right:10px;
+  width:34px;height:34px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.06);
+  color:#fff;
+  font-size:22px;
+  line-height:30px;
+  cursor:pointer;
+}
+.modalGrid{display:flex;gap:16px;align-items:flex-start;}
+.modalLeft{width:220px;flex:0 0 220px;}
+.modalCover{width:220px;height:220px;border-radius:14px;overflow:hidden;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;}
+.modalCover img{width:100%;height:100%;object-fit:cover;display:block;}
+.noCoverBox{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;opacity:.9;}
+.modalPlatforms{margin-top:10px;opacity:.8;font-size:12px;}
+.modalRight{flex:1;min-width:0;padding-top:2px;}
+.modalTitle{font-size:22px;font-weight:800;line-height:1.15;margin-bottom:6px;}
+.modalEdition{opacity:.75;font-size:14px;margin-bottom:12px;}
+.modalMetaRow{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap;}
+.modalDiscount{font-weight:800;}
+.modalUntil{opacity:.85;font-size:13px;}
+.modalBuyRow{display:flex;gap:12px;align-items:center;flex-wrap:nowrap;}
+.modalPrice{font-size:20px;font-weight:900;}
+@media (max-width:560px){
+  .modalGrid{flex-direction:row;}
+  .modalLeft{width:100%;flex:0 0 auto;display:flex;gap:12px;align-items:flex-start;}
+  .modalCover{width:120px;height:120px;}
+  .modalPlatforms{margin-top:0;}
+}
+
+.modalRu{opacity:.95;font-size:13px;margin-bottom:10px;display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:12px;border:1px solid rgba(22,163,74,.45);background:rgba(22,163,74,.08);color:#4dff64;font-weight:800;}
+.modalRu.noRu{border-color:rgba(100,116,139,.35);background:rgba(100,116,139,.08);color:var(--muted);font-weight:700;}
+
+.modalSub{opacity:.85;font-size:13px;margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.modalSub .subIcon{height:18px;max-width:120px;object-fit:contain;display:block;}
+
+/* modal responsive typography */
+.modalTitle{font-size:clamp(18px, 4.8vw, 24px);}
+.modalEdition{font-size:clamp(12px, 3.5vw, 14px);}
+.modalRu,.modalSub,.modalUntil{font-size:clamp(12px, 3.4vw, 13px);}
+.modalPrice{font-size:clamp(18px, 4.2vw, 20px);}
+@media (max-width:560px){
+  .modalCard{padding:12px;}
+  .modalBuyRow{justify-content:space-between;}
+  .modalPlatforms{font-size:12px;}
+}
+
+/* modal layout fixed on mobile */
+.modalGrid{display:flex;gap:16px;align-items:flex-start;flex-wrap:nowrap;}
+.modalCoverWrap{width:240px;flex:0 0 240px;}
+.modalCoverWrap img{width:100%;height:auto;border-radius:14px;display:block;}
+.modalPlatforms{display:inline-block;padding:6px 10px;border-radius:12px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.10);font-weight:700;opacity:1;}
+.modalDiscount{color:var(--danger);}
+@media (max-width:560px){
+  .modalCard{padding:12px;}
+  .modalCoverWrap{width:150px;flex:0 0 150px;}
+  .modalBuyRow{flex-wrap:nowrap;}
+  .buyBtn{padding:10px 14px;font-size:14px;}
+}
+
+
+/* --- modal 360px hotfix --- */
+.modalOverlay *{box-sizing:border-box;}
+.modalCard{width:min(920px, 94vw); max-height:90vh; overflow:auto;}
+.modalGrid{width:100%;}
+.modalRight{flex:1; min-width:0;}
+.modalRight *{min-width:0;}
+@media (max-width:400px){
+  .modalCoverWrap{width:120px;flex:0 0 120px;}
+  .modalGrid{gap:12px;}
+  .modalPlatforms{padding:5px 8px;font-size:12px;}
+}
+
+
+/* --- modal mobile keep 2 columns (fix overflow) --- */
+.modalCard{overflow-x:hidden;}
+.modalGrid{flex-wrap:nowrap;}
+.modalLeft{display:flex;flex-direction:column;align-items:flex-start;}
+.modalRight{overflow:hidden;}
+.modalTitle{word-break:break-word;}
+.modalEdition,.modalRu,.modalSub,.modalUntil,.modalPrice{word-break:break-word;}
+.modalPlatforms{max-width:100%;text-align:center;align-self:flex-start;}
+
+@media (max-width:400px){
+  .modalLeft{width:120px;flex:0 0 120px;}
+  .modalCover{width:120px;height:120px;}
+  .modalPlatforms{width:120px;display:block;padding:6px 8px;}
+}
+
+
+/* --- modal responsive width bands: keep layout stable from 400px to 560px --- */
+.modalCard{width:min(650px, 94vw); overflow-x:hidden; max-height:90vh; overflow-y:auto;}
+.modalGrid{display:flex;align-items:flex-start;gap:16px;flex-wrap:nowrap;}
+.modalLeft{display:flex;flex-direction:column;align-items:flex-start;flex:0 0 220px; width:220px;}
+.modalCover{width:220px;height:220px;object-fit:cover;border-radius:14px;display:block;}
+.modalPlatforms{width:220px;max-width:100%;display:flex;justify-content:center;align-items:center;}
+.modalRight{flex:1;min-width:0;overflow:hidden;}
+.modalTitle,.modalEdition,.modalRu,.modalSub,.modalUntil,.modalPrice{min-width:0;word-break:break-word;}
+
+/* 560px and below: shrink left column but keep 2 columns */
+@media (max-width:560px){
+  .modalLeft{flex:0 0 150px; width:150px;}
+  .modalCover{width:150px;height:150px;}
+  .modalPlatforms{width:150px;}
+  .modalGrid{gap:12px;}
+}
+
+/* 400px and below: further shrink */
+@media (max-width:400px){
+  .modalLeft{flex:0 0 120px; width:120px;}
+  .modalCover{width:120px;height:140px;}
+  .modalPlatforms{width:120px;}
+}
+
+
+/* === Buy button modifiers === */
+.buyBtn {
+  border-radius: 5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.buyBtn--card {
+  width: 100%;
+  padding: 6px 6px;
+  font-size: 12px;
+}
+
+.buyBtn--modal {
+  padding: 8px 16px;
+  font-size: 13px;
+  /*min-width: 120px;*/
+  flex-shrink: 1;
+}
+
+/* keep price and button on one line in modal */
+.modalBuyRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: nowrap;
+}
+
+.modalPrice {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+
+
+/* =========================================================
+   Timeweb Cloud – inspired DARK theme (high contrast)
+   (Overrides only; keeps existing layout/styling)
+   ========================================================= */
+:root{
+  /* surfaces */
+  --bg:#0b1220;          /* page background */
+  --card:#0f1a2b;        /* cards / panels */
+  --text:#e6edf6;        /* primary text */
+  --muted:#9aaec6;       /* secondary text */
+  --border:#1b2a41;      /* borders */
+
+  /* accents */
+  --accent:#4da3ff;      /* primary action */
+  --danger:#ff5a66;
+}
+
+/* global */
+body{background:var(--bg)!important;color:var(--text)!important;}
+
+a{color:var(--accent);}
+a:hover{filter:brightness(1.07);}
+
+/* top bar */
+.topbar{
+  background:rgba(15,26,43,.88)!important;
+  border-bottom:1px solid var(--border)!important;
+  backdrop-filter:saturate(140%) blur(10px);
+}
+.brand{color:var(--text)!important;opacity:.95;}
+
+/* filters + inputs */
+.badge,
+.select,.input{
+  background:rgba(255,255,255,.03);
+  border:1px solid #e5e7eb!important;
+}
+.select::placeholder,.input::placeholder{color:var(--muted)!important;}
+.select:focus,.input:focus{
+  outline:none;
+  border-color:rgba(77,163,255,.6)!important;
+  box-shadow:0 0 0 3px rgba(77,163,255,.15);
+}
+
+/* results bar text */
+.resultsCount{color:var(--text)!important;}
+
+/* cards */
+.gameCard,
+.card{
+  background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02))!important;
+  border:1px solid var(--border)!important;
+  color:var(--text)!important;
+  box-shadow:0 10px 30px rgba(0,0,0,.25);
+}
+.gameCard .meta,
+.gameCard .desc,
+.muted{color:var(--muted)!important;}
+
+/* modal */
+.modalOverlay{background:rgba(0,0,0,.6)!important;}
+.modal,
+.modalContent{
+  background:linear-gradient(180deg, rgba(15,26,43,.96), rgba(11,18,32,.96))!important;
+  border:1px solid var(--border)!important;
+  color:var(--text)!important;
+  box-shadow:0 18px 60px rgba(0,0,0,.55);
+}
+
+/* price visibility */
+.price,
+.modalPrice{color:#ffd166!important;text-shadow:0 1px 0 rgba(0,0,0,.25);}
+
+/* buttons (keep “buy” close to original, but Timeweb-ish blue) */
+.buyBtn{
+  background:linear-gradient(180deg, #66b3ff 0%, #2f7dff 100%)!important;
+  color:#06101f!important;
+  border:1px solid rgba(255,255,255,.12)!important;
+  box-shadow:0 10px 18px rgba(47,125,255,.22);
+}
+.buyBtn:hover{filter:brightness(1.06);}
+.buyBtn:active{transform:translateY(1px);}
+
+/* secondary buttons if any */
+button, .btn{
+  color:inherit;
+}
+
+/* separators / lines */
+hr{border-color:var(--border)!important;}
+
+/* scrollbars (subtle) */
+::-webkit-scrollbar{width:10px;height:10px;}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.10);border-radius:10px;}
+::-webkit-scrollbar-track{background:rgba(255,255,255,.03);}
+
+
+
+/* =========================================================
+   Timeweb Cloud – DARK theme (v2, contrast & controls)
+   ========================================================= */
+
+/* Snow canvas overlay */
+.snowCanvas{
+  position:fixed;
+  inset:0;
+  z-index:4;
+  pointer-events:none;
+  opacity:.45;
+}
+/* layering: snow above page, modal above snow */
+.topbar, .container{ position:relative; z-index:3; }
+.modalOverlay{ z-index:10 !important; }
+.modal{ z-index:11 !important; }
+
+
+/* Titles */
+.title{
+  color: var(--text) !important;
+  opacity: .98;
+}
+.title:hover{ color: rgba(230,237,246,.98) !important; }
+
+/* Search icon button */
+.searchToggle{
+  background: rgba(255,255,255,.04) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text) !important;
+}
+.searchToggle:hover{
+  background: rgba(255,255,255,.06) !important;
+  border-color: rgba(77,163,255,.45) !important;
+  box-shadow: 0 0 0 3px rgba(77,163,255,.12);
+}
+.searchToggle svg{ opacity: .9 !important; }
+
+/* Reset button */
+.btnGhost{
+  background: rgba(11 18 32) !important;
+  color: var(--text) !important;
+  border: 1px solid #0b1220 !important;
+}
+.btnGhost:hover{
+  background: rgba(11 18 32) !important;
+  border-color: rgba(77,163,255,.35) !important;
+}
+.btnGhost:active{ transform: translateY(1px); }
+
+/* Pager buttons */
+.pager button{
+  background: rgba(255,255,255,.04) !important;
+  color: #ffffff !important;
+  border: 1px solid var(--border) !important;
+}
+.pager button:hover{
+  background: rgba(255,255,255,.06) !important;
+  border-color: rgba(77,163,255,.35) !important;
+}
+.pager button:disabled{
+  opacity: .75;
+  cursor: default;
+  box-shadow: none !important;
+}
+
+/* Buy button redesign (Timeweb-like CTA) */
+.buyBtn{
+  background: linear-gradient(180deg, rgba(77,163,255,1) 0%, rgba(47,125,255,1) 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255,255,255,.14) !important;
+  box-shadow: 0 10px 18px rgba(47,125,255,.25);
+}
+.buyBtn:hover{
+  filter: brightness(1.06);
+  box-shadow: 0 14px 26px rgba(47,125,255,.32);
+}
+.buyBtn:active{
+  transform: translateY(1px);
+  filter: brightness(0.98);
+}
+
+/* Modal typography */
+.modalTitle{ color: var(--text) !important; }
+.modalText, .modalDesc, .modalMeta{ color: var(--muted) !important; }
+
+/* Modal inner panels if present */
+.modalContent .card,
+.modalContent .gameCard{
+  box-shadow: none !important;
+}
+
+
+
+
+
+/* ---------------- Cart UI ---------------- */
+.headerActions{gap:8px;}
+.cartToggle{
+  width:33px;height:33px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background:#172233;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+}
+.cartToggle svg{width:18px;height:18px;fill:currentColor;opacity:.85;}
+.cartToggle:active{transform:translateY(1px);}
+.cartCount{
+  position:absolute;
+  top:-6px;right:-6px;
+  min-width:18px;height:18px;
+  padding:0 5px;
+  border-radius:999px;
+  background:var(--danger);
+  color:#fff;
+  font-size:11px;
+  font-weight:900;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  border:1px solid #fff;
+}
+
+.cartOverlay{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.55);
+  z-index:9999;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:14px;
+}
+.cartDrawer{
+  width:min(650px, 94vw);
+  /* behave like game modal card (no full-screen feel) */
+  max-height:90vh;
+  height:auto;
+  background:#0b1220;
+  color:#fff;
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow:0 20px 60px rgba(0,0,0,.6);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  padding:14px;
+  position:relative;
+  border-radius:16px;
+}
+.cartHead{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding-bottom:10px;
+  border-bottom:1px solid rgba(255,255,255,.10);
+}
+.cartTitle{
+  font-weight:950;
+  font-size:16px;
+  letter-spacing:.2px;
+}
+.cartRegion{opacity:.75;font-weight:800;}
+.cartHeadActions{display:flex;align-items:center;gap:8px;}
+.cartClearBtn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:#fff;}
+.cartClearBtn:disabled{opacity:.5;cursor:not-allowed;}
+.cartClose{
+  width:34px;height:34px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.06);
+  color:#fff;
+  font-size:22px;
+  line-height:30px;
+  cursor:pointer;
+}
+.cartBody{
+  padding:12px 2px 12px 2px;
+  overflow:auto;
+  flex:1;
+}
+.cartEmpty{
+  padding:14px 10px;
+  opacity:.85;
+  font-size:14px;
+}
+.cartItem{
+  display:flex;
+  gap:12px;
+  padding:10px;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:14px;
+  background:rgba(255,255,255,.04);
+  margin-bottom:10px;
+}
+.cartItemLeft{width:92px;flex:0 0 92px;}
+.cartCover{
+  width:92px;height:92px;
+  border-radius:14px;
+  overflow:hidden;
+  background:rgba(255,255,255,.06);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.cartCover img{width:100%;height:100%;object-fit:cover;display:block;}
+.cartPlatforms{
+  margin-top:8px;
+  font-size:11px;
+  opacity:.85;
+  text-align:center;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:12px;
+  padding:6px 8px;
+  background:rgba(255,255,255,.03);
+}
+.cartItemRight{flex:1;min-width:0;}
+.cartItemTop{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
+.cartItemTitle{
+  font-weight:900;
+  font-size:14px;
+  line-height:1.2;
+  overflow:hidden;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+}
+.cartRemove{
+  width:28px;height:28px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.06);
+  color:#fff;
+  font-size:18px;
+  cursor:pointer;
+  flex:0 0 auto;
+}
+.cartEdition{opacity:.75;font-size:12px;margin-top:4px;margin-bottom:6px;}
+.cartSub{opacity:.9;font-size:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;}
+.cartSub .subIcon{height:16px;max-width:120px;object-fit:contain;display:block;}
+.cartMeta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:2px;margin-bottom:8px;}
+.cartDisc{font-weight:950;color:#ff5b5b;font-size:12px;}
+.cartUntil{opacity:.85;font-size:12px;}
+.cartPriceRow{display:flex;align-items:center;justify-content:space-between;}
+.cartPrice{font-size:14px;font-weight:950;}
+.cartFoot{
+  border-top:1px solid rgba(255,255,255,.10);
+  padding-top:10px;
+}
+.cartTotalRow{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;}
+.cartTotalLabel{opacity:.85;font-size:13px;}
+.cartTotalValue{font-weight:950;font-size:15px;}
+.cartBuyBtn{width:100%;font-size:12px;padding:12px 14px;border-radius:14px;}
+.cartBuyBtn:disabled{opacity:.55;cursor:not-allowed;}
+.cartHint{margin-top:8px;font-size:11px;opacity:.75;line-height:1.25;}
+
+@media (max-width:560px){
+  .cartOverlay{padding:10px;}
+  .cartDrawer{width:94vw;border-radius:16px;padding:12px;}
+  .cartItem{padding:9px;}
+  .cartItemLeft{width:86px;flex:0 0 86px;}
+  .cartCover{width:86px;height:86px;}
+}
+
+/* Buy button states (toggle add/remove without opening cart) */
+.buyBtn.isInCart{
+  /* override global .buyBtn gradient rules (they use !important) */
+  background:linear-gradient(180deg, rgba(76, 220, 123, 1) 0%, rgba(22, 163, 74, 1) 100%) !important;
+  color:#fff !important;
+  border-color:rgba(255,255,255,.16) !important;
+  box-shadow:0 10px 18px rgba(22,163,74,.22) !important;
+}
+.buyBtn.isInCart:hover{
+  filter:brightness(1.04);
+  box-shadow:0 14px 26px rgba(22,163,74,.28) !important;
+}
+/* ---------------- end Cart UI ---------------- */
+
+
+/* --- Site section tabs (PS Store-like) --- */
+.siteTabsShell{
+  max-width:1200px;
+  margin:0 auto;
+  padding: 6px 16px 8px 16px;
+  position:relative;
+}
+.siteTabs{
+  display:flex;
+  gap:10px;
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  scroll-behavior:smooth;
+  padding: 6px 46px;
+  scrollbar-width:none;
+}
+.siteTabs::-webkit-scrollbar{display:none;}
+
+.siteTab{
+  appearance:none;
+  border:1px solid var(--border);
+  background:#0e192b;
+  color:#fff;
+  border-radius:999px;
+  padding:10px 14px;
+  min-height:40px;
+  cursor:pointer;
+  user-select:none;
+  white-space:nowrap;
+  font-weight:850;
+  letter-spacing:.2px;
+  transition:transform .08s ease, box-shadow .12s ease, background .12s ease, border-color .12s ease;
+  box-shadow:0 4px 14px rgba(15,23,42,.06);
+}
+.siteTab:hover{
+  box-shadow:0 10px 26px rgba(15,23,42,.10);
+  transform:translateY(-1px);
+}
+.siteTab.isActive{
+  background:#ef4444;
+  border-color:#ef4444;
+}
+
+.tabsArrow{
+  position:absolute;
+  top:50%;
+  transform:translateY(-50%);
+  width:34px;
+  height:34px;
+  border-radius:999px;
+  border:1px solid var(--border);
+  background:#0e192b;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  user-select:none;
+  box-shadow:0 10px 26px rgba(15,23,42,.10);
+}
+.tabsArrowLeft{ left:16px; }
+.tabsArrowRight{ right:16px; }
+.tabsArrow:active{ transform:translateY(-50%) scale(0.98); }
+
+/* =========================================================
+   Navigation (desktop + mobile)
+   Desktop: centered text tabs with blue active state (like the first screenshot)
+   Mobile: swipeable pill bar with arrows (like PlayStation Store)
+   ========================================================= */
+
+.siteTabsShell{
+  padding: 10px 16px 14px 16px;
+}
+
+.siteTabs{
+  padding: 6px 0;
+  gap: 26px;
+  justify-content: center;
+}
+
+.siteTab{
+  border: 0;
+  background: transparent;
+  border-radius: 10px;
+  padding: 8px 6px;
+  min-height: unset;
+  font-size: clamp(14px, 1.6vw, 16px);
+  font-weight: 850;
+  letter-spacing: .2px;
+  box-shadow: none;
+  transform: none;
+  color: rgba(230, 237, 246, .86);
+}
+
+.siteTab:hover{
+  background: rgba(255,255,255,.04);
+  box-shadow: none;
+  transform: none;
+  color: rgba(230, 237, 246, .98);
+}
+
+.siteTab.isActive{
+  background: transparent;
+  border: 0;
+  color: var(--accent);
+  position: relative;
+}
+
+.siteTab.isActive::after{
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: -6px;
+  width: 26px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent);
+  opacity: .95;
+}
+
+/* Arrows are hidden on desktop */
+.tabsArrow{ display:none; }
+
+/*
+  Mobile: keep the SAME look as desktop (no white pill background),
+  but allow horizontal swipe/scroll if tabs don't fit.
+*/
+@media (max-width: 720px){
+  .siteTabsShell{ padding: 10px 12px 14px 12px; }
+
+  .siteTabs{
+    justify-content: flex-start;
+    gap: 22px;
+    /* Leave room for overlay arrows */
+    padding: 6px 54px;
+  }
+
+  /* Show arrows on mobile (while keeping the same visual style as desktop tabs) */
+  .tabsArrow{ display:flex; }
+
+  .tabsArrowLeft{ left:10px; }
+  .tabsArrowRight{ right:10px; }
+}
+
+
+
+/* Subscriptions page */
+
+/* Hide game-specific controls on subscriptions section */
+body[data-tab="subs"] .resultsBar{ display:none; }
+
+/* Reuse the main #grid container but switch it into a subscriptions grid */
+.grid.gridSubs{
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap:16px;
+}
+
+/* --- Subscriptions: detail pages (Essential/Extra/Deluxe/EA Play) --- */
+.subsDetail{ grid-column: 1 / -1; width: 100%; }
+.subsDetailHead{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin: 4px 0 16px; }
+.subsDetail .subsPageTitle{ font-size: 20px; font-weight: 600; letter-spacing: 0.2px; }
+.subOfferGrid{
+  display:flex;
+  justify-content:center;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap: 16px;
+  align-items: stretch;
+  margin-bottom: 18px;
+}
+.subOfferCard{
+  max-height: 401px;
+  max-width: 292px;
+  background: rgba(11 18 32);
+  border: 1px solid rgba(11 18 32);
+  border-radius: 5px;
+  padding: 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  display:flex;
+  flex-direction:column;
+  gap: 10px;
+}
+.subOfferImg{
+  border-radius: 20px;
+  overflow:hidden;
+  background: rgba(0,0,0,0.20);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  aspect-ratio: 1 / 1;
+}
+.subOfferImg img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display:block;
+}
+.subOfferTitle{font-size: 16px; }
+.subOfferTitle span{ opacity: 0.85; }
+.subOfferPrice{ font-size: 18px; font-weight: 900; margin-top: auto; }
+.subOfferCard .buyBtn{ width: 100%;  font-size: clamp(14px, 1.6vw, 16px); }
+.subsInfoBox{
+  box-shadow: 0 12px 28px rgba(0,0,0,0.35);
+  background: rgba(14 25 43);
+  border: 1px solid rgba(11 18 32);
+  border-radius: 5px;
+  padding: 10px;
+}
+.subsInfoTitle{ font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+.subsInfoText{ opacity: 0.85; line-height: 1.45; font-size: 14px;}
+
+.subsGamesBlock{ margin-top: 18px; }
+.subsGamesHead{ display:flex; align-items:flex-end; justify-content:space-between; gap:12px; padding: 14px 0 8px; }
+.subsGamesTitle{ font-size: 14px; font-weight: 600; }
+.subsGamesCount{ opacity: 0.8; font-size: 14px; font-weight: 700; }
+.subsGamesGrid{ padding: 0 0 10px; }
+
+@media (max-width: 900px){
+  .subOfferGrid{ grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+@media (max-width: 520px){
+  .subOfferGrid{ grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }
+  .subOfferCard{ padding: 7px;}
+  .subOfferPrice{ font-size: 16px; }
+  .subsDetail .subsPageTitle{ font-size: 16px; }
+}
+.subsCard{
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+  background: rgba(11 18 32);
+  border: 1px solid rgba(11 18 32);
+  border-radius: 5px;
+  padding: 10px;
+  text-align:left;
+  color: #fff;
+  cursor:pointer;
+  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease, background .12s ease;
+}
+.subsCard:hover{
+  transform: translateY(-2px);
+  border-color: rgba(11 18 32);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.35);
+  background: rgba(11 18 32);
+}
+.subsImgWrap{
+  border-radius: 20px;
+  overflow:hidden;
+  aspect-ratio: 1/1;
+  background: rgba(0,0,0,0.25);
+}
+.subsImgWrap img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+.subsName{
+  margin-top: 12px;
+  font-size: 15px;
+  letter-spacing: 0.2px;
+}
+.subsPage{
+  grid-column: 1 / -1;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 18px;
+  padding: 16px;
+}
+.subsPageHead{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-bottom: 10px;
+}
+.subsBackBtn{
+  font-size: clamp(16px, 2.0vw, 20px);
+  padding: 4px 8px;
+}
+.subsPageTitle{
+  font-weight: 900;
+  font-size: 18px;
+}
+.subsEmpty{
+  padding: 26px 10px;
+  opacity: 0.9;
+}
+@media (max-width: 980px){
+  .grid.gridSubs{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 520px){
+  .grid.gridSubs{ grid-template-columns: repeat(2, minmax(0, 1fr)); gap:12px; }
+  .subsCard{ padding: 8px; border-radius: 5px; }
+  .subsName{ font-size: 16px; }
+}
+
+/* Подписки: тарифы (1/3/12) — на мобилке 2 колонки */
+@media (max-width: 720px) {
+  .subOfferGrid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+    justify-content: center !important;
+  }
+
+  /* чтобы карточки нормально влезали в 2 колонки */
+  .subOfferCard {
+    width: 100% !important;
+    max-width: none !important;
+  }
+}
+
+/* ===== Discounts (PlayStation-like overview) ===== */
+/* On the Discounts overview page we don't show count/sort bar */
+body[data-tab="discounts"][data-discounts-view="overview"] .resultsBar{
+  display:none;
+}
+
+.discountBannersGrid{
+  display: grid;
+  width: 100%;
+  gap: 18px;
+  justify-content: center;
+  align-items: start;
+  margin-top: 14px;
+
+  /* Desktop: 3 columns, each can grow up to 450px */
+  grid-template-columns: repeat(3, minmax(135px, 450px));
+}
+
+/* Banner card fills its grid column */
+.discountBannerCard{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  text-decoration:none;
+  color:inherit;
+  width: 100%;
+}
+
+/* <= 900px: 2 columns */
+@media (max-width: 900px){
+  .discountBannersGrid{
+    grid-template-columns: repeat(2, minmax(135px, 450px));
+  }
+}
+
+/* <= 480px: strict 2x135px grid */
+@media (max-width: 480px){
+  .discountBannersGrid{
+    grid-template-columns: repeat(2, 135px);
+  }
+  .discountBannerCard{
+    width: 135px;
+  }
+}
+
+.discountBannerImgWrap{
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 14px;
+  overflow:hidden;
+  background: rgba(255,255,255,0.04);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+}
+
+.discountBannerImgWrap img{
+  width:100%;
+  height:100%;
+  object-fit: cover;
+  display:block;
+}
+
+.discountBannerPlaceholder{
+  width:100%;
+  height:100%;
+  background: radial-gradient(100% 100% at 50% 0%, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.02) 100%);
+}
+
+.discountBannerCaption{
+  font-weight: 600;
+  font-size: clamp(12px, 1.6vw, 18px);
+  padding: 0 4px;
+  opacity: .95;
+}
+
+/* Hide count/sort on Discounts overview (banner page) */
+body[data-tab="discounts"][data-discounts-view="overview"] .resultsBar{ display:none; }
+
+.allDeals{
+  margin-top: 18px;
+}
+
+.allDealsHead{
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 18px;
+  margin-bottom: 10px;
+}
+
+.allDealsTitle{
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: .2px;
+}
+
+.allDealsViewAll{
+  color: #8ab4ff;
+  text-decoration:none;
+  font-weight: 700;
+}
+
+.allDealsShell{
+  position: relative;
+}
+
+.allDealsTrack{
+  --gap: 14px;
+  --perView: 6;
+  position: relative;
+  overflow: hidden; /* no scrollbar */
+  /* Arrows are overlayed, so do not reserve space.
+     Reserving space makes cards smaller and can reveal a partial extra card. */
+  padding: 6px 0;
+  touch-action: pan-y;
+}
+
+/* Responsive per-view counts like PS Store */
+@media (max-width: 1280px){ .allDealsTrack{ --perView: 4; } }
+@media (max-width: 980px){ .allDealsTrack{ --perView: 3; } }
+@media (max-width: 640px){ .allDealsTrack{ --perView: 2; } }
+
+.allDealsInner{
+  display:flex;
+  gap: var(--gap);
+  /* Prevent vertical stretching of items which creates empty space in shorter cards */
+  align-items: flex-start;
+  /* Make percentage widths for .allDealsItem resolve against the track width */
+  width: 100%;
+  will-change: transform;
+  transform: translate3d(0,0,0);
+  transition: transform .35s ease;
+}
+
+.allDealsItem{
+  flex: 0 0 auto;
+  width: calc((100% - (var(--perView) - 1) * var(--gap)) / var(--perView));
+  min-width: 0;
+  display:flex;
+}
+
+/* Carousel cards: keep widths uniform; let height be natural to avoid empty bottom gaps */
+.allDealsItem .card{ height: auto; width: 100%; }
+.allDealsItem .title{
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.6em; /* reserve space for 2 lines */
+}
+
+/* Carousel cards should be compact: don't push the price block to the bottom */
+.allDealsItem .bottom{
+  margin-top: 6px;
+}
+
+.allDealsArrow{
+  position:absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 999px;
+  background: rgb(77 163 255);
+  color: #fff;
+  font-size: 28px;
+  cursor:pointer;
+  z-index: 2;
+}
+/* Place arrows inside the carousel, on top of крайних карточек */
+.allDealsArrow.left{ left: 8px; }
+.allDealsArrow.right{ right: 8px; }
+
+.allDealsViewCard{
+  display:block;
+  width: 100%;
+  height: 100%;
+  text-decoration:none;
+  color: inherit;
+}
+
+.allDealsViewCardInner{
+  height: 100%;
+  min-height: 340px;
+  border-radius: 14px;
+  border: 2px solid rgba(255,255,255,0.16);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight: 900;
+  font-size: 14px;
+  letter-spacing: .4px;
+  background: rgba(255,255,255,0.03);
+}
+
+@media (max-width: 700px){
+  .allDealsTrack{ padding: 6px 0; }
+  .allDealsViewCardInner{ min-height: 300px; }
+}
+
+
+/* Banner tiles (Discounts overview) — responsive size */
+.discountBannersGrid{
+  display: grid;
+  gap: 18px;
+  justify-items: center;
+  align-items: start;
+  /* 3 columns on wide screens when possible, otherwise auto-wrap */
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.discountBannerCard{
+  /* banner square size between 135 and 450, but not oversized on phones */
+  --banner-size: clamp(135px, 28vw, 450px);
+  width: var(--banner-size);
+  max-width: 450px;
+  min-width: 135px;
+}
+
+@media (max-width: 640px){
+  .discountBannerCard{
+    --banner-size: clamp(135px, 80vw, 320px);
+  }
+}
+
+.discountBannerCard .bannerImgWrap{
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: 18px;
+}
+
+.discountBannerCard img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.discountBannerCard .bannerCaption{
+  margin-top: 10px;
+  font-size: clamp(14px, 2.3vw, 22px);
+  line-height: 1.1;
+  text-align: center;
+  font-weight: 700;
+}
+
+
+
+/* === Fix banners layout: make grid fill row and prevent flex shrink on overview === */
+body[data-tab="discounts"][data-discounts-view="overview"] .discountTabs{
+  display:block;
+}
+
+/* Mobile: force banner size down to 135px and keep them in rows (not a single column) */
+
+
+/* === FIX: Discount banners responsive grid (authoritative override) === */
+#discountBannersGrid.discountBannersGrid{
+  display: grid !important;
+  width: 100% !important;
+  gap: 18px !important;
+  justify-content: center !important;
+  align-items: start !important;
+  margin-top: 14px !important;
+  grid-template-columns: repeat(3, minmax(135px, 450px)) !important;
+}
+
+/* Banner card should fill its grid cell, keep square image, and never use vw-based clamp */
+#discountBannersGrid .discountBannerCard{
+  width: 100% !important;
+  max-width: 450px !important;
+  min-width: 135px !important;
+}
+
+#discountBannersGrid .discountBannerImgWrap{
+  width: 100% !important;
+  aspect-ratio: 1 / 1 !important;
+}
+
+@media (max-width: 900px){
+  #discountBannersGrid.discountBannersGrid{
+    grid-template-columns: repeat(2, minmax(135px, 450px)) !important;
+  }
+}
+
+@media (max-width: 480px){
+  /* Strict: 2 columns of 135px on phones */
+  #discountBannersGrid.discountBannersGrid{
+    grid-template-columns: repeat(2, 135px) !important;
+  }
+  #discountBannersGrid .discountBannerCard{
+    width: 135px !important;
+    max-width: 135px !important;
+    min-width: 135px !important;
+  }
+  /* Slightly smaller caption on very small screens */
+  #discountBannersGrid .discountBannerCaption{
+    font-size: 14px !important;
+  }
+}
+
+
+/* === Banner blocks: fluid, smooth scaling from 340px to desktop ===
+   Goal:
+   - No hard jumps between breakpoints
+   - Works down to 340px layout width
+   - Banner size scales proportionally, min 135px, max 450px
+   - Centers as a group and wraps naturally (2 on small, 3 on medium/large)
+*/
+#discountBannersGrid.discountBannersGrid{
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: center !important;
+  align-items: flex-start !important;
+  gap: 24px !important;
+  width: 100% !important;
+}
+
+/* Each banner takes a square "tile" that scales smoothly with container width.
+   The middle term is (container - gaps for 3 tiles) / 3, so on medium widths it fits 3.
+   When space is smaller, it clamps to 135px and naturally wraps to 2 / 1 tiles.
+*/
+#discountBannersGrid.discountBannersGrid .discountBannerCard{
+  flex: 0 0 clamp(135px, calc((100% - 48px) / 3), 450px) !important;
+  max-width: 450px !important;
+  aspect-ratio: 1 / 1;
+}
+
+#discountBannersGrid.discountBannersGrid .discountBannerCard img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 18px;
+  display: block;
+}
+
+/* Adaptive caption under banner */
+#discountBannersGrid.discountBannersGrid .discountBannerCaption{
+  font-size: clamp(12px, 1.8vw, 16px);
+  line-height: 1.2;
+}
+
+
+
+/* pager improvements */
+.pagerBtn.active{background:rgb(54 134 255) !important;}
+.pagerDots{display:inline-block; padding:0 10px; opacity:0.7;}
