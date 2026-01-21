@@ -5,7 +5,7 @@ body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantare
 .container{max-width:1200px;margin:0 auto;padding: 10px 12px 8px 12px;}
 .brand{text-decoration:none;color: #38384d;font-family: "Orbitron", system-ui, sans-serif;font-weight:990;font-size:clamp(20px, 2.6vw, 26px);letter-spacing: 0.06em;text-transform: uppercase;}
 .badge{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid var(--border);font-size:12px;background:#fff;}
-.filters{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:15px;}
+.filters{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:20px;}
 .select,.input{padding:6px 4px;border:1px solid var(--border);border-radius:10px;background:#fff;color:var(--text);}
 
 /* Results bar (счётчик слева + сортировка справа) */
@@ -171,7 +171,7 @@ tr:last-child td{border-bottom:none;}
   min-width:260px;
 }
 @media(max-width:560px){
-  .discountTabs{gap:10px;margin:14px 0 14px 0;}
+  .discountTabs{gap:10px;margin:26px 0 14px 0;}
   .discountTabs.two .discountTabBtn{flex:1 1 100%;min-width:0;}
   .discountTabBtn{width:100%;}
   .discountTabBtn{padding:10px 8px;}
@@ -864,8 +864,8 @@ hr{border-color:var(--border)!important;}
     justify-content: flex-start;
     gap: 22px;
     /* Leave room for overlay arrows */
-    margin:0 10px
-    padding: 6px 0px;
+    margin:0 10px;
+    padding: 6px 0px 12px 0px;
   }
 
   /* Show arrows on mobile (while keeping the same visual style as desktop tabs) */
@@ -1132,7 +1132,7 @@ body[data-tab="discounts"][data-discounts-view="overview"] .resultsBar{ display:
 
 .allDealsTitle{
   font-size: 16px;
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: .2px;
 }
 
