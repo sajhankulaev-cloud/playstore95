@@ -1317,7 +1317,7 @@ async function renderDiscountOverview(){
           <div class="discountBannerImgWrap">
             ${img ? `<img src="${img}" alt="Discount banner" loading="lazy"/>` : `<div class="discountBannerPlaceholder"></div>`}
           </div>
-          <!--<div class="discountBannerCaption">До ${escapeHtml(label || iso)}</div>-->
+          <div class="discountBannerCaption">До ${escapeHtml(label || iso)}</div>
         `;
         gridEl.appendChild(card);
       }
