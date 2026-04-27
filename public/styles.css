@@ -48,13 +48,13 @@ body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantare
 .card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 1px 1px rgba(0,0,0,.03);display: flex;flex-direction: column;height: 100%;}
 .coverWrap{position:relative;width:100%;background:#111827;display:flex;align-items:center;justify-content:center;color:#fff;}
 .coverWrap img{width:100%;height:100%;object-fit:cover;display:block;}
-.platformStrip{position:absolute;border: 2px solid;left:6px;bottom:6px;color:#fff;font-weight:700;padding:3px 6px;font-size:10px;text-transform:uppercase;letter-spacing:.4px;background: rgba(0, 0, 0, .55);}
+.platformStrip{position:absolute;border-radius: 2px 0px 20px 2px;left:0px;top:0px;color:#fff;font-weight:600;padding:6px 12px;font-size:14px;text-transform:uppercase;letter-spacing:.4px;background: rgb(3 44 213);}
 .body{padding:12px;flex:1;display:flex;flex-direction:column;}
-.title{color: #3f3532;display: -webkit-box;-webkit-line-clamp: 2;-webkit-box-orient: vertical;overflow: hidden;font-weight:600;font-size:14px;line-height:1.25;margin:0 0 5px;min-height:36px;}
+.title{color: #3f3532;display: -webkit-box;-webkit-line-clamp: 2;-webkit-box-orient: vertical;overflow: hidden;font-weight:630;font-size:16px;line-height:1.25;margin:0 0 5px;min-height:36px;}
 .row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin: 0 0 8px;display: flex;align-items: center;justify-content: space-between;margin-top: auto;}
-.discount{font-weight:900;color:var(--danger);font-size:14px;}
+.discount{background: #cc3444;font-weight:600;border-radius: 6px;padding: 3px 6px;color:#fff;font-size:12px;}
 .until{font-size:12px;color:var(--muted);}
-.price{font-weight:650;font-size:16px;}
+.price{font-weight:650;font-size:18px;}
 .buyBtn{border:none;background:var(--accent);color:#fff;font-weight:900;padding:10px 12px;border-radius:12px;cursor:pointer;font-size:11px;}
 
 /* Preorders card (separate styling, same structure as regular cards) */
@@ -189,8 +189,8 @@ tr:last-child td{border-bottom:none;}
 }
 .modalCard{
   width:min(780px, 96vw);
-  background:#0b1220;
-  color:#fff;
+  background:#f4f7fc;
+  color:#474f62;
   border:1px solid rgba(255,255,255,.12);
   border-radius:16px;
   box-shadow:0 20px 60px rgba(0,0,0,.6);
@@ -198,14 +198,17 @@ tr:last-child td{border-bottom:none;}
   padding:16px;
 }
 .modalClose{
-  position:absolute;top:10px;right:10px;
-  width:34px;height:34px;
-  border-radius:10px;
-  border:1px solid rgba(255,255,255,.14);
+  position:absolute;
+  top:5px;
+  right:5px;
+  width:29px;
+  height:29px;
+  border-radius:14px;
+  border:1px solid rgb(7 35 75);
   background:rgba(255,255,255,.06);
-  color:#fff;
-  font-size:22px;
-  line-height:30px;
+  color:#071f43;
+  font-size:20px;
+  line-height:26px;
   cursor:pointer;
 }
 .modalGrid{display:flex;gap:16px;align-items:flex-start;}
@@ -215,10 +218,10 @@ tr:last-child td{border-bottom:none;}
 .noCoverBox{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;opacity:.9;}
 .modalPlatforms{margin-top:10px;opacity:.8;font-size:12px;}
 .modalRight{flex:1;min-width:0;padding-top:2px;}
-.modalTitle{font-size:22px;font-weight:800;line-height:1.15;margin-bottom:6px;}
+.modalTitle{font-size:22px;font-weight:600;line-height:1.15;margin-bottom:5px;}
 .modalEdition{opacity:.75;font-size:14px;margin-bottom:12px;}
 .modalMetaRow{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap;}
-.modalDiscount{font-weight:800;}
+.modalDiscount{font-weight:650;}
 .modalUntil{opacity:.85;font-size:13px;}
 .modalBuyRow{display:flex;gap:12px;align-items:center;flex-wrap:nowrap;}
 .modalPrice{font-size:20px;font-weight:900;}
@@ -229,7 +232,7 @@ tr:last-child td{border-bottom:none;}
   .modalPlatforms{margin-top:0;}
 }
 
-.modalRu{opacity:.95;font-size:13px;margin-bottom:10px;display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:12px;border:1px solid rgba(22,163,74,.45);background:rgba(22,163,74,.08);color:#4dff64;font-weight:800;}
+.modalRu{opacity:.95;font-size:13px;margin-bottom:10px;display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:10px;border:1px solid rgba(154 208 182);/*background:rgba(22,163,74,.08);*/color:#2cb55d;font-weight:600;}
 .modalRu.noRu{border-color:rgba(100,116,139,.35);background:rgba(100,116,139,.08);color:var(--muted);font-weight:700;}
 
 .modalSub{opacity:.85;font-size:13px;margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
@@ -250,8 +253,8 @@ tr:last-child td{border-bottom:none;}
 .modalGrid{display:flex;gap:16px;align-items:flex-start;flex-wrap:nowrap;}
 .modalCoverWrap{width:240px;flex:0 0 240px;}
 .modalCoverWrap img{width:100%;height:auto;border-radius:14px;display:block;}
-.modalPlatforms{display:inline-block;padding:6px 10px;border-radius:12px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.10);font-weight:700;opacity:1;}
-.modalDiscount{color:var(--danger);}
+.modalPlatforms{letter-spacing: 0.06em;display:inline-block;padding:6px 10px;border-radius:12px;background:rgb(20 82 231);/*border:1px solid rgba(255,255,255,.10);*/font-weight:600;opacity:1;}
+.modalDiscount{color:#f44a50;}
 @media (max-width:560px){
   .modalCard{padding:12px;}
   .modalCoverWrap{width:150px;flex:0 0 150px;}
@@ -269,7 +272,7 @@ tr:last-child td{border-bottom:none;}
 @media (max-width:400px){
   .modalCoverWrap{width:120px;flex:0 0 120px;}
   .modalGrid{gap:12px;}
-  .modalPlatforms{padding:5px 8px;font-size:12px;}
+  .modalPlatforms{padding:5px 8px;font-size:14px;}
 }
 
 
@@ -285,7 +288,7 @@ tr:last-child td{border-bottom:none;}
 @media (max-width:400px){
   .modalLeft{width:120px;flex:0 0 120px;}
   .modalCover{width:120px;height:120px;}
-  .modalPlatforms{width:120px;display:block;padding:6px 8px;}
+  .modalPlatforms{width:120px;display:block;padding:8px 7px;}
 }
 
 
@@ -294,7 +297,7 @@ tr:last-child td{border-bottom:none;}
 .modalGrid{display:flex;align-items:flex-start;gap:16px;flex-wrap:nowrap;}
 .modalLeft{display:flex;flex-direction:column;align-items:flex-start;flex:0 0 220px; width:220px;}
 .modalCover{width:220px;height:220px;object-fit:cover;border-radius:14px;display:block;}
-.modalPlatforms{width:220px;max-width:100%;display:flex;justify-content:center;align-items:center;}
+.modalPlatforms{color: #ffffff;width:220px;max-width:100%;display:flex;justify-content:center;align-items:center;}
 .modalRight{flex:1;min-width:0;overflow:hidden;}
 .modalTitle,.modalEdition,.modalRu,.modalSub,.modalUntil,.modalPrice{min-width:0;word-break:break-word;}
 
@@ -316,14 +319,14 @@ tr:last-child td{border-bottom:none;}
 
 /* === Buy button modifiers === */
 .buyBtn {
-  border-radius: 5px;
-  font-weight: 600;
+  border-radius: 8px;
+  font-weight: 550;
   white-space: nowrap;
 }
 
 .buyBtn--card {
   width: 100%;
-  padding: 6px 6px;
+  padding: 12px 6px;
   font-size: 12px;
 }
 
@@ -400,9 +403,9 @@ a:hover{filter:brightness(1.07);}
 .gameCard,
 .card{
   background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02))!important;
-  border:1px solid var(--border)!important;
+  border:1px solid #d9dfea !important;
   color:var(--text)!important;
-  box-shadow:0 10px 30px rgba(0,0,0,.25);
+  /*box-shadow:0 10px 30px rgba(0,0,0,.25);*/
 }
 .gameCard .meta,
 .gameCard .desc,
@@ -420,7 +423,7 @@ a:hover{filter:brightness(1.07);}
 
 /* price visibility */
 .price,
-.modalPrice{color:#ffd166!important;text-shadow:0 1px 0 rgba(0,0,0,.25);}
+.modalPrice{color:#1353e9 !important;/*text-shadow:0 1px 0 rgba(0,0,0,.25);*/}
 
 /* buttons (keep “buy” close to original, but Timeweb-ish blue) */
 .buyBtn{
@@ -470,7 +473,7 @@ hr{border-color:var(--border)!important;}
   color: var(--text) !important;
   opacity: .98;
 }
-.title:hover{ color: rgba(230,237,246,.98) !important; }
+.title:hover{ color: #262a36 !important; }
 
 /* Search icon button */
 .searchToggle{
@@ -531,7 +534,8 @@ hr{border-color:var(--border)!important;}
 
 /* Buy button redesign (Timeweb-like CTA) */
 .buyBtn{
-  background: linear-gradient(180deg, rgba(77,163,255,1) 0%, rgba(47,125,255,1) 100%) !important;
+  letter-spacing: 0.06em;
+  background: #1452e7 !important;
   color: #ffffff !important;
   border: 1px solid rgba(255,255,255,.14) !important;
   box-shadow: 0 10px 18px rgba(47,125,255,.25);
@@ -546,7 +550,7 @@ hr{border-color:var(--border)!important;}
 }
 
 /* Modal typography */
-.modalTitle{ color: var(--text) !important; }
+.modalTitle{ color: #102248 !important; }
 .modalText, .modalDesc, .modalMeta{ color: var(--muted) !important; }
 
 /* Modal inner panels if present */
@@ -739,7 +743,7 @@ hr{border-color:var(--border)!important;}
 /* Buy button states (toggle add/remove without opening cart) */
 .buyBtn.isInCart{
   /* override global .buyBtn gradient rules (they use !important) */
-  background:linear-gradient(180deg, rgba(76, 220, 123, 1) 0%, rgba(22, 163, 74, 1) 100%) !important;
+  background:#04cd15 !important;
   color:#fff !important;
   border-color:rgba(255,255,255,.16) !important;
   box-shadow:0 10px 18px rgba(22,163,74,.22) !important;
@@ -1225,10 +1229,10 @@ body[data-tab="discounts"][data-discounts-view="overview"] .resultsBar{ display:
   transform: translateY(-50%);
   width: 40px;
   height: 40px;
-  border: 0;
+  border: 1px solid #dce0eb;
   border-radius: 999px;
-  background: rgb(77 163 255);
-  color: #fff;
+  background: rgb(238 245 255);
+  color: #2e3650;
   font-size: 28px;
   cursor:pointer;
   z-index: 2;
