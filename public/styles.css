@@ -859,7 +859,7 @@ hr{border-color:var(--border)!important;}
   background: rgba(255,255,255,.04);
   box-shadow: none;
   transform: none;
-  color: rgba(230, 237, 246, .98);
+  color: #3251bc;
 }
 
 .siteTab.isActive{
