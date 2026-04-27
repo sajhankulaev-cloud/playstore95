@@ -1592,7 +1592,7 @@ body[data-tab="discounts"][data-discounts-view="overview"] .discountTabs{
 }
 .wishToastTitle{
   font-weight:600;
-  font-size:16px;
+  font-size:16px !important;
   margin-bottom:3px;
   color:#1452e7;
 }
