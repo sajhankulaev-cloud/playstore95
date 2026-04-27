@@ -407,8 +407,8 @@ a:hover{filter:brightness(1.07);}
 .gameCard,
 .card{
   background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02))!important;
-  border:1px solid #d9dfea !important;
-  color:var(--text)!important;
+  border:1px solid #d5dbe7 !important;
+  color:#262a36;
   /*box-shadow:0 10px 30px rgba(0,0,0,.25);*/
 }
 .gameCard .meta,
@@ -619,7 +619,7 @@ hr{border-color:var(--border)!important;}
   max-height:90vh;
   height:auto;
   background:#f7f8fd;
-  color:#fff;
+  color:#262a36;
   border:1px solid rgba(255,255,255,.12);
   box-shadow:0 20px 60px rgba(0,0,0,.6);
   display:flex;
@@ -646,7 +646,7 @@ hr{border-color:var(--border)!important;}
 .cartRegion{opacity:.75;font-weight:600;}
 .cartHeadActions{display:flex;align-items:center;gap:8px;}
 .cartClearBtn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:#fff;}
-.cartClearBtn:disabled{opacity:.5;cursor:not-allowed;}
+.cartClearBtn:disabled{/*opacity:.5;*/cursor:not-allowed;}
 .cartClose{
   width:28px;height:28px;
   border-radius:10px;
@@ -664,7 +664,7 @@ hr{border-color:var(--border)!important;}
 }
 .cartEmpty{
   padding:14px 10px;
-  opacity:.85;
+  /*opacity:.85;*/
   font-size:14px;
 }
 .cartItem{
@@ -1059,7 +1059,7 @@ body[data-tab="subs"] .resultsBar{ display:none; }
 }
 @media (max-width: 520px){
   .grid.gridSubs{ grid-template-columns: repeat(2, minmax(0, 1fr)); gap:12px; }
-  .subsCard{ padding: 8px; border-radius: 5px; }
+  .subsCard{ /*padding: 8px;*/ border-radius: 15px; }
   .subsName{ font-size: 16px; }
 }
 
