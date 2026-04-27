@@ -1149,7 +1149,7 @@ body[data-tab="discounts"][data-discounts-view="overview"] .resultsBar{
 .discountBannerCaption{
   font-weight: 600;
   font-size: clamp(12px, 1.6vw, 18px);
-  padding: 8px 10px;
+  padding: 12px 10px;
   opacity: .95;
 }
 
@@ -1380,6 +1380,7 @@ body[data-tab="discounts"][data-discounts-view="overview"] .discountTabs{
   /* Slightly smaller caption on very small screens */
   #discountBannersGrid .discountBannerCaption{
     font-size: 10px !important;
+    padding: 8px 10px;
   }
 }
 
