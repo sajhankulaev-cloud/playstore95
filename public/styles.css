@@ -331,13 +331,13 @@ tr:last-child td{border-bottom:none;}
 
 .buyBtn--card {
   width: 100%;
-  padding: 12px 6px;
-  font-size: 12px;
+  padding: 8px 6px;
+  font-size: 11px;
 }
 
 .buyBtn--modal {
-  padding: 8px 16px;
-  font-size: 13px;
+  padding: 8px 5px;
+  font-size: 11px;
   /*min-width: 120px;*/
   flex-shrink: 1;
 }
@@ -688,14 +688,16 @@ hr{border-color:var(--border)!important;}
 }
 .cartCover img{width:100%;height:100%;object-fit:cover;display:block;}
 .cartPlatforms{
-  margin-top:8px;
-  font-size:12px;
-  opacity:.85;
-  text-align:center;
-  /*border:1px solid rgba(255,255,255,.12);*/
-  border-radius:10px;
-  padding:6px 8px;
-  background:#1452e7;
+    color: #fff;
+    margin-top: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    opacity: .85;
+    text-align: center;
+    /* border: 1px solid rgba(255, 255, 255, .12); */
+    border-radius: 10px;
+    padding: 6px;
+    background: #1452e7;
 }
 .cartItemRight{flex:1;min-width:0;}
 .cartItemTop{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
@@ -1430,9 +1432,12 @@ body[data-tab="discounts"][data-discounts-view="overview"] .discountTabs{
   line-height: 1.2;
 }
 
+
+
 /* pager improvements */
 .pagerBtn.active{background:rgb(54 134 255) !important;}
 .pagerDots{display:inline-block; padding:0 10px; opacity:0.7;}
+
 
 /* === Wishlist + exact small icon additions (no layout rewrite) === */
 .wishToggle{
@@ -1596,7 +1601,7 @@ body[data-tab="discounts"][data-discounts-view="overview"] .discountTabs{
   line-height:1.35;
 }
 @media (max-width:560px){
-  .wishBtn{width:40px;height:40px;min-width:40px;}
+  .wishBtn{width:36px;height:36px;min-width:36px;}
   .wishAddCartBtn{min-width:116px;font-size:12px;}
   .btnCartIcon{width:16px;height:16px;flex-basis:16px;}
 }
@@ -1622,8 +1627,8 @@ body[data-tab="discounts"][data-discounts-view="overview"] .discountTabs{
   height:19px;
 }
 .wishBtn svg{
-  width:25px;
-  height:25px;
+  width:20px;
+  height:20px;
 }
 .wishBtn.isInWishlist svg{
   fill:currentColor;
