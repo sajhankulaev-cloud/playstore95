@@ -1368,7 +1368,7 @@ body[data-tab="discounts"][data-discounts-view="overview"] .discountTabs{
   #discountBannersGrid .discountBannerCard{
     width: 135px !important;
     max-width: 135px !important;
-    min-width: 170px !important;
+    min-width: 165px !important;
   }
   /* Slightly smaller caption on very small screens */
   #discountBannersGrid .discountBannerCaption{
