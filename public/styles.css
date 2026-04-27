@@ -1389,7 +1389,7 @@ body[data-tab="discounts"][data-discounts-view="overview"] .discountTabs{
   flex-wrap: wrap !important;
   justify-content: center !important;
   align-items: flex-start !important;
-  gap: 14px !important;
+  gap: 10px !important;
   width: 100% !important;
 }
 
