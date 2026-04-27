@@ -35,7 +35,7 @@
     <select id="region" class="selecColor1"><option value="TR" class="colValue">TR</option><option value="UA" class="colValue">UA</option></select>
     <select id="platform" class="selecColor1"><option value="" class="colValue">PS4/PS5</option><option value="PS4" class="colValue">PS4</option><option value="PS5" class="colValue">PS5</option></select>
     <button id="reset" class="btnGhost1" type="button">Сброс</button>
-	<button class="wishToggle wishToggle--filters" id="wishToggle" type="button" aria-label="Список желаемого">
+    <button class="wishToggle wishToggle--filters" id="wishToggle" type="button" aria-label="Список желаемого">
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z"></path></svg>
       <span class="wishCount" id="wishCount" aria-hidden="true">0</span>
     </button>
@@ -849,6 +849,11 @@ function formatDateRuLong(dateStr){
 
 // ---------------- Cart (per region, stored in localStorage) ----------------
 const CART_LS_PREFIX = "ps95_cart_";
+const WISH_LS_PREFIX = "ps95_wish_";
+const CART_ICON_SVG = `<svg class="btnCartIcon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 6h15.2l-1.35 7.25c-.12.66-.7 1.15-1.37 1.15H9.05c-.66 0-1.23-.46-1.38-1.1L5.85 5H3.5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="19" r="1.55" fill="currentColor"/><circle cx="17" cy="19" r="1.55" fill="currentColor"/></svg>`;
+const CAL_ICON_SVG = `<svg class="dateIcon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="5.5" width="16" height="15" rx="3.2" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M8 3.5v4M16 3.5v4M4 10h16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M8.5 13.8h2.2M13.3 13.8h2.2M8.5 17h2.2M13.3 17h2.2" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round"/></svg>`;
+function dateWithIconHtml(text){ const t=String(text||'').trim(); return t ? `${CAL_ICON_SVG}<span>${escapeHtml(t)}</span>` : ''; }
+function cartButtonHtml(label){ return `${CART_ICON_SVG}<span>${escapeHtml(label || 'В корзину')}</span>`; }
 
 function getCartKey(region){
   return CART_LS_PREFIX + String(region || "TR").toUpperCase();
@@ -870,6 +875,32 @@ function saveCart(region, items){
     localStorage.setItem(getCartKey(region), JSON.stringify(items || []));
   }catch(_){}
 }
+function getWishKey(region){ return WISH_LS_PREFIX + String(region || "TR").toUpperCase(); }
+function loadWishlist(region){
+  try{ const arr=safeJsonParse(localStorage.getItem(getWishKey(region)), []); return Array.isArray(arr)?arr:[]; }catch(_){ return []; }
+}
+function saveWishlist(region, items){ try{ localStorage.setItem(getWishKey(region), JSON.stringify(items || [])); }catch(_){} }
+function isInWishlist(gameId, region){ return loadWishlist(region || state.region).some(x => String(x.id) === String(gameId)); }
+function updateWishCount(){
+  const el=document.getElementById("wishCount"); if(!el) return;
+  const n=loadWishlist(state.region).length; el.textContent=String(n); el.style.display=n>0?"inline-flex":"none";
+}
+function setWishBtnState(btn, inWish){
+  if(!btn) return; btn.classList.toggle("isInWishlist", !!inWish); btn.setAttribute("aria-pressed", String(!!inWish)); btn.setAttribute("title", inWish ? "Убрать из желаемого" : "В желаемое");
+}
+function refreshAllWishButtons(){ document.querySelectorAll("button[data-wish-game]").forEach(btn=>setWishBtnState(btn, isInWishlist(btn.getAttribute("data-wish-game"), state.region))); }
+function addToWishlist(game){
+  if(!game || !game.id) return; const region=state.region; const items=loadWishlist(region); const normalized=normalizeGameForCart(game);
+  const idx=items.findIndex(x=>String(x.id)===String(normalized.id)); if(idx>=0) items[idx]=normalized; else items.push(normalized);
+  saveWishlist(region, items); updateWishCount(); refreshAllWishButtons(); if(isWishOpen()) renderWishlist();
+}
+function removeFromWishlist(gameId){
+  const items=loadWishlist(state.region).filter(x=>String(x.id)!==String(gameId)); saveWishlist(state.region, items); updateWishCount(); refreshAllWishButtons(); if(isWishOpen()) renderWishlist();
+}
+function toggleWishlist(game){ if(isInWishlist(game.id, state.region)) removeFromWishlist(game.id); else addToWishlist(game); }
+function isWishOpen(){ const ov=document.getElementById("wishOverlay"); return !!(ov && ov.style.display!=="none"); }
+function openWishlist(){ const ov=document.getElementById("wishOverlay"); if(!ov) return; ov.style.display="flex"; ov.setAttribute("aria-hidden","false"); document.body.classList.add("modalOpen"); renderWishlist(); }
+function closeWishlist(){ const ov=document.getElementById("wishOverlay"); if(!ov) return; ov.style.display="none"; ov.setAttribute("aria-hidden","true"); document.body.classList.remove("modalOpen"); }
 function normalizeGameForCart(game){
   // Store what we need to render the cart and build WhatsApp message
   return {
@@ -923,7 +954,9 @@ function setBuyBtnState(btn, inCart){
   const defLabel = btn.getAttribute("data-cart-label") || "В корзину";
   const inLabel = btn.getAttribute("data-cart-label-in") || "В корзине";
   btn.classList.toggle("isInCart", !!inCart);
-  btn.textContent = inCart ? inLabel : defLabel;
+  const label = inCart ? inLabel : defLabel;
+  if((defLabel || "").toLowerCase().includes("корз")) btn.innerHTML = cartButtonHtml(label);
+  else btn.textContent = label;
   btn.setAttribute("aria-pressed", String(!!inCart));
 }
 
@@ -1022,7 +1055,7 @@ function renderCart(){
         ${subBadgeHtml(item.sub)}
         <div class="cartMeta">
           <div class="cartDisc">${item.discPerc ? `-${item.discPerc}%` : ""}</div>
-          <div class="cartUntil">${item.discountedUntil ? formatDateRuLong(item.discountedUntil) : ""}</div>
+          <div class="cartUntil">${item.discountedUntil ? escapeHtml(formatDateRuLong(item.discountedUntil)) : ""}</div>
         </div>
         <div class="cartPriceRow">
           <div class="cartPrice">${fmtRub(item.finalPriceRub || 0)}</div>
@@ -1032,6 +1065,39 @@ function renderCart(){
     row.querySelector(".cartRemove").onclick = ()=>removeFromCart(item.id);
     body.appendChild(row);
   });
+}
+
+function renderWishlist(){
+  const body=document.getElementById("wishBody"); const regionEl=document.getElementById("wishRegion"); const clearBtn=document.getElementById("wishClearBtn");
+  if(regionEl) regionEl.textContent=`(${state.region})`;
+  const items=loadWishlist(state.region);
+  if(clearBtn) clearBtn.disabled=items.length===0;
+  if(!body) return;
+  if(!items.length){ body.innerHTML=`<div class="cartEmpty">Список желаемого пуст</div>`; return; }
+  body.innerHTML="";
+  items.forEach(item=>{
+    const row=document.createElement("div"); row.className="cartItem wishItem";
+    row.innerHTML=`
+      <div class="cartItemLeft"><div class="cartCover">${item.cover ? `<img src="${item.cover}" alt="" referrerpolicy="no-referrer" onerror="this.style.display='none'">` : `<div class="noCoverBox">NO COVER</div>`}</div><div class="cartPlatforms">${item.platform || "PS4 / PS5"}</div></div>
+      <div class="cartItemRight">
+        <div class="cartItemTop"><div class="cartItemTitle">${item.name || ""}</div><button class="cartRemove" type="button" aria-label="Удалить">×</button></div>
+        <div class="cartEdition">${item.edition || "Standard Edition"}</div>
+        <div class="cartMeta"><div class="cartDisc">${item.discPerc ? `-${item.discPerc}%` : ""}</div><div class="cartUntil">${item.discountedUntil ? escapeHtml(formatDateRuLong(item.discountedUntil)) : ""}</div></div>
+        <div class="cartPriceRow wishPriceRow"><div class="cartPrice">${fmtRub(item.finalPriceRub || 0)}</div><button class="buyBtn wishAddCartBtn" type="button" data-cart-game="${item.id}" data-cart-label="В корзину" data-cart-label-in="В корзине">В корзину</button></div>
+      </div>`;
+    row.querySelector(".cartRemove").onclick=()=>removeFromWishlist(item.id);
+    const addBtn=row.querySelector(".wishAddCartBtn"); setBuyBtnState(addBtn, isInCart(item.id, state.region));
+    addBtn.onclick=()=>{ if(isInCart(item.id, state.region)) removeFromCart(item.id); else addToCart(item); setBuyBtnState(addBtn, isInCart(item.id, state.region)); };
+    body.appendChild(row);
+  });
+}
+function clearWishlist(){ saveWishlist(state.region, []); updateWishCount(); refreshAllWishButtons(); if(isWishOpen()) renderWishlist(); }
+function showWishlistDiscountToast(){
+  const items=loadWishlist(state.region).filter(x=>Number(x.discPerc||0)>0); if(!items.length) return;
+  const old=document.getElementById("wishToast"); if(old) old.remove();
+  const el=document.createElement("div"); el.id="wishToast"; el.className="wishToast";
+  el.innerHTML=`<div class="wishToastTitle">Игры из вашего списка желаемого со скидкой</div>`;
+  document.body.appendChild(el); requestAnimationFrame(()=>el.classList.add("show")); setTimeout(()=>{ el.classList.remove("show"); setTimeout(()=>el.remove(),350); },3600);
 }
 
 function buyCartWhatsApp(){
@@ -1094,6 +1160,7 @@ function buildCard(game, whatsapp, showUntil){
   div.className = isPreorder ? "card card--preorder" : "card";
   const until = (showUntil && game.discountedUntil) ? formatDateDMY(game.discountedUntil) : "";
   const inCart = isInCart(game.id, state.region);
+  const inWish = isInWishlist(game.id, state.region);
   const preorderBadge = isPreorder ? `<div class="preorderBadge" aria-label="Предзаказ">ПРЕДЗАКАЗ</div>` : "";
 
   // For preorders we keep the same card structure as other pages,
@@ -1125,6 +1192,8 @@ function buildCard(game, whatsapp, showUntil){
     if(nowInCart) removeFromCart(game.id);
     else addToCart(game);
   };
+  const wishBtn = div.querySelector(".wishBtn");
+  if(wishBtn){ wishBtn.onclick=(e)=>{ e.preventDefault(); e.stopPropagation(); toggleWishlist(game); setWishBtnState(wishBtn, isInWishlist(game.id, state.region)); }; }
   return div;
 }
 
@@ -1211,6 +1280,8 @@ function openGameModal(game){
 
   if(buy){
     buy.setAttribute("data-cart-game", String(game.id));
+    buy.setAttribute("data-cart-label", "В корзину");
+    buy.setAttribute("data-cart-label-in", "В корзине");
     setBuyBtnState(buy, isInCart(game.id, state.region));
     buy.onclick=()=>{
       const nowInCart = isInCart(game.id, state.region);
@@ -1218,6 +1289,12 @@ function openGameModal(game){
       else addToCart(game);
       setBuyBtnState(buy, isInCart(game.id, state.region));
     };
+  }
+  const gmWish=document.getElementById("gmWishBtn");
+  if(gmWish){
+    gmWish.setAttribute("data-wish-game", String(game.id));
+    setWishBtnState(gmWish, isInWishlist(game.id, state.region));
+    gmWish.onclick=()=>{ toggleWishlist(game); setWishBtnState(gmWish, isInWishlist(game.id, state.region)); };
   }
 
   overlay.style.display="flex";
@@ -1321,7 +1398,7 @@ async function renderDiscountOverview(){
           <div class="discountBannerImgWrap">
             ${img ? `<img src="${img}" alt="Discount banner" loading="lazy"/>` : `<div class="discountBannerPlaceholder"></div>`}
           </div>
-          <div class="discountBannerCaption">До ${escapeHtml(label || iso)}</div>
+          <div class="discountBannerCaption">${dateWithIconHtml('До ' + (label || iso))}</div>
         `;
         gridEl.appendChild(card);
       }
@@ -1613,7 +1690,10 @@ document.getElementById("region").onchange=e=>{
   // она будет автоматически заменена на ближайшую внутри loadDiscountTabs().
   try{localStorage.setItem("ps95_region",state.region);}catch(_){}
   updateCartCount();
+  updateWishCount();
+  refreshAllWishButtons();
   if(isCartOpen()) renderCart();
+  if(isWishOpen()) renderWishlist();
   load();
 };
 document.getElementById("sort").onchange=e=>{state.sort=e.target.value;state.page=1;load();};
@@ -1650,6 +1730,10 @@ document.addEventListener("DOMContentLoaded",()=>{
   const cartOverlay=document.getElementById("cartOverlay");
   const cartBuy=document.getElementById("cartBuyBtn");
   const cartClear=document.getElementById("cartClearBtn");
+  const wishToggle=document.getElementById("wishToggle");
+  const wishClose=document.getElementById("wishCloseBtn");
+  const wishOverlay=document.getElementById("wishOverlay");
+  const wishClear=document.getElementById("wishClearBtn");
 
   if(cartToggle) cartToggle.onclick=(e)=>{ e.preventDefault(); openCart(); };
   if(cartClose) cartClose.onclick=(e)=>{ e.preventDefault(); closeCart(); };
@@ -1660,16 +1744,22 @@ document.addEventListener("DOMContentLoaded",()=>{
   }
   if(cartBuy) cartBuy.onclick=(e)=>{ e.preventDefault(); buyCartWhatsApp(); };
   if(cartClear) cartClear.onclick=(e)=>{ e.preventDefault(); clearCart(); };
+  if(wishToggle) wishToggle.onclick=(e)=>{ e.preventDefault(); openWishlist(); };
+  if(wishClose) wishClose.onclick=(e)=>{ e.preventDefault(); closeWishlist(); };
+  if(wishOverlay) wishOverlay.addEventListener("click",(e)=>{ if(e.target===wishOverlay) closeWishlist(); });
+  if(wishClear) wishClear.onclick=(e)=>{ e.preventDefault(); clearWishlist(); };
 
   const knownTabs2 = new Set(["preorders","new","discounts","allgames","subs"]);
   if(!knownTabs2.has(state.tab)) state.tab="discounts";
   setActiveTab(state.tab,{keepPage:true});
   initTabsUI();
   updateCartCount();
+  updateWishCount();
+  showWishlistDiscountToast();
 });
 
 document.addEventListener("keydown",(e)=>{
-  if(e.key==="Escape") closeCart();
+  if(e.key==="Escape") { closeCart(); closeWishlist(); }
 });
 
 load();
@@ -1702,6 +1792,13 @@ load();
 </div>
 
   
+<div id="wishOverlay" class="cartOverlay wishOverlay" style="display:none" aria-hidden="true">
+  <div class="cartDrawer wishDrawer" role="dialog" aria-modal="true" aria-label="Список желаемого">
+    <div class="cartHead"><div class="cartTitle">Желаемое <span class="cartRegion" id="wishRegion"></span></div><div class="cartHeadActions"><button class="btnGhost cartClearBtn" id="wishClearBtn" type="button">Очистить</button><button class="cartClose" id="wishCloseBtn" type="button" aria-label="Закрыть">×</button></div></div>
+    <div class="cartBody" id="wishBody"></div>
+  </div>
+</div>
+
 <div id="cartOverlay" class="cartOverlay" style="display:none" aria-hidden="true">
   <div class="cartDrawer" role="dialog" aria-modal="true" aria-label="Корзина">
     <div class="cartHead">
