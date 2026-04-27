@@ -33,7 +33,7 @@ body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantare
 .searchPanel{max-width:0;opacity:0;overflow:hidden;pointer-events:none;transition:max-width .25s ease, opacity .2s ease;}
 .searchWrap.open .searchPanel{max-width:320px;opacity:1;pointer-events:auto;}
 .searchInput{min-width:240px; background: #224bc0 !important;}
-.colorA{font-size:clamp(14px, 1.8vw, 18px); padding:0 0 3px 0;}
+.colorA{font-size:clamp(12px, 1.8vw, 18px); padding:0 0 3px 0;}
 @media (max-width:640px){
   .topbarHeader{flex-wrap:nowrap;}
   .searchPanel{position:absolute;left:16px;right:16px;top:52px;max-width:none;opacity:0;transform:translateY(-8px);transition:opacity .2s ease, transform .2s ease;overflow:visible;}
@@ -49,7 +49,7 @@ body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantare
 .coverWrap img{width:100%;height:100%;object-fit:cover;display:block;}
 .platformStrip{position:absolute;border-radius: 2px 0px 20px 2px;left:0px;top:0px;color:#fff;font-weight:600;padding:6px 12px;font-size:14px;text-transform:uppercase;letter-spacing:.4px;background: rgb(3 44 213);}
 .body{padding:12px;flex:1;display:flex;flex-direction:column;}
-.title{color: #3f3532;display: -webkit-box;-webkit-line-clamp: 2;-webkit-box-orient: vertical;overflow: hidden;font-weight:630;font-size:16px;line-height:1.25;margin:0 0 5px;min-height:36px;}
+.title{color: #3f3532;display: -webkit-box;-webkit-line-clamp: 2;-webkit-box-orient: vertical;overflow: hidden;font-weight:600;font-size:14px;line-height:1.25;margin:0 0 5px;min-height:36px;}
 .row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin: 0 0 8px;display: flex;align-items: center;justify-content: space-between;margin-top: auto;}
 .discount{background: #cc3444;font-weight:600;border-radius: 6px;padding: 3px 6px;color:#fff;font-size:12px;}
 .until{font-size:12px;color:var(--muted);}
@@ -91,7 +91,7 @@ body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantare
 .side{background:#0b1220;color:#e5e7eb;padding:18px;position:sticky;top:0;height:100vh;}
 .side h2{margin:0 0 14px;font-size:16px; color: #fff !important;}
 .selecColor{background: rgba(255, 255, 255, .03) !important;border: 1px solid var(--border) !important;color: #0f172a !important;padding: 6px 4px;border-radius: 10px;}
-.selecColor1{box-shadow: 0 6px 14px rgba(15, 23, 42, .10);font-size: 11px;background: rgb(249 250 254) !important;border: 1px solid #e0e6ef !important;color: #262a36 !important;padding: 6px 8px 6px 8px;border-radius: 10px;}
+.selecColor1{box-shadow: 0 6px 14px rgba(15, 23, 42, .10);font-size: clamp(11px, 1.8vw, 14px);background: rgb(249 250 254) !important;border: 1px solid #e0e6ef !important;color: #262a36 !important;padding: 6px 8px 6px 8px;border-radius: 10px;}
 .colValue{background:#f9fafe;}
 .nav a{display:block;color:#fff !important;text-decoration:none;padding:10px 10px;border-radius:10px;margin:6px 0;}
 .nav a.active,.nav a:hover{background:#111b31; color:#fff !important}
@@ -491,7 +491,7 @@ hr{border-color:var(--border)!important;}
 /* Reset button */
 .btnGhost{
   color: #366beb !important;
-  border: 1px solid #0b1220 !important;
+  border: 0px solid #0b1220 !important;
 }
 .btnGhost:hover{
   border-color: rgba(77,163,255,.35) !important;
@@ -499,7 +499,7 @@ hr{border-color:var(--border)!important;}
 .btnGhost:active{ transform: translateY(1px); }
 .btnGhost1{
   box-shadow: 0 6px 14px rgba(15, 23, 42, .10);
-  font-size: 11px;
+  font-size: clamp(11px, 1.8vw, 14px);
   background: rgb(249 250 254) !important;
   color: #262a36 !important;
   border: 1px solid #dee4ee !important;
@@ -801,16 +801,17 @@ hr{border-color:var(--border)!important;}
 }
 
 .tabsArrow{
-  font-size: 16px;
+  font-size: 18px;
+  font-weight: 600;
   position:absolute;
   top:50%;
   transform:translateY(-50%);
   width:34px;
   height:34px;
   border-radius:999px;
-  border:1px solid #e3e7f3;
+  border:1px solid #d5dbe7;
   background:#ebf1fd;
-  color:#333b54;
+  color:#1a2345;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -1367,11 +1368,11 @@ body[data-tab="discounts"][data-discounts-view="overview"] .discountTabs{
   #discountBannersGrid .discountBannerCard{
     width: 135px !important;
     max-width: 135px !important;
-    min-width: 154px !important;
+    min-width: 170px !important;
   }
   /* Slightly smaller caption on very small screens */
   #discountBannersGrid .discountBannerCaption{
-    font-size: 11px !important;
+    font-size: 10px !important;
   }
 }
 
@@ -1388,7 +1389,7 @@ body[data-tab="discounts"][data-discounts-view="overview"] .discountTabs{
   flex-wrap: wrap !important;
   justify-content: center !important;
   align-items: flex-start !important;
-  gap: 14px !important;
+  gap: 15px !important;
   width: 100% !important;
 }
 
@@ -1417,7 +1418,7 @@ body[data-tab="discounts"][data-discounts-view="overview"] .discountTabs{
   background: #f3f8fe;
   text-align: center;
   color: #262a36;
-  font-size: clamp(12px, 1.8vw, 16px);
+  font-size: clamp(10px, 1.8vw, 16px);
   line-height: 1.2;
 }
 
