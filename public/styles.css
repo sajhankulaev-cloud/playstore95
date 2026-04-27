@@ -521,11 +521,12 @@ hr{border-color:var(--border)!important;}
 
 /* Pager buttons */
 .pager button{
-  background: rgba(255,255,255,.04) !important;
-  color: #ffffff !important;
-  border: 1px solid var(--border) !important;
+  background: #ebf1fd;
+  color: #1a2345 !important;
+  border: 1px solid #d5dbe7;
 }
 .pager button:hover{
+  color:#d5dbe7;
   background: rgba(255,255,255,.06) !important;
   border-color: rgba(77,163,255,.35) !important;
 }
