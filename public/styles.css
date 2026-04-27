@@ -960,7 +960,7 @@ body[data-tab="subs"] .resultsBar{ display:none; }
 .subOfferTitle{font-size: 16px; }
 .subOfferTitle span{ opacity: 0.85; }
 .subOfferPrice{ font-size: 18px; font-weight: 700; margin: 0px 0px 0px 10px; }
-.subOfferCard .buyBtn{ margin: 0px 10px 10px 10px; width: 100%;  font-size: clamp(14px, 1.6vw, 16px); }
+.subOfferCard .buyBtn{ margin: 0px 10px 10px 10px; font-size: clamp(14px, 1.6vw, 16px); }
 .subsInfoBox{
   box-shadow: 0 12px 28px rgba(0,0,0,0.35);
   background: rgb(252 254 253);
