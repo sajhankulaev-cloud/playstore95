@@ -768,7 +768,7 @@ hr{border-color:var(--border)!important;}
   margin-top: 20px;
   background: #f5f8ff;
   border-radius: 15px;
-  /*padding: 6px 16px 8px 16px;*/
+  padding:10px 16px 14px 16px;
   position:relative;
 }
 .siteTabs{
