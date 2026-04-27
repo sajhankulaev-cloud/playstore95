@@ -255,6 +255,7 @@ tr:last-child td{border-bottom:none;}
 .modalCoverWrap img{width:100%;height:auto;border-radius:14px;display:block;}
 .modalPlatforms{letter-spacing: 0.06em;display:inline-block;padding:6px 10px;border-radius:12px;background:rgb(20 82 231);/*border:1px solid rgba(255,255,255,.10);*/font-weight:600;opacity:1;}
 .modalDiscount{color:#f44a50;}
+.modalDiscount1{color: #eaedf4;}
 @media (max-width:560px){
   .modalCard{padding:12px;}
   .modalCoverWrap{width:150px;flex:0 0 150px;}
