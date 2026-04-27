@@ -526,7 +526,7 @@ hr{border-color:var(--border)!important;}
   border: 1px solid #d5dbe7;
 }
 .pager button:hover{
-  color:#d5dbe7;
+  color:#d5dbe7 !important;
   background: rgba(255,255,255,.06) !important;
   border-color: rgba(77,163,255,.35) !important;
 }
