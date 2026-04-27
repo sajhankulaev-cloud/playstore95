@@ -1096,7 +1096,7 @@ function showWishlistDiscountToast(){
   const items=loadWishlist(state.region).filter(x=>Number(x.discPerc||0)>0); if(!items.length) return;
   const old=document.getElementById("wishToast"); if(old) old.remove();
   const el=document.createElement("div"); el.id="wishToast"; el.className="wishToast";
-  el.innerHTML=`<div class="wishToastTitle">Игры из вашего списка желаемого со скидкой</div>`;
+  el.innerHTML=`<div class="wishToastTitle">В вашем списке желаемого есть игры со скидкой</div>`;
   document.body.appendChild(el); requestAnimationFrame(()=>el.classList.add("show")); setTimeout(()=>{ el.classList.remove("show"); setTimeout(()=>el.remove(),350); },3600);
 }
 
