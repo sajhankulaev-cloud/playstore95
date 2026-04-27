@@ -1683,7 +1683,7 @@ footer{
   z-index:1;
 }
 .topbar{
-  background:rgba(235, 241, 253, .78) !important;
+  background:rgb(235 241 253 / 0%) !important;
 }
 @media (max-width:480px){
   body::before{background-size:260px 260px;opacity:.48;}
