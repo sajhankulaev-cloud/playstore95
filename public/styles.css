@@ -2,7 +2,7 @@
 *{box-sizing:border-box}
 body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;background:var(--bg);color:var(--text);}
 .topbar{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--border);}
-.container{max-width:1200px;margin:0 auto;padding: 10px 12px 8px 12px;}
+.container{max-width:1200px;margin:0 auto;padding: 10px 8px 8px 8px;}
 .brand{text-decoration:none;font-family: "Orbitron", system-ui, sans-serif;font-weight:990;font-size:clamp(22px, 2.6vw, 26px);text-transform: uppercase;}
 .badge{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid var(--border);font-size:12px;background:#fff;}
 .filters{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:20px;}
@@ -367,15 +367,15 @@ tr:last-child td{border-bottom:none;}
 }
 
 /* global */
-body{background:var(--bg)!important;color:var(--text)!important;}
+body{background:#ebf1fd !important;color:#262a36 !important;}
 
 a{color:var(--accent);}
 a:hover{filter:brightness(1.07);}
 
 /* top bar */
 .topbar{
-  background:rgba(15,26,43,.88)!important;
-  border-bottom:1px solid var(--border)!important;
+  background:rgb(235 241 253) !important;
+  /*border-bottom:1px solid var(--border)!important;*/
   backdrop-filter:saturate(140%) blur(10px);
 }
 .brand{color:#1742bd !important;opacity:.95;}
@@ -833,16 +833,16 @@ hr{border-color:var(--border)!important;}
 
 .siteTab{
   border: 0;
-  background: transparent;
+  background: rgba(255,255,255,.06);
   border-radius: 10px;
   padding: 8px 6px;
   min-height: unset;
   font-size: clamp(14px, 1.6vw, 16px);
-  font-weight: 550;
+  font-weight: 500;
   letter-spacing: .2px;
   box-shadow: none;
   transform: none;
-  color: rgba(230, 237, 246, .86);
+  color: rgb(38 42 54);
 }
 
 .siteTab:hover{
@@ -880,14 +880,14 @@ hr{border-color:var(--border)!important;}
   but allow horizontal swipe/scroll if tabs don't fit.
 */
 @media (max-width: 720px){
-  .siteTabsShell{ padding:0px; margin-top:20px;}
+  .siteTabsShell{ background: #f5f8ff;border-radius: 15px;padding:0px; margin-top:20px;}
 
   .siteTabs{
     justify-content: flex-start;
-    gap: 22px;
+    gap: 18px;
     /* Leave room for overlay arrows */
     margin:0 10px;
-    padding: 6px 0px 12px 0px;
+    padding: 10px 0px 12px 0px;
   }
 
   /* Show arrows on mobile (while keeping the same visual style as desktop tabs) */
@@ -1110,10 +1110,10 @@ body[data-tab="discounts"][data-discounts-view="overview"] .resultsBar{
 .discountBannerImgWrap{
   width: 100%;
   aspect-ratio: 1 / 1;
-  border-radius: 14px;
+  border-radius: 15px;
   overflow:hidden;
   background: rgba(255,255,255,0.04);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  box-shadow: 0 12px 19px rgba(15, 23, 42, .10);
 }
 
 .discountBannerImgWrap img{
@@ -1153,16 +1153,16 @@ body[data-tab="discounts"][data-discounts-view="overview"] .resultsBar{ display:
 }
 
 .allDealsTitle{
-  font-size: 14px;
+  font-size: 18px;
   font-weight: 600;
   letter-spacing: .2px;
 }
 
 .allDealsViewAll{
-  font-size: 14px;
-  color: #8ab4ff;
+  font-size: 16px;
+  color: #002ccb;
   text-decoration:none;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .allDealsShell{
@@ -1397,12 +1397,17 @@ body[data-tab="discounts"][data-discounts-view="overview"] .discountTabs{
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 18px;
+  /*border-radius: 18px;*/
   display: block;
 }
 
 /* Adaptive caption under banner */
 #discountBannersGrid.discountBannersGrid .discountBannerCaption{
+  box-shadow: 0 6px 14px rgba(15, 23, 42, .10);
+  border-radius: 10px;
+  background: #f3f8fe;
+  text-align: center;
+  color: #262a36;
   font-size: clamp(12px, 1.8vw, 16px);
   line-height: 1.2;
 }
