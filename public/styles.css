@@ -905,15 +905,15 @@ hr{border-color:var(--border)!important;}
     justify-content: flex-start;
     gap: 18px;
     /* Leave room for overlay arrows */
-    margin:0 10px;
-    padding: 10px 0px 12px 0px;
+    margin:0 8px;
+    padding: 6px 0px 8px 0px;
   }
 
   /* Show arrows on mobile (while keeping the same visual style as desktop tabs) */
   .tabsArrow{ display:flex; }
 
-  .tabsArrowLeft{ left:10px; }
-  .tabsArrowRight{ right:10px; }
+  .tabsArrowLeft{ left:6px; }
+  .tabsArrowRight{ right:6px; }
 }
 
 
