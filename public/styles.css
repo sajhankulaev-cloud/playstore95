@@ -765,8 +765,10 @@ hr{border-color:var(--border)!important;}
 /* --- Site section tabs (PS Store-like) --- */
 .siteTabsShell{
   max-width:1200px;
-  margin:0 auto;
-  padding: 6px 16px 8px 16px;
+  margin-top: 20px;
+  background: #f5f8ff;
+  border-radius: 15px;
+  /*padding: 6px 16px 8px 16px;*/
   position:relative;
 }
 .siteTabs{
@@ -836,7 +838,7 @@ hr{border-color:var(--border)!important;}
 
 .siteTabsShell{
   box-shadow: 0 6px 14px rgba(15, 23, 42, .10);
-  padding: 10px 16px 14px 16px;
+  /*padding: 10px 16px 14px 16px;*/
 }
 
 .siteTabs{
