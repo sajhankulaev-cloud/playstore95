@@ -208,7 +208,7 @@ tr:last-child td{border-bottom:none;}
   width:29px;
   height:29px;
   border-radius:14px;
-  border:1px solid rgb(7 35 75);
+  border:1px solid #d5dbe7;
   background:rgba(255,255,255,.06);
   color:#071f43;
   font-size:20px;
@@ -482,7 +482,7 @@ hr{border-color:var(--border)!important;}
 /* Search icon button */
 .searchToggle{
   background: rgb(246 250 251) !important;
-  border: 1px solid #dee4ee !important;
+  border: 1px solid #d5dbe7 !important;
   color: #1452e7 !important;
 }
 .searchToggle:hover{
@@ -507,7 +507,7 @@ hr{border-color:var(--border)!important;}
   font-size: clamp(11px, 1.8vw, 14px);
   background: rgb(249 250 254) !important;
   color: #262a36 !important;
-  border: 1px solid #dee4ee !important;
+  border: 1px solid #d5dbe7 !important;
   padding: 8px 10px;
   border-radius: 10px;
   cursor: pointer;
@@ -572,7 +572,7 @@ hr{border-color:var(--border)!important;}
   color: #1452e7 !important;
   width:33px;height:33px;
   border-radius:15px;
-  border:1px solid #e0e6ef;
+  border:1px solid #d5dbe7;
   background:#f6fbff;
   cursor:pointer;
   display:inline-flex;
@@ -650,7 +650,7 @@ hr{border-color:var(--border)!important;}
 .cartClose{
   width:28px;height:28px;
   border-radius:10px;
-  border:1px solid rgb(232 233 240);
+  border:1px solid #d5dbe7;
   background:rgba(255,255,255,.06);
   color:#1452e7;
   font-size:18px;
@@ -671,7 +671,7 @@ hr{border-color:var(--border)!important;}
   display:flex;
   gap:12px;
   padding:10px;
-  border:1px solid rgb(221 223 230);
+  border:1px solid #d5dbe7;
   border-radius:14px;
   background:rgb(249 250 254);
   margin-bottom:10px;
@@ -712,7 +712,7 @@ hr{border-color:var(--border)!important;}
 .cartRemove{
   width:28px;height:28px;
   border-radius:10px;
-  border:1px solid rgb(218 221 227);
+  border:1px solid #d5dbe7;
   background:rgba(255,255,255,.06);
   color:#1452e7;
   font-size:18px;
@@ -942,14 +942,14 @@ body[data-tab="subs"] .resultsBar{ display:none; }
   background: rgb(252 254 253);
   border: 1px solid rgb(239 241 248);
   border-radius: 15px;
-  padding: 14px;
+  /*padding: 14px;*/
   box-shadow: 0 6px 14px rgba(15, 23, 42, .10);
   display:flex;
   flex-direction:column;
   gap: 10px;
 }
 .subOfferImg{
-  border-radius: 20px;
+  border-radius: 15px;
   overflow:hidden;
   background: rgba(0,0,0,0.20);
   display:flex;
@@ -963,7 +963,7 @@ body[data-tab="subs"] .resultsBar{ display:none; }
   object-fit: cover;
   display:block;
 }
-.subOfferTitle{font-size: 16px; }
+.subOfferTitle{font-size: 16px; margin-left: 10px;}
 .subOfferTitle span{ opacity: 0.85; }
 .subOfferPrice{ font-size: 18px; font-weight: 700; margin: 0px 0px 0px 10px; }
 .subOfferCard .buyBtn{ margin: 0px 10px 10px 10px; font-size: clamp(14px, 1.6vw, 16px); }
@@ -988,7 +988,7 @@ body[data-tab="subs"] .resultsBar{ display:none; }
 }
 @media (max-width: 520px){
   .subOfferGrid{ grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }
-  .subOfferCard{ padding: 7px;}
+/*.subOfferCard{ padding: 7px;}*/
   .subOfferPrice{ font-size: 18px; }
   .subsDetail .subsPageTitle{ font-size: 16px; }
 }
