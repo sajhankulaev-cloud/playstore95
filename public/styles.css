@@ -21,7 +21,12 @@ body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantare
   .resultsBar{flex-wrap:wrap;gap:10px;}
   .resultsSort{margin-left:auto;}
 }
-
+.body-bar1 {
+    padding: 12px 10px 6px 10px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
 /* Search (top-right icon + раскрывающаяся строка поиска) */
 .topbarInner{position:relative;}
 .topbarHeader{display:flex;align-items:center;justify-content:space-between;gap:12px;}
