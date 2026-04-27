@@ -93,7 +93,7 @@ body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantare
 .side h2{margin:0 0 14px;font-size:16px; color: #fff !important;}
 .selecColor{background: rgba(255, 255, 255, .03) !important;border: 1px solid var(--border) !important;color: #0f172a !important;padding: 6px 4px;border-radius: 10px;}
 .selecColor1{box-shadow: 0 6px 14px rgba(15, 23, 42, .10);font-size: 11px;background: rgb(249 250 254) !important;border: 1px solid #e0e6ef !important;color: #262a36 !important;padding: 6px 8px 6px 8px;border-radius: 10px;}
-.colValue{background:#0e192b;}
+.colValue{background:#f9fafe;}
 .nav a{display:block;color:#fff !important;text-decoration:none;padding:10px 10px;border-radius:10px;margin:6px 0;}
 .nav a.active,.nav a:hover{background:#111b31; color:#fff !important}
 .main{padding:18px;}
@@ -512,7 +512,8 @@ hr{border-color:var(--border)!important;}
   cursor: pointer;
 }
 .btnGhost1:hover{
-  background: rgb(22 32 49) !important;
+  color:#f6fafb !important;
+  background: #224bc0 !important;
   border-color: rgba(77,163,255,.35) !important;
 }
 .btnGhost1:active{ transform: translateY(1px); }
