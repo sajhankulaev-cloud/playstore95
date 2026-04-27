@@ -92,7 +92,7 @@ body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantare
 .side{background:#0b1220;color:#e5e7eb;padding:18px;position:sticky;top:0;height:100vh;}
 .side h2{margin:0 0 14px;font-size:16px; color: #fff !important;}
 .selecColor{background: rgba(255, 255, 255, .03) !important;border: 1px solid var(--border) !important;color: #0f172a !important;padding: 6px 4px;border-radius: 10px;}
-.selecColor1{background: rgba(255, 255, 255, .03) !important;border: 1px solid var(--border) !important;color: #fff !important;padding: 6px 4px;border-radius: 10px;}
+.selecColor1{box-shadow: 0 6px 14px rgba(15, 23, 42, .10);font-size: 11px;background: rgb(249 250 254) !important;border: 1px solid #e0e6ef !important;color: #262a36 !important;padding: 6px 8px 6px 8px;border-radius: 10px;}
 .colValue{background:#0e192b;}
 .nav a{display:block;color:#fff !important;text-decoration:none;padding:10px 10px;border-radius:10px;margin:6px 0;}
 .nav a.active,.nav a:hover{background:#111b31; color:#fff !important}
@@ -498,11 +498,13 @@ hr{border-color:var(--border)!important;}
 }
 .btnGhost:active{ transform: translateY(1px); }
 .btnGhost1{
-  background: rgb(22 32 49) !important;
-  color: var(--text) !important;
-  border: 1px solid #1b2a41 !important;
-  padding: 8px 7px;
-  border-radius: 12px;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, .10);
+  font-size: 11px;
+  background: rgb(249 250 254) !important;
+  color: #262a36 !important;
+  border: 1px solid #dee4ee !important;
+  padding: 8px 10px;
+  border-radius: 10px;
   cursor: pointer;
 }
 .btnGhost1:hover{
