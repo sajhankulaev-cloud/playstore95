@@ -406,7 +406,7 @@ a:hover{filter:brightness(1.07);}
 /* cards */
 .gameCard,
 .card{
-  background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02))!important;
+  background:#eef5ff !important;
   border:1px solid #d5dbe7 !important;
   color:#262a36;
   /*box-shadow:0 10px 30px rgba(0,0,0,.25);*/
@@ -1591,9 +1591,10 @@ body[data-tab="discounts"][data-discounts-view="overview"] .discountTabs{
   transform:translateY(0);
 }
 .wishToastTitle{
-  font-weight:800;
-  font-size:14px;
+  font-weight:600;
+  font-size:16px;
   margin-bottom:3px;
+  color:#1452e7;
 }
 .wishToastText{
   color:#475569;
@@ -1642,4 +1643,48 @@ body[data-tab="discounts"][data-discounts-view="overview"] .discountTabs{
   .filters .wishToggle--filters{
     margin-left:auto;
   }
+}
+
+
+/* ===== PS adaptive background + hidden snow ===== */
+html{
+  min-width:360px;
+  background:#eef5ff;
+}
+body{
+  min-width:360px;
+  background:
+    radial-gradient(circle at 78% 8%, rgba(82, 140, 255, .20) 0 16%, transparent 34%),
+    radial-gradient(circle at 14% 34%, rgba(255,255,255,.95) 0 18%, transparent 42%),
+    radial-gradient(circle at 88% 72%, rgba(179, 213, 255, .26) 0 18%, transparent 44%),
+    linear-gradient(135deg, #f9fcff 0%, #edf5ff 42%, #e7f1ff 100%) !important;
+  background-attachment: fixed;
+}
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  opacity:.56;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='360' viewBox='0 0 360 360'%3E%3Cg fill='none' stroke='%232f6bff' stroke-width='5' stroke-linecap='round' stroke-linejoin='round' opacity='.16'%3E%3Ccircle cx='305' cy='72' r='14'/%3E%3Crect x='46' y='264' width='22' height='22' rx='4' transform='rotate(24 57 275)'/%3E%3Cpath d='M220 46l15 29h-30z'/%3E%3Cpath d='M82 88l24 24M106 88l-24 24'/%3E%3Cpath d='M300 244l24 24M324 244l-24 24'/%3E%3Ccircle cx='118' cy='304' r='12'/%3E%3Crect x='286' y='154' width='24' height='24' rx='4' transform='rotate(18 298 166)'/%3E%3Cpath d='M150 178l13 25h-26z'/%3E%3C/g%3E%3C/svg%3E");
+  background-size:clamp(230px, 52vw, 420px) clamp(230px, 52vw, 420px);
+  background-position:center top;
+}
+.snowCanvas{
+  display:none !important;
+  visibility:hidden !important;
+  opacity:0 !important;
+}
+.topbar,
+.container,
+footer{
+  position:relative;
+  z-index:1;
+}
+.topbar{
+  background:rgba(235, 241, 253, .78) !important;
+}
+@media (max-width:480px){
+  body::before{background-size:260px 260px;opacity:.48;}
 }
