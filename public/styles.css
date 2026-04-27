@@ -1596,7 +1596,7 @@ body[data-tab="discounts"][data-discounts-view="overview"] .discountTabs{
   line-height:1.35;
 }
 @media (max-width:560px){
-  .wishBtn{width:44px;height:44px;min-width:44px;}
+  .wishBtn{width:40px;height:40px;min-width:40px;}
   .wishAddCartBtn{min-width:116px;font-size:12px;}
   .btnCartIcon{width:16px;height:16px;flex-basis:16px;}
 }
