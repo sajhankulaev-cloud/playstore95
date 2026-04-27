@@ -258,7 +258,7 @@ function renderSubscriptions(){
   grid.innerHTML = cards.map(c=>`
     <button class="subsCard" type="button" data-sub="${c.id}" aria-label="${escapeHtml(c.alt)}">
       <div class="subsImgWrap">
-        <img src="${c.img}" alt="${escapeHtml(c.alt)}" loading="lazy"/>
+        <img src="${c.img}" alt="${escapeHtml(c.alt)}" loading="lazy" decoding="async"/>
       </div>
       <div class="subsName">${escapeHtml(c.title)}</div>
     </button>
@@ -338,7 +338,7 @@ async function renderSubsEssential(){
     // store cart payload in dataset for click handler
     return `
       <div class="subOfferCard" data-sub-offer="${id}">
-        <div class="subOfferImg"><img src="${it.img}" alt="Essential ${it.months}" loading="lazy" onerror="this.src='/img/psplus.png'"/></div>
+        <div class="subOfferImg"><img src="${it.img}" loading="lazy" decoding="async" alt="Essential ${it.months}" loading="lazy" onerror="this.src='/img/psplus.png'"/></div>
         <div class="subOfferTitle">Essential <span>${escapeHtml(it.label)}</span></div>
         <div class="subOfferPrice">${price ? fmtRub(price) : "—"}</div>
         <button class="buyBtn" type="button" data-cart-game="${id}" data-cart-label="Купить" data-cart-label-in="В корзине">Купить</button>
@@ -444,7 +444,7 @@ async function renderSubsExtra(){
     const price = getSubPrice(prices, region, "psplus", "extra", it.months);
     return `
       <div class="subOfferCard" data-sub-offer="${id}">
-        <div class="subOfferImg"><img src="${it.img}" alt="Extra ${it.months}" loading="lazy" onerror="this.src='/img/extra.png'"/></div>
+        <div class="subOfferImg"><img src="${it.img}" loading="lazy" decoding="async" alt="Extra ${it.months}" loading="lazy" onerror="this.src='/img/extra.png'"/></div>
         <div class="subOfferTitle">Extra <span>${escapeHtml(it.label)}</span></div>
         <div class="subOfferPrice">${price ? fmtRub(price) : "—"}</div>
         <button class="buyBtn" type="button" data-sub-buy="${id}">Купить</button>
@@ -545,7 +545,7 @@ function renderSubsDeluxe(){
         const price = getSubPrice(prices, region, "psplus", "deluxe", it.months);
         return `
           <div class="subOfferCard" data-sub-offer="${id}">
-            <div class="subOfferImg"><img src="${it.img}" alt="Deluxe ${it.months}" loading="lazy" onerror="this.src='/img/deluxe.png'"/></div>
+            <div class="subOfferImg"><img src="${it.img}" loading="lazy" decoding="async" alt="Deluxe ${it.months}" loading="lazy" onerror="this.src='/img/deluxe.png'"/></div>
             <div class="subOfferTitle">Deluxe <span>${escapeHtml(it.label)}</span></div>
             <div class="subOfferPrice">${price ? fmtRub(price) : "—"}</div>
             <button class="buyBtn" type="button" data-sub-buy="${id}">Купить</button>
@@ -656,7 +656,7 @@ async function renderSubsEaPlay(){
     const price = getSubPrice(prices, region, "eaplay", null, it.months);
     return `
       <div class="subOfferCard" data-sub-offer="${id}">
-        <div class="subOfferImg"><img src="${it.img}" alt="EA Play ${it.months}" loading="lazy" onerror="this.src='/img/ea.png'"/></div>
+        <div class="subOfferImg"><img src="${it.img}" loading="lazy" decoding="async" alt="EA Play ${it.months}" loading="lazy" onerror="this.src='/img/ea.png'"/></div>
         <div class="subOfferTitle">EA Play <span>${escapeHtml(it.label)}</span></div>
         <div class="subOfferPrice">${price ? fmtRub(price) : "—"}</div>
         <button class="buyBtn" type="button" data-sub-buy="${id}">Купить</button>
@@ -1006,7 +1006,7 @@ function subBadgeHtml(subVal){
   const PSPLUS_ICON = "/img/psplus1.png";
   const icon = isEa ? EA_ICON : PSPLUS_ICON;
   const text = isEa ? "Доступна в EaPlay" : "Доступна в Extra";
-  return `<div class="cartSub"><img class="subIcon" src="${icon}" alt="" referrerpolicy="no-referrer" onerror="this.style.display='none'"/><span>${text}</span></div>`;
+  return `<div class="cartSub"><img class="subIcon" src="${icon}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.style.display='none'"/><span>${text}</span></div>`;
 }
 
 function renderCart(){
@@ -1042,7 +1042,7 @@ function renderCart(){
     row.innerHTML = `
       <div class="cartItemLeft">
         <div class="cartCover">
-          ${item.cover ? `<img src="${item.cover}" alt="" referrerpolicy="no-referrer" onerror="this.style.display='none'">` : `<div class="noCoverBox">NO COVER</div>`}
+          ${item.cover ? `<img src="${item.cover}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.style.display='none'">` : `<div class="noCoverBox">NO COVER</div>`}
         </div>
         <div class="cartPlatforms">${item.platform || "PS4 / PS5"}</div>
       </div>
@@ -1078,7 +1078,7 @@ function renderWishlist(){
   items.forEach(item=>{
     const row=document.createElement("div"); row.className="cartItem wishItem";
     row.innerHTML=`
-      <div class="cartItemLeft"><div class="cartCover">${item.cover ? `<img src="${item.cover}" alt="" referrerpolicy="no-referrer" onerror="this.style.display='none'">` : `<div class="noCoverBox">NO COVER</div>`}</div><div class="cartPlatforms">${item.platform || "PS4 / PS5"}</div></div>
+      <div class="cartItemLeft"><div class="cartCover">${item.cover ? `<img src="${item.cover}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.style.display='none'">` : `<div class="noCoverBox">NO COVER</div>`}</div><div class="cartPlatforms">${item.platform || "PS4 / PS5"}</div></div>
       <div class="cartItemRight">
         <div class="cartItemTop"><div class="cartItemTitle">${item.name || ""}</div><button class="cartRemove" type="button" aria-label="Удалить">×</button></div>
         <div class="cartEdition">${item.edition || "Standard Edition"}</div>
@@ -1175,7 +1175,7 @@ function buildCard(game, whatsapp, showUntil){
   div.innerHTML=`
     <div class="coverWrap">
       <div class="platformStrip">${game.platform||"PS4 / PS5"}</div>
-      ${game.cover?`<img src="${game.cover}" alt="" referrerpolicy="no-referrer" onerror="this.style.display='none'">`:"<div style='font-weight:900;font-size:12px;opacity:.9'>NO COVER</div>"}
+      ${game.cover?`<img src="${game.cover}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.style.display='none'">`:"<div style='font-weight:900;font-size:12px;opacity:.9'>NO COVER</div>"}
     </div>
     <div class="body-bar1">
       ${preorderBadge}
@@ -1214,7 +1214,7 @@ function openGameModal(game){
   // cover
   if(coverWrap){
     if(game.cover){
-      coverWrap.innerHTML=`<img src="${game.cover}" alt="" referrerpolicy="no-referrer"/>`;
+      coverWrap.innerHTML=`<img src="${game.cover}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"/>`;
     }else{
       coverWrap.innerHTML=`<div class="noCoverBox">NO COVER</div>`;
     }
@@ -1266,7 +1266,7 @@ function openGameModal(game){
       const text = isEa ? "Доступна в EaPlay" : "Доступна в Extra";
 
       subEl.style.display="flex";
-      subEl.innerHTML = `<img class="subIcon" src="${icon}" alt="" referrerpolicy="no-referrer" onerror="this.style.display='none'"/><span>${text}</span>`;
+      subEl.innerHTML = `<img class="subIcon" src="${icon}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.style.display='none'"/><span>${text}</span>`;
     }
   }
 
@@ -1396,7 +1396,7 @@ async function renderDiscountOverview(){
         const label = isoToRuDateLong(iso);
         card.innerHTML = `
           <div class="discountBannerImgWrap">
-            ${img ? `<img src="${img}" alt="Discount banner" loading="lazy"/>` : `<div class="discountBannerPlaceholder"></div>`}
+            ${img ? `<img src="${img}" alt="Discount banner" loading="lazy" decoding="async"/>` : `<div class="discountBannerPlaceholder"></div>`}
           </div>
           <div class="discountBannerCaption">${dateWithIconHtml('До ' + (label || iso))}</div>
         `;
