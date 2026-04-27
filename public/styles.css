@@ -1430,8 +1430,211 @@ body[data-tab="discounts"][data-discounts-view="overview"] .discountTabs{
   line-height: 1.2;
 }
 
-
-
 /* pager improvements */
 .pagerBtn.active{background:rgb(54 134 255) !important;}
 .pagerDots{display:inline-block; padding:0 10px; opacity:0.7;}
+
+/* === Wishlist + exact small icon additions (no layout rewrite) === */
+.wishToggle{
+  color:#1452e7 !important;
+  width:33px;height:33px;
+  border-radius:15px;
+  border:1px solid #d5dbe7;
+  background:#f6fbff;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+}
+.wishToggle svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;opacity:.9;}
+.wishToggle:hover{
+  color:#f6fafb !important;
+  background:#1452e7 !important;
+  border-color:rgba(77,163,255,.45) !important;
+  box-shadow:0 0 0 3px rgba(77,163,255,.12);
+}
+.wishToggle:active{transform:translateY(1px);}
+.wishCount{
+  position:absolute;
+  top:-6px;right:-6px;
+  min-width:18px;height:18px;
+  padding:0 5px;
+  border-radius:999px;
+  background:#ef4444;
+  color:#fff;
+  font-size:11px;
+  font-weight:900;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  border:1px solid #fff;
+}
+.cardActions{
+  display:flex !important;
+  gap:6px !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  margin-top:auto !important;
+}
+.cardActions .buyBtn--card{
+  flex:1 1 auto;
+  min-width:0;
+}
+.btnCartIcon{
+  width:21px;
+  height:21px;
+  flex:0 0 21px;
+  display:block;
+}
+.buyBtn[data-cart-game],
+.cartBuyBtn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+}
+.wishBtn{
+  width:48px;
+  height:48px;
+  min-width:48px;
+  border-radius:999px;
+  border:1px solid #d9e2f4;
+  background:#f8fbff;
+  color:#1452e7;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  box-shadow:0 8px 18px rgba(20,82,231,.10);
+  transition:transform .12s ease, background .12s ease, color .12s ease, border-color .12s ease, box-shadow .12s ease;
+}
+.wishBtn svg{
+  width:24px;
+  height:24px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:2;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.wishBtn:hover{transform:translateY(-1px);box-shadow:0 12px 24px rgba(20,82,231,.16);}
+.wishBtn.isInWishlist{
+  background:#ef4444;
+  border-color:#ef4444;
+  color:#fff;
+  box-shadow:0 10px 22px rgba(239,68,68,.25);
+}
+.wishBtn.isInWishlist svg{fill:currentColor;}
+.wishBtn--modal{
+  width:54px;
+  height:54px;
+  min-width:54px;
+}
+.modalBuyRow{
+  gap:12px;
+}
+.dateIcon{
+  width:22px;
+  height:22px;
+  min-width:22px;
+  color:#2f6bff;
+  vertical-align:middle;
+}
+.discountBannerCaption,
+.cartUntil,
+.modalUntil{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+}
+.cartUntil .dateIcon,
+.modalUntil .dateIcon{
+  width:18px;
+  height:18px;
+  min-width:18px;
+}
+.wishDrawer{max-width:650px;}
+.wishPriceRow{gap:12px;}
+.wishAddCartBtn{
+  width:auto;
+  min-width:132px;
+  padding:10px 12px;
+  border-radius:10px;
+  font-size:13px;
+  letter-spacing:0;
+}
+.wishToast{
+  position:fixed;
+  right:18px;
+  bottom:18px;
+  z-index:10020;
+  max-width:min(360px, calc(100vw - 36px));
+  padding:13px 16px;
+  border-radius:16px;
+  background:rgba(248,251,255,.96);
+  border:1px solid #d9e2f4;
+  color:#102248;
+  box-shadow:0 18px 40px rgba(20,82,231,.18);
+  opacity:0;
+  transform:translateY(12px);
+  pointer-events:none;
+  transition:opacity .25s ease, transform .25s ease;
+}
+.wishToast.show{
+  opacity:1;
+  transform:translateY(0);
+}
+.wishToastTitle{
+  font-weight:800;
+  font-size:14px;
+  margin-bottom:3px;
+}
+.wishToastText{
+  color:#475569;
+  font-size:13px;
+  line-height:1.35;
+}
+@media (max-width:560px){
+  .wishBtn{width:44px;height:44px;min-width:44px;}
+  .wishAddCartBtn{min-width:116px;font-size:12px;}
+  .btnCartIcon{width:16px;height:16px;flex-basis:16px;}
+}
+
+/* === Final wishlist-only adjustments === */
+.filters .wishToggle--filters{
+  margin-left:auto;
+  flex:0 0 auto;
+}
+.wishToggle--filters{
+  width:33px;
+  height:33px;
+  border-radius:15px;
+}
+.wishToggle--filters svg,
+.wishBtn svg{
+  stroke-width:1.9;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.wishToggle--filters svg{
+  width:19px;
+  height:19px;
+}
+.wishBtn svg{
+  width:25px;
+  height:25px;
+}
+.wishBtn.isInWishlist svg{
+  fill:currentColor;
+}
+.wishToastTitle{
+  margin:0;
+  font-size:14px;
+  line-height:1.35;
+}
+@media (max-width:560px){
+  .filters .wishToggle--filters{
+    margin-left:auto;
+  }
+}
