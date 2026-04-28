@@ -1716,16 +1716,17 @@ footer{
 .subsInfoCopy{ flex:1; min-width:0; }
 .subsInfoIconPngSlot{
   border-radius:8px;
-  background: rgba(31,100,242,.08);
-  border:1px dashed rgba(31,100,242,.38);
+  /*background: rgba(31,100,242,.08);
+  border:1px dashed rgba(31,100,242,.38);*/
   position:relative;
+  background: url('/img/psplus-logo.png') center/contain no-repeat;
 }
 .subsInfoIconPngSlot::after{
   content:"";
   width:14px;
   height:14px;
   border-radius:4px;
-  border:2px solid rgba(31,100,242,.65);
+  /*border:2px solid rgba(31,100,242,.65);*/
   display:block;
 }
 /* To add your own PS Plus PNG later: set background-image on .subsInfoIconPngSlot */
