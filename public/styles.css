@@ -1810,13 +1810,13 @@ footer{
       box-shadow: 0 6px 14px rgba(15, 23, 42, .10);
     }
 
-    .filters .selecColor1 {
+    /*.filters .selecColor1 {
       padding-left: 18px;
       padding-right: 42px;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='%23262a36' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
       background-position: right 14px center;
       background-size: 22px 22px;
-    }
+    }*/
   }
 }
