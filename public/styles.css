@@ -1803,7 +1803,7 @@ footer{
       border-radius: 10px;
       font-size: clamp(11px, 1.8vw, 14px);
       line-height: 1;
-      padding: 8px 8px 8px 8px;
+      padding: 10px 8px 10px 8px;
       background: rgb(249 250 254) !important;
       border: 1px solid #e0e6ef !important;
       color: #262a36 !important;
