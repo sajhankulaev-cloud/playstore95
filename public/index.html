@@ -86,6 +86,43 @@ function escapeHtml(s){
   ));
 }
 
+
+
+function subsIcon(name){
+  const icons={
+    base:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="6" width="14" height="13" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 6.2V5.4A3.4 3.4 0 0 1 11.4 2h1.2A3.4 3.4 0 0 1 16 5.4v.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+    gift:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="9" width="16" height="11" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4 13h16M12 9v11M8.2 8.8C6.1 7.7 6.6 4.4 9 4.4c1.7 0 2.4 1.6 3 4.4.6-2.8 1.3-4.4 3-4.4 2.4 0 2.9 3.3.8 4.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    globe:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.8 12h16.4M12 3.5c2.2 2.4 3.3 5.2 3.3 8.5S14.2 18.1 12 20.5c-2.2-2.4-3.3-5.2-3.3-8.5S9.8 5.9 12 3.5Z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',
+    share:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="5" width="11" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 16h8.5a2.5 2.5 0 0 0 0-5H16M16 8l3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    cloud:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7.5 18.5h9.4a4.1 4.1 0 0 0 .4-8.2 6 6 0 0 0-11.1 1.5A3.4 3.4 0 0 0 7.5 18.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 16V9.5M9.5 12l2.5-2.5 2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    tag:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12.4 12.4 4H20v7.6L11.6 20 4 12.4Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="16.3" cy="7.8" r="1.4" fill="currentColor"/></svg>',
+    puzzle:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 4h4v3a2 2 0 1 0 4 0V4h3v6h-3a2 2 0 1 0 0 4h3v6h-6v-3a2 2 0 1 0-4 0v3H4v-6h3a2 2 0 1 0 0-4H4V4h5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
+    bulb:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 14.5a6 6 0 1 1 8 0c-.9.8-1.4 1.8-1.5 3h-5c-.1-1.2-.6-2.2-1.5-3Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9.5 20h5M10 22h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+    gamepad:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 9h10a4 4 0 0 1 3.7 2.5l1 2.6a3.2 3.2 0 0 1-5.4 3.3L14.7 16H9.3l-1.6 1.4a3.2 3.2 0 0 1-5.4-3.3l1-2.6A4 4 0 0 1 7 9Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 12v4M6 14h4M16.5 13.5h.1M18.5 15.5h.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+    layers:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3 3.5 7.5 12 12l8.5-4.5L12 3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M5 12.2 12 16l7-3.8M5 16.2 12 20l7-3.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    grid:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="4" width="6" height="6" rx="1.7" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="4" width="6" height="6" rx="1.7" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="4" y="14" width="6" height="6" rx="1.7" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="14" width="6" height="6" rx="1.7" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>',
+    ubisoft:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 20.5a8.5 8.5 0 1 0-7.7-4.9c1.7 3.7 6.3 4.3 9.4 2.4 3.4-2 3.5-6.8.5-8.5-2.3-1.3-5.3-.4-6.1 2-.5 1.7.6 3.3 2.2 3.5 1.4.2 2.8-.6 3-2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+    refresh:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18.5 8.5A7 7 0 0 0 6 7.8L4.5 10M5.5 15.5A7 7 0 0 0 18 16.2l1.5-2.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.5 5.5V10H9M19.5 18.5V14H15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    download:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4v10M8 10l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 18h14v2H5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
+    crown:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 8l4 4 4-7 4 7 4-4-1.5 10h-13L4 8Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M7 20h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+    demo:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 9h10a4 4 0 0 1 3.7 2.5l.9 2.4a3.1 3.1 0 0 1-5.2 3.2L15 16H9l-1.4 1.1a3.1 3.1 0 0 1-5.2-3.2l.9-2.4A4 4 0 0 1 7 9Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M7 14h4M9 12v4M16.5 13.5h.1M18.5 15.5h.1M19 6v3M17.5 7.5h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+    stream:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7.5 17.5H17a3.7 3.7 0 0 0 .5-7.4A5.5 5.5 0 0 0 7 11.4a3.1 3.1 0 0 0 .5 6.1Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16.5 13v5M14 15.5h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+    clockgame:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5.5 10.5h7a3 3 0 0 1 2.8 1.9l.7 1.9a2.4 2.4 0 0 1-4 2.5l-1-1H7l-1 1a2.4 2.4 0 0 1-4-2.5l.7-1.9a3 3 0 0 1 2.8-1.9Z" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="17" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M17 6v2.2l1.6 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+    library:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="5" width="4" height="14" rx="1" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="10" y="5" width="4" height="14" rx="1" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16 6.5 20 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+    trial:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 8h10v4a5 5 0 0 1-10 0V8Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 4h6M10 8V4M14 8V4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M10 13h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'
+  };
+  return icons[name] || icons.base;
+}
+
+function subsInfoItem(icon, content){
+  const isPng = icon === 'psplus';
+  return `<p class="subsInfoItem"><span class="subsInfoIcon${isPng ? ' subsInfoIconPngSlot' : ''}" aria-hidden="true">${isPng ? '' : subsIcon(icon)}</span><span class="subsInfoCopy">${content}</span></p>`;
+}
+
+function subsInfoList(items){
+  return items.map(([icon, content])=>subsInfoItem(icon, content)).join('');
+}
+
 function setSortOptionsForTab(tab){
   const sel=document.getElementById("sort");
   if(!sel) return;
@@ -361,16 +398,18 @@ async function renderSubsEssential(){
       <div class="subsInfoBox">
         <div class="subsInfoTitle">Подробнее о PlayStation Plus</div>
         <div class="subsInfoText">
-			<p>- <b>PlayStation Plus Essential</b> — базовый уровень подписки PlayStation, который обеспечивает доступ к ключевым функциям PlayStation. </p>
-			<p>- <b>Ежемесячные игры.</b> Несколько проектов для PS4 и PS5, которые добавляются в библиотеку при активной подписке. </p>
-			<p>- <b>Доступ к онлайн-мультиплееру.</b> Можно играть с друзьями и другими игроками по всему миру. </p>
-			<p>- <b>Share Play.</b> Функция позволяет передать управление аккаунтом другому человеку, что удобно для совместных игр или прохождения сложных уровней. </p>
-			<p>- <b>Облачное хранилище.</b> Объём — до 100 ГБ, можно сохранять игровые данные и получать к ним доступ с любого устройства, подключённого к PlayStation Network.</p> 
-			<p>- <b>Эксклюзивные скидки.</b> Специальные предложения и акции в PlayStation Store, например, до 75% скидки на избранные игры. </p>
-			<p>- <b>Дополнительный контент.</b> Бонусы и внутриигровые предметы для отдельных проектов. </p>
-			<p>- <b>Справка по игре (для PS5).</b> Подсказки и советы прямо во время прохождения. </p>
-			<p>- <b>Коллекция PlayStation Plus (для PS5).</b> Доступ к подборке популярных игр прошлого поколения. </p>
-			<p>- <b>PS Plus Essential</b> подходит для тех, кто активно играет в многопользовательские игры, получает удовольствие от бесплатных игр ежемесячно и ищет базовые функции PlayStation по доступной цене.</p>
+${subsInfoList([
+        ['base', '<b>PlayStation Plus Essential</b> — базовый уровень подписки PlayStation, который обеспечивает доступ к ключевым функциям PlayStation.'],
+        ['gift', '<b>Ежемесячные игры.</b> Несколько проектов для PS4 и PS5, которые добавляются в библиотеку при активной подписке.'],
+        ['globe', '<b>Доступ к онлайн-мультиплееру.</b> Можно играть с друзьями и другими игроками по всему миру.'],
+        ['share', '<b>Share Play.</b> Функция позволяет передать управление аккаунтом другому человеку, что удобно для совместных игр или прохождения сложных уровней.'],
+        ['cloud', '<b>Облачное хранилище.</b> Объём — до 100 ГБ, можно сохранять игровые данные и получать к ним доступ с любого устройства, подключённого к PlayStation Network.'],
+        ['tag', '<b>Эксклюзивные скидки.</b> Специальные предложения и акции в PlayStation Store, например, до 75% скидки на избранные игры.'],
+        ['puzzle', '<b>Дополнительный контент.</b> Бонусы и внутриигровые предметы для отдельных проектов.'],
+        ['bulb', '<b>Справка по игре (для PS5).</b> Подсказки и советы прямо во время прохождения.'],
+        ['gamepad', '<b>Коллекция PlayStation Plus (для PS5).</b> Доступ к подборке популярных игр прошлого поколения.'],
+        ['psplus', '<b>PS Plus Essential</b> подходит для тех, кто активно играет в многопользовательские игры, получает удовольствие от бесплатных игр ежемесячно и ищет базовые функции PlayStation по доступной цене.']
+      ])}
 		</div>
       </div>
     </div>
@@ -477,11 +516,13 @@ async function renderSubsExtra(){
 	   <div class="subsInfoBox">
         <div class="subsInfoTitle">Подробнее о PlayStation Plus Extra</div>
         <div class="subsInfoText">
-			<p>- <b>PlayStation Plus Extra</b> средний уровень подписки PlayStation Plus, который включает все преимущества базовой версии <b>PS Plus Essential</b> и добавляет расширенные возможности. </p>
-			<p>- <b>Доступ к каталогу игр</b> для PS4 и PS5. В него входят хиты от PlayStation Studios, инди-проекты и блокбастеры </p>
-			<p>- <b>Подписка Ubisoft+ Classics</b>— отдельная коллекция игр от Ubisoft, включающая серии Assassin's Creed, Far Cry, Watch Dogs.</p>
-			<p>- <b>Ежемесячные обновления каталога.</b>— новые игры добавляются каждый месяц.</p>
-			<p>- <b>Игры доступны без ограничений<b>— можно играть сколько угодно, пока активна подписка.</p> 
+${subsInfoList([
+        ['layers', '<b>PlayStation Plus Extra</b> — средний уровень подписки PlayStation Plus, который включает все преимущества базовой версии <b>PS Plus Essential</b> и добавляет расширенные возможности.'],
+        ['grid', '<b>Доступ к каталогу игр</b> для PS4 и PS5. В него входят хиты от PlayStation Studios, инди-проекты и блокбастеры.'],
+        ['ubisoft', '<b>Подписка Ubisoft+ Classics</b> — отдельная коллекция игр от Ubisoft, включающая серии Assassin\'s Creed, Far Cry, Watch Dogs.'],
+        ['refresh', '<b>Ежемесячные обновления каталога.</b> Новые игры добавляются каждый месяц.'],
+        ['download', '<b>Игры доступны без ограничений</b> — можно играть сколько угодно, пока активна подписка.']
+      ])}
 		</div>
       </div>
       <div class="subsGamesBlock">
@@ -578,9 +619,11 @@ function renderSubsDeluxe(){
           <div class="subsInfoBox">
             <div class="subsInfoTitle">Подробнее о PlayStation Plus Deluxe</div>
             <div class="subsInfoText">
-				<p>- <b>PlayStation Plus Deluxe</b> максимальный уровень подписки PlayStation Plus, который включает все преимущества <b>PS Plus Essential</b> и <b>PS Plus Extra</b>.</p>
-				<p>- <b>Каталог классических игр</b> с PlayStation 1, PlayStation 2 и PlayStation Portable. Многие из этих игр были улучшены для работы на современных консолях, а некоторые даже получили поддержку трофеев.</p>
-				<p>- <b>Демо-версии игр (только для PS5) </b>— можно тестировать новые игры перед покупкой.</p>
+${subsInfoList([
+          ['crown', '<b>PlayStation Plus Deluxe</b> — максимальный уровень подписки PlayStation Plus, который включает все преимущества <b>PS Plus Essential</b> и <b>PS Plus Extra</b>.'],
+          ['library', '<b>Каталог классических игр</b> с PlayStation 1, PlayStation 2 и PlayStation Portable. Многие из этих игр были улучшены для работы на современных консолях, а некоторые даже получили поддержку трофеев.'],
+          ['demo', '<b>Демо-версии игр (только для PS5)</b> — можно тестировать новые игры перед покупкой.']
+        ])}
 			</div>
           </div>
           <div class="subsGamesBlock">
@@ -688,9 +731,11 @@ async function renderSubsEaPlay(){
       <div class="subsInfoBox">
         <div class="subsInfoTitle">Подробнее о EA Play</div>
         <div class="subsInfoText">
-			<p>- <b>Доступ к библиотеке игр.</b> В неё входят популярные серии, такие как FIFA, UFC, Madden NFL, The Sims, Battlefield, Need for Speed и многие другие.</p>
-			<p>- <b>Ранний доступ к новым играм.</b> Можно испытать новые игры EA до их официального релиза с пробными версиями, доступными до 10 часов.</p>
-			<p>- <b>Скидки на покупки.</b> Можно получать скидки до 10% на цифровые покупки игр EA</p>
+${subsInfoList([
+        ['library', '<b>Доступ к библиотеке игр.</b> В неё входят популярные серии, такие как FIFA, UFC, Madden NFL, The Sims, Battlefield, Need for Speed и многие другие.'],
+        ['trial', '<b>Ранний доступ к новым играм.</b> Можно испытать новые игры EA до их официального релиза с пробными версиями, доступными до 10 часов.'],
+        ['tag', '<b>Скидки на покупки.</b> Можно получать скидки до 10% на цифровые покупки игр EA.']
+      ])}
 		</div>
       </div>
       <div class="subsGamesBlock">
