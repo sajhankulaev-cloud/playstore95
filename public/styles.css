@@ -1790,23 +1790,21 @@ footer{
     }
 
     .filters .colorA {
-      font-size: 18px;
-      line-height: 48px;
-      padding: 0;
+      font-size: clamp(12px, 1.8vw, 18px);
+      padding: 0 0 3px 0;
     }
 
     .filters .selecColor1 {
       -webkit-appearance: none;
       appearance: none;
-      height: 48px;
-      min-height: 48px;
+      height: auto;
+      min-height: 0;
       box-sizing: border-box;
-      border-radius: 18px;
-      font-size: 20px;
+      border-radius: 10px;
+      font-size: clamp(11px, 1.8vw, 14px);
       line-height: 1;
-      padding-top: 0;
-      padding-bottom: 0;
-      background-color: rgb(249 250 254) !important;
+      padding: 6px 8px 6px 8px;
+      background: rgb(249 250 254) !important;
       border: 1px solid #e0e6ef !important;
       color: #262a36 !important;
       box-shadow: 0 6px 14px rgba(15, 23, 42, .10);
