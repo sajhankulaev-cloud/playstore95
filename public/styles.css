@@ -1690,6 +1690,58 @@ footer{
   body::before{background-size:260px 260px;opacity:.48;}
 }
 
+/* Subscription info icons */
+.subsInfoText .subsInfoItem{
+  display:flex;
+  align-items:flex-start;
+  gap:12px;
+  margin: 0 0 14px;
+}
+.subsInfoText .subsInfoItem:last-child{ margin-bottom:0; }
+.subsInfoIcon{
+  width:28px;
+  height:28px;
+  min-width:28px;
+  color:#1f64f2;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  margin-top:1px;
+}
+.subsInfoIcon svg{
+  width:100%;
+  height:100%;
+  display:block;
+}
+.subsInfoCopy{ flex:1; min-width:0; }
+.subsInfoIconPngSlot{
+  border-radius:8px;
+  background: rgba(31,100,242,.08);
+  border:1px dashed rgba(31,100,242,.38);
+  position:relative;
+}
+.subsInfoIconPngSlot::after{
+  content:"";
+  width:14px;
+  height:14px;
+  border-radius:4px;
+  border:2px solid rgba(31,100,242,.65);
+  display:block;
+}
+/* To add your own PS Plus PNG later: set background-image on .subsInfoIconPngSlot */
+.subsInfoIconPngSlot.has-img,
+.subsInfoIconPngSlot[style*="background-image"]{
+  border:0;
+  background-size:contain;
+  background-repeat:no-repeat;
+  background-position:center;
+}
+.subsInfoIconPngSlot.has-img::after,
+.subsInfoIconPngSlot[style*="background-image"]::after{ display:none; }
+@media (max-width:520px){
+  .subsInfoText .subsInfoItem{ gap:10px; margin-bottom:12px; }
+  .subsInfoIcon{ width:24px; height:24px; min-width:24px; }
+}
 
 /* Logo PNG placeholder before PLAYSTORE 95 */
 .brand{
