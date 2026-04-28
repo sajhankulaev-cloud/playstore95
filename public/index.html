@@ -1497,7 +1497,7 @@ async function renderDiscountOverview(){
         const label = isoToRuDateLong(iso);
         card.innerHTML = `
           <div class="discountBannerImgWrap">
-            ${img ? `<img src="${img}" alt="Discount banner" decoding="async"/>` : `<div class="discountBannerPlaceholder"></div>`}
+            ${img ? `<img src="${img}" alt="Sale Image" decoding="async"/>` : `<div class="discountBannerPlaceholder"></div>`}
           </div>
           <div class="discountBannerCaption">${dateWithIconHtml('До ' + (label || iso))}</div>
         `;
