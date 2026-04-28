@@ -1689,3 +1689,23 @@ footer{
 @media (max-width:480px){
   body::before{background-size:260px 260px;opacity:.48;}
 }
+
+
+/* Logo PNG placeholder before PLAYSTORE 95 */
+.brand{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+}
+.brandIcon{
+  display:inline-block;
+  flex:0 0 auto;
+  width:30px;
+  height:30px;
+  background:url('/img/playstation_logo.png') center/contain no-repeat;
+}
+.brandText{display:inline-block;}
+@media (max-width:480px){
+  .brand{gap:8px;}
+  .brandIcon{width:26px;height:26px;}
+}
