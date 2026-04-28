@@ -1184,7 +1184,7 @@ function pickTitleFromChihiro(obj){
 
 
 
-app.use(express.json({ limit: "5mb" }));
+app.use(express.json({ limit: "50mb" }));
 
 // visitors counter (admin-only display)
 app.use((req, _res, next)=>{ recordVisit(req); next(); });
