@@ -2289,17 +2289,23 @@ app.put("/api/admin/subscriptions-prices", requireAdmin, (req, res) => {
     const r = (p[region] && typeof p[region] === "object") ? p[region] : {};
     const ps = (r.psplus && typeof r.psplus === "object") ? r.psplus : {};
     const ea = (r.eaplay && typeof r.eaplay === "object") ? r.eaplay : {};
+    const cleanNum = (v) => {
+      const n = Number(v);
+      return Number.isFinite(n) ? Math.max(0, n) : 0;
+    };
     const normTier = (t) => ({
-      "1": Math.max(0, Number(t && t["1"])),
-      "3": Math.max(0, Number(t && t["3"])),
-      "12": Math.max(0, Number(t && t["12"]))
+      "1": cleanNum(t && t["1"]),
+      "3": cleanNum(t && t["3"]),
+      "12": cleanNum(t && t["12"]),
+      discount12: cleanNum(t && t.discount12)
     });
     const essential = normTier(ps.essential);
     const extra = normTier(ps.extra);
     const deluxe = normTier(ps.deluxe);
     const eaplay = {
-      "1": Math.max(0, Number(ea && ea["1"])),
-      "12": Math.max(0, Number(ea && ea["12"]))
+      "1": cleanNum(ea && ea["1"]),
+      "12": cleanNum(ea && ea["12"]),
+      discount12: cleanNum(ea && ea.discount12)
     };
     return {
       psplus: { essential, extra, deluxe },
