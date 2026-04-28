@@ -1790,12 +1790,13 @@ footer{
     }
 
     .filters .colorA {
-          font-size: clamp(12px, 1.8vw, 18px);
-          padding: 0 0 3px 0;
+      font-size: 18px;
+      line-height: 48px;
+      padding: 0;
     }
 
     .filters .selecColor1,
-    .filters {
+    .filters .btnGhost1 {
       -webkit-appearance: none;
       appearance: none;
       height: 48px;
@@ -1820,6 +1821,12 @@ footer{
       background-position: right 14px center;
       background-size: 22px 22px;
     }
+
+    .filters .btnGhost1 {
+      padding-left: 22px;
+      padding-right: 22px;
+    }
+
     .filters .wishToggle--filters {
       -webkit-appearance: none;
       appearance: none;
