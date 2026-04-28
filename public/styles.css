@@ -1795,8 +1795,7 @@ footer{
       padding: 0;
     }
 
-    .filters .selecColor1,
-    .filters .btnGhost1 {
+    .filters .selecColor1 {
       -webkit-appearance: none;
       appearance: none;
       height: 48px;
