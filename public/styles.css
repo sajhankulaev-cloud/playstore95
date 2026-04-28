@@ -1820,21 +1820,5 @@ footer{
       background-position: right 14px center;
       background-size: 22px 22px;
     }
-
-    .filters .wishToggle--filters {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 48px;
-      height: 48px;
-      min-width: 48px;
-      min-height: 48px;
-      border-radius: 18px;
-      box-sizing: border-box;
-    }
-
-    .filters .wishToggle--filters svg {
-      width: 28px;
-      height: 28px;
-    }
   }
 }
