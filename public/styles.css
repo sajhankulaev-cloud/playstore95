@@ -1762,3 +1762,21 @@ footer{
   .brand{gap:8px;}
   .brandIcon{width:26px;height:26px;}
 }
+
+.subOfferPrice{
+  display:flex;
+  align-items:baseline;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.subOfferPriceOld{
+  color:#64748b;
+  text-decoration:line-through;
+  font-size:16px;
+  font-weight:700;
+}
+.subOfferPriceNew{
+  color:#111827;
+  font-size:20px;
+  font-weight:950;
+}
