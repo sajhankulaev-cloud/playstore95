@@ -3,8 +3,13 @@ const https = require("https");
 const path = require("path");
 const express = require("express");
 const crypto = require("crypto");
+let sharp = null;
+try{ sharp = require("sharp"); }catch(_e){ sharp = null; }
 
 const app = express();
+
+const IMAGE_CACHE_DIR = path.join(__dirname, "data", "image_cache");
+try{ fs.mkdirSync(IMAGE_CACHE_DIR, { recursive:true }); }catch(_e){}
 
 // --- PlayStation Browse rank ("All games" page order) helpers ---
 // We assign popRank to match the ordering on https://store.playstation.com/<locale>/pages/browse
@@ -1188,6 +1193,100 @@ app.use(express.json({ limit: "50mb" }));
 
 // visitors counter (admin-only display)
 app.use((req, _res, next)=>{ recordVisit(req); next(); });
+
+function isAllowedRemoteImageUrl(raw){
+  try{
+    const u = new URL(String(raw || ""));
+    if(u.protocol !== "https:") return false;
+    const host = u.hostname.toLowerCase();
+    return host.endsWith("playstation.com") || host.endsWith("playstation.net") || host.includes("playstation");
+  }catch(_e){
+    return false;
+  }
+}
+
+async function fetchRemoteImageBuffer(url, redirectsLeft=3){
+  return new Promise((resolve, reject)=>{
+    const req = https.get(url, {
+      headers:{
+        "User-Agent":"Mozilla/5.0 (compatible; PlayStore95ImageOptimizer/1.0)",
+        "Accept":"image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+      },
+      timeout:15000
+    }, (res)=>{
+      const status = Number(res.statusCode || 0);
+      if(status >= 300 && status < 400 && res.headers.location && redirectsLeft > 0){
+        res.resume();
+        try{
+          const next = new URL(res.headers.location, url).href;
+          return resolve(fetchRemoteImageBuffer(next, redirectsLeft - 1));
+        }catch(e){ return reject(e); }
+      }
+      if(status < 200 || status >= 300){
+        res.resume();
+        return reject(new Error("remote_status_" + status));
+      }
+      const contentType = String(res.headers["content-type"] || "").toLowerCase();
+      if(contentType && !contentType.startsWith("image/")){
+        res.resume();
+        return reject(new Error("not_image"));
+      }
+      const chunks = [];
+      let total = 0;
+      res.on("data", (chunk)=>{
+        total += chunk.length;
+        if(total > 12 * 1024 * 1024){
+          req.destroy(new Error("image_too_large"));
+          return;
+        }
+        chunks.push(chunk);
+      });
+      res.on("end", ()=>resolve(Buffer.concat(chunks)));
+    });
+    req.on("timeout", ()=>req.destroy(new Error("remote_timeout")));
+    req.on("error", reject);
+  });
+}
+
+app.get("/api/optimized-image", async (req, res)=>{
+  try{
+    const remoteUrl = String(req.query.u || "");
+    const width = Math.max(80, Math.min(700, parseInt(String(req.query.w || "322"), 10) || 322));
+    if(!isAllowedRemoteImageUrl(remoteUrl)) return res.status(400).send("bad image url");
+
+    const accept = String(req.headers.accept || "").toLowerCase();
+    const canWebp = accept.includes("image/webp");
+    const ext = (sharp && canWebp) ? "webp" : "bin";
+    const key = crypto.createHash("sha1").update(remoteUrl + "|" + width + "|" + ext).digest("hex");
+    const filePath = path.join(IMAGE_CACHE_DIR, key + "." + ext);
+
+    if(fs.existsSync(filePath)){
+      res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+      res.setHeader("Content-Type", ext === "webp" ? "image/webp" : "image/jpeg");
+      return fs.createReadStream(filePath).pipe(res);
+    }
+
+    const original = await fetchRemoteImageBuffer(remoteUrl);
+    let output = original;
+    let contentType = "image/jpeg";
+
+    if(sharp && canWebp){
+      output = await sharp(original, { failOn:"none" })
+        .resize({ width, height:width, fit:"cover", withoutEnlargement:true })
+        .webp({ quality:82, effort:4 })
+        .toBuffer();
+      contentType = "image/webp";
+    }
+
+    try{ fs.writeFileSync(filePath, output); }catch(_e){}
+    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+    res.setHeader("Content-Type", contentType);
+    return res.send(output);
+  }catch(e){
+    console.error("optimized image error:", e && e.message ? e.message : e);
+    return res.status(502).send("image optimize failed");
+  }
+});
 
 const DATA_DIR = path.join(__dirname, "data");
 const STORE_PATH = path.join(DATA_DIR, "store.json");
