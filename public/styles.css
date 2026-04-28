@@ -1788,24 +1788,17 @@ footer{
       gap: 8px;
       align-items: center;
     }
-
-    .filters .colorA {
-      font-size: 18px;
-      line-height: 48px;
-      padding: 0;
-    }
-
     .filters .selecColor1,
-    .filters .btnGhost1 {
+    .filters {
       -webkit-appearance: none;
       appearance: none;
-      height: 48px;
-      min-height: 48px;
+      height: auto;
+      min-height: 0;
       box-sizing: border-box;
-      border-radius: 18px;
-      font-size: 20px;
+      border-radius: 10px;
+      font-size: clamp(11px, 1.8vw, 14px);
       line-height: 1;
-      padding-top: 0;
+      padding: 6px 8px;
       padding-bottom: 0;
       background-color: rgb(249 250 254) !important;
       border: 1px solid #e0e6ef !important;
@@ -1820,27 +1813,6 @@ footer{
       background-repeat: no-repeat;
       background-position: right 14px center;
       background-size: 22px 22px;
-    }
-
-    .filters .btnGhost1 {
-      padding-left: 22px;
-      padding-right: 22px;
-    }
-
-    .filters .wishToggle--filters {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 48px;
-      height: 48px;
-      min-width: 48px;
-      min-height: 48px;
-      border-radius: 18px;
-      box-sizing: border-box;
-    }
-
-    .filters .wishToggle--filters svg {
-      width: 28px;
-      height: 28px;
     }
   }
 }
