@@ -338,6 +338,33 @@ function getSubPrice(prices, region, kind, tier, months){
   return 0;
 }
 
+function getSubDiscountPrice(prices, region, kind, tier, months){
+  if(Number(months) !== 12) return 0;
+  const R = String(region||"TR").toUpperCase();
+  if(kind==="psplus"){
+    return Number(prices?.[R]?.psplus?.[tier]?.discount12) || 0;
+  }
+  if(kind==="eaplay"){
+    return Number(prices?.[R]?.eaplay?.discount12) || 0;
+  }
+  return 0;
+}
+
+function getSubFinalPrice(prices, region, kind, tier, months){
+  const base = getSubPrice(prices, region, kind, tier, months);
+  const discount = getSubDiscountPrice(prices, region, kind, tier, months);
+  return discount > 0 ? discount : base;
+}
+
+function renderSubOfferPrice(prices, region, kind, tier, months){
+  const base = getSubPrice(prices, region, kind, tier, months);
+  const discount = getSubDiscountPrice(prices, region, kind, tier, months);
+  if(discount > 0 && base > 0){
+    return `<span class="subOfferPriceOld">${fmtRub(base)}</span><span class="subOfferPriceNew">${fmtRub(discount)}</span>`;
+  }
+  return base ? fmtRub(base) : "—";
+}
+
 // Fetch games by subscription tag (e.g. "psplus_extra")
 async function renderSubsEssential(){
   const grid=document.getElementById("grid");
@@ -380,7 +407,7 @@ async function renderSubsEssential(){
       <div class="subOfferCard" data-sub-offer="${id}">
         <div class="subOfferImg"><img src="${it.img}" loading="lazy" decoding="async" alt="Essential ${it.months}" loading="lazy" onerror="this.src='/img/psplus.png'"/></div>
         <div class="subOfferTitle">Essential <span>${escapeHtml(it.label)}</span></div>
-        <div class="subOfferPrice">${price ? fmtRub(price) : "—"}</div>
+        <div class="subOfferPrice">${renderSubOfferPrice(prices, region, "psplus", "essential", it.months)}</div>
         <button class="buyBtn" type="button" data-cart-game="${id}" data-cart-label="Купить" data-cart-label-in="В корзине">Купить</button>
       </div>
     `;
@@ -423,7 +450,7 @@ ${subsInfoList([
     const months = Number(String(id||"").split("_").pop()) || 1;
     const label = months===1 ? "1 месяц" : (months===3 ? "3 месяца" : "12 месяцев");
     const img = months===1 ? "/img/essential_1.png" : (months===3 ? "/img/essential_3.png" : "/img/essential_12.png");
-    const price = getSubPrice(prices, region, "psplus", "essential", months);
+    const price = getSubFinalPrice(prices, region, "psplus", "essential", months);
     const btn = card.querySelector("button[data-cart-game]");
     if(btn){
       btn.addEventListener("click", ()=>{
@@ -488,7 +515,7 @@ async function renderSubsExtra(){
       <div class="subOfferCard" data-sub-offer="${id}">
         <div class="subOfferImg"><img src="${it.img}" loading="lazy" decoding="async" alt="Extra ${it.months}" loading="lazy" onerror="this.src='/img/extra.png'"/></div>
         <div class="subOfferTitle">Extra <span>${escapeHtml(it.label)}</span></div>
-        <div class="subOfferPrice">${price ? fmtRub(price) : "—"}</div>
+        <div class="subOfferPrice">${renderSubOfferPrice(prices, region, "psplus", "extra", it.months)}</div>
         <button class="buyBtn" type="button" data-sub-buy="${id}">Купить</button>
       </div>
     `;
@@ -538,7 +565,7 @@ ${subsInfoList([
   grid.querySelectorAll("button[data-sub-buy]").forEach(btn=>{
     const id = btn.getAttribute("data-sub-buy") || "";
     const months = Number(String(id).split("_").pop()) || 1;
-    const price = getSubPrice(prices, region, "psplus", "extra", months);
+    const price = getSubFinalPrice(prices, region, "psplus", "extra", months);
     btn.addEventListener("click", ()=>{
       buySubscriptionWhatsApp({
         name: "PlayStation Plus Extra",
@@ -591,7 +618,7 @@ function renderSubsDeluxe(){
           <div class="subOfferCard" data-sub-offer="${id}">
             <div class="subOfferImg"><img src="${it.img}" loading="lazy" decoding="async" alt="Deluxe ${it.months}" loading="lazy" onerror="this.src='/img/deluxe.png'"/></div>
             <div class="subOfferTitle">Deluxe <span>${escapeHtml(it.label)}</span></div>
-            <div class="subOfferPrice">${price ? fmtRub(price) : "—"}</div>
+            <div class="subOfferPrice">${renderSubOfferPrice(prices, region, "psplus", "deluxe", it.months)}</div>
             <button class="buyBtn" type="button" data-sub-buy="${id}">Купить</button>
           </div>
         `;
@@ -639,7 +666,7 @@ ${subsInfoList([
       grid.querySelectorAll("button[data-sub-buy]").forEach(btn=>{
         const id = btn.getAttribute("data-sub-buy") || "";
         const months = Number(String(id).split("_").pop()) || 1;
-        const price = getSubPrice(prices, region, "psplus", "deluxe", months);
+        const price = getSubFinalPrice(prices, region, "psplus", "deluxe", months);
         btn.addEventListener("click", ()=>{
           const wa = state.whatsapp || "https://wa.me/+79659556300";
           const msg = `Подписка PlayStation Plus Deluxe на ${months} мес. Регион: ${region}. Цена: ${price ? fmtRub(price) : "—"}.`;
@@ -704,7 +731,7 @@ async function renderSubsEaPlay(){
       <div class="subOfferCard" data-sub-offer="${id}">
         <div class="subOfferImg"><img src="${it.img}" loading="lazy" decoding="async" alt="EA Play ${it.months}" loading="lazy" onerror="this.src='/img/ea.png'"/></div>
         <div class="subOfferTitle">EA Play <span>${escapeHtml(it.label)}</span></div>
-        <div class="subOfferPrice">${price ? fmtRub(price) : "—"}</div>
+        <div class="subOfferPrice">${renderSubOfferPrice(prices, region, "eaplay", null, it.months)}</div>
         <button class="buyBtn" type="button" data-sub-buy="${id}">Купить</button>
       </div>
     `;
@@ -750,7 +777,7 @@ ${subsInfoList([
   grid.querySelectorAll("button[data-sub-buy]").forEach(btn=>{
     const id = btn.getAttribute("data-sub-buy") || "";
     const months = Number(String(id).split("_").pop()) || 1;
-    const price = getSubPrice(prices, region, "eaplay", null, months);
+    const price = getSubFinalPrice(prices, region, "eaplay", null, months);
     btn.addEventListener("click", ()=>{
       buySubscriptionWhatsApp({
         name: "EA Play",
