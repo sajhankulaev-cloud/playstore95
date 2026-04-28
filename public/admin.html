@@ -524,6 +524,7 @@ button{ color:#0f172a !important; }
           <th>1 мес</th>
           <th>3 мес</th>
           <th>12 мес</th>
+          <th>Скидка 12 мес</th>
         </tr>
       </thead>
       <tbody id="subsPricesBody"></tbody>
@@ -708,6 +709,7 @@ function subsRow(region, label, key){
     <td><input class="input" type="number" step="1" min="0" data-m="1" style="width:110px"/></td>
     <td>${isEA ? '<span class="small" style="opacity:.7;">—</span>' : '<input class="input" type="number" step="1" min="0" data-m="3" style="width:110px"/>'}</td>
     <td><input class="input" type="number" step="1" min="0" data-m="12" style="width:110px"/></td>
+    <td><input class="input" type="number" step="1" min="0" data-discount-m="12" placeholder="0" style="width:120px"/></td>
   `;
   return tr;
 }
@@ -734,6 +736,11 @@ function setSubsInput(tr, m, v){
   if(!el) return;
   el.value = String(Number(v||0));
 }
+function setSubsDiscountInput(tr, m, v){
+  const el = tr.querySelector(`[data-discount-m="${m}"]`);
+  if(!el) return;
+  el.value = Number(v||0) > 0 ? String(Number(v||0)) : "";
+}
 
 async function loadSubsPrices(){
   buildSubsPricesTable();
@@ -752,10 +759,12 @@ async function loadSubsPrices(){
       setSubsInput(tr, 1, t["1"]);
       setSubsInput(tr, 3, t["3"]);
       setSubsInput(tr, 12, t["12"]);
+      setSubsDiscountInput(tr, 12, t.discount12);
     }else{
       const ea = reg.eaplay || {};
       setSubsInput(tr, 1, ea["1"]);
       setSubsInput(tr, 12, ea["12"]);
+      setSubsDiscountInput(tr, 12, ea.discount12);
     }
   }
 }
@@ -769,6 +778,12 @@ async function saveSubsPrices(){
     const n = Number((el.value||"").trim());
     return Number.isFinite(n) ? n : 0;
   };
+  const readDiscountVal = (tr, m) => {
+    const el = tr.querySelector(`[data-discount-m="${m}"]`);
+    if(!el) return 0;
+    const n = Number((el.value||"").trim());
+    return Number.isFinite(n) ? n : 0;
+  };
   for(const tr of rows){
     const region = tr.dataset.region;
     const key = tr.dataset.key;
@@ -777,12 +792,14 @@ async function saveSubsPrices(){
       prices[region].psplus[tier] = {
         "1": readVal(tr,1),
         "3": readVal(tr,3),
-        "12": readVal(tr,12)
+        "12": readVal(tr,12),
+        discount12: readDiscountVal(tr,12)
       };
     }else{
       prices[region].eaplay = {
         "1": readVal(tr,1),
-        "12": readVal(tr,12)
+        "12": readVal(tr,12),
+        discount12: readDiscountVal(tr,12)
       };
     }
   }
