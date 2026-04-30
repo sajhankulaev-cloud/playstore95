@@ -1825,8 +1825,7 @@ footer{
 
 .cartOldTotalRow .cartOldTotalValue{
 	color: #736b6b;
-    font-size: 14px;
-    font-weight: 900;
+    font-size: 18px;
 }
 
 .cartDiscountRow .cartTotalLabel{color:#ff0000;}
