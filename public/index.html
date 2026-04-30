@@ -75,7 +75,7 @@
 
 <script>
 
-const state={tab:"discounts",region:"TR",sort:"pop",platform:"",search:"",page:1,until:"",subPage:"",allDeals:false};
+const state={tab:"discounts",region:"TR",sort:"pop",platform:"",search:"",page:1,until:"",subPage:"",allDeals:false,discountRates:{TR:[],UA:[]},roundStep:50};
 
 const TAB_LABELS={preorders:"Предзаказы",new:"Новинки",discounts:"Скидки",allgames:"Все игры",subs:"Подписки"};
 
@@ -955,6 +955,29 @@ const CART_ICON_SVG = `<svg class="btnCartIcon" viewBox="0 0 24 24" aria-hidden=
 const CAL_ICON_SVG = `<svg class="dateIcon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="5.5" width="16" height="15" rx="3.2" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M8 3.5v4M16 3.5v4M4 10h16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M8.5 13.8h2.2M13.3 13.8h2.2M8.5 17h2.2M13.3 17h2.2" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round"/></svg>`;
 function dateWithIconHtml(text){ const t=String(text||'').trim(); return t ? `${CAL_ICON_SVG}<span>${escapeHtml(t)}</span>` : ''; }
 function cartButtonHtml(label){ return `${CART_ICON_SVG}<span>${escapeHtml(label || 'В корзину')}</span>`; }
+function pickCartRate(rules, price){
+  const p=Number(price||0);
+  for(const r of (rules||[])){
+    const min=Number(r.min); const max=(r.max===null||typeof r.max==="undefined")?null:Number(r.max);
+    if(Number.isFinite(min) && p>=min && (max===null || p<max)) return Number(r.rate)||1;
+  }
+  return (rules||[]).length ? (Number(rules[rules.length-1].rate)||1) : 1;
+}
+function roundCartDown(value, step){ const st=Number(step)||50; return Math.floor((Number(value)||0)/st)*st; }
+function calcCartDiscount(items){
+  const list=Array.isArray(items)?items:[];
+  const oldTotal=list.reduce((s,x)=>s+(Number(x.finalPriceRub)||0),0);
+  if(list.length<2) return {oldTotal, discount:0, total:oldTotal};
+  const rules=(state.discountRates&&state.discountRates[state.region])||[];
+  const total=list.reduce((s,x)=>{
+    const storePrice=Number(x.storePrice||0);
+    const basePrice=Number(x.finalPriceRub)||0;
+    if(!storePrice) return s+Math.max(400, roundCartDown(basePrice, state.roundStep));
+    const rate=pickCartRate(rules, storePrice);
+    return s+Math.max(400, roundCartDown(storePrice*rate, state.roundStep));
+  },0);
+  return {oldTotal, discount:Math.max(0, oldTotal-total), total};
+}
 
 function getCartKey(region){
   return CART_LS_PREFIX + String(region || "TR").toUpperCase();
@@ -1013,7 +1036,8 @@ function normalizeGameForCart(game){
     cover: game.cover || "",
     discPerc: Number(game.discPerc || 0) || 0,
     discountedUntil: game.discountedUntil || null,
-    finalPriceRub: Number(game.finalPriceRub || 0) || 0
+    finalPriceRub: Number(game.finalPriceRub || 0) || 0,
+    storePrice: Number(game.storePrice || 0) || 0
   };
 }
 
@@ -1080,6 +1104,7 @@ function addToCart(game){
   saveCart(region, items);
   updateCartCount();
   refreshAllBuyButtons();
+  if(isCartOpen()) renderCart();
 }
 
 function removeFromCart(gameId){
@@ -1121,9 +1146,17 @@ function renderCart(){
   if(regionEl) regionEl.textContent = `(${state.region})`;
 
   const items = loadCart(state.region);
-  const total = items.reduce((s,x)=> s + (Number(x.finalPriceRub)||0), 0);
+  const totals = calcCartDiscount(items);
 
-  if(totalEl) totalEl.textContent = fmtRub(total);
+  const oldTotalEl = document.getElementById("cartOldTotal");
+  const discountEl = document.getElementById("cartDiscount");
+  const discountRowEl = document.getElementById("cartDiscountRow");
+  const oldTotalRowEl = document.getElementById("cartOldTotalRow");
+  if(totalEl) totalEl.textContent = fmtRub(totals.total);
+  if(oldTotalEl) oldTotalEl.textContent = fmtRub(totals.oldTotal);
+  if(discountEl) discountEl.textContent = `- ${fmtRub(totals.discount)}`;
+  if(oldTotalRowEl) oldTotalRowEl.style.display = totals.discount > 0 ? "flex" : "none";
+  if(discountRowEl) discountRowEl.style.display = totals.discount > 0 ? "flex" : "none";
 
   if(clearBtn) clearBtn.disabled = items.length === 0;
   if(buyBtn) buyBtn.disabled = items.length === 0;
@@ -1205,7 +1238,7 @@ function buyCartWhatsApp(){
   const items = loadCart(state.region);
   if(!items.length) return;
 
-  const total = items.reduce((s,x)=> s + (Number(x.finalPriceRub)||0), 0);
+  const totals = calcCartDiscount(items);
 
   const lines = [];
   lines.push("Хочу купить игры:");
@@ -1222,7 +1255,11 @@ function buyCartWhatsApp(){
     lines.push(parts.join("\n"));
     lines.push("");
   });
-  lines.push(`Итого: ${fmtRub(total)}`);
+  if(totals.discount > 0){
+    lines.push(`Старая цена: ${fmtRub(totals.oldTotal)}`);
+    lines.push(`Скидка за 2+ игры: - ${fmtRub(totals.discount)}`);
+  }
+  lines.push(`Итого: ${fmtRub(totals.total)}`);
 
   const msg = encodeURIComponent(lines.join("\n"));
   const base = state.whatsapp || "https://wa.me/+79659556300";
@@ -1643,6 +1680,8 @@ async function load(){
   }
   const whatsapp=meta.settings?.whatsappLink||"https://wa.me/+79659556300";
   state.whatsapp = whatsapp;
+  state.discountRates = meta.discountRates || {TR:[],UA:[]};
+  state.roundStep = Number(meta.settings?.roundStep || 50);
   const showUntil=!!(state.tab==="discounts" && meta.hasAnyUntil && meta.hasAnyUntil[state.region]);
 
   // Discounts overview (no date selected, not "View All", and not searching)
@@ -1911,6 +1950,14 @@ load();
     </div>
     <div class="cartBody" id="cartBody"></div>
     <div class="cartFoot">
+      <div class="cartTotalRow cartOldTotalRow" id="cartOldTotalRow" style="display:none;">
+        <div class="cartTotalLabel">Старая цена</div>
+        <div class="cartTotalValue cartOldTotalValue" id="cartOldTotal">0 ₽</div>
+      </div>
+      <div class="cartTotalRow cartDiscountRow" id="cartDiscountRow" style="display:none;">
+        <div class="cartTotalLabel">Скидка за 2+ игры</div>
+        <div class="cartTotalValue cartDiscountValue" id="cartDiscount">0 ₽</div>
+      </div>
       <div class="cartTotalRow">
         <div class="cartTotalLabel">Итого:</div>
         <div class="cartTotalValue" id="cartTotal">0 ₽</div>
