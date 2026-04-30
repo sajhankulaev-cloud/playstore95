@@ -1820,3 +1820,14 @@ footer{
     }*/
   }
 }
+.cartOldTotalValue{text-decoration:line-through;}
+.cartDiscountValue{font-weight:850;}
+
+.cartOldTotalRow .cartOldTotalValue{
+	color: #736b6b;
+    font-size: 14px;
+    font-weight: 900;
+}
+
+.cartDiscountRow .cartTotalLabel{color:#ff0000;}
+.cartDiscountRow .cartDiscountValue{color:#ff0000; font-weight:700;}
