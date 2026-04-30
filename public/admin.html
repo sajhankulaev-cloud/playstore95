@@ -505,6 +505,16 @@ button{ color:#0f172a !important; }
 <div style="margin-top:12px;overflow:auto;">
 <table><thead><tr><th>От</th><th>До</th><th>Курс</th><th>Действия</th></tr></thead><tbody id="ratesBody"></tbody></table></div></div>
 
+<div class="adminCard" id="discountRates">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+<div><div style="font-weight:950;font-size:16px;">Курсы скидок по диапазонам</div><div class="small">TR/UA • Для скидки в корзине 2+ игры.</div></div>
+<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+<select id="discountRegionSel" class="select"><option value="TR">Турция (TR)</option><option value="UA">Украина (UA)</option></select>
+<button class="btnGhost" id="addDiscountRow">+ Диапазон</button><button class="btnDark" id="saveDiscountRates">Сохранить</button>
+</div></div>
+<div style="margin-top:12px;overflow:auto;">
+<table><thead><tr><th>От</th><th>До</th><th>Курс скидки</th><th>Действия</th></tr></thead><tbody id="discountRatesBody"></tbody></table></div></div>
+
 <!-- Prices: subscriptions (under exchange rates) -->
 <div class="adminCard" id="subsPrices">
   <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
@@ -689,13 +699,15 @@ tr.innerHTML=`<td><input class="input" type="number" step="1" value="${min}"></t
 <td><button class="btnGhost">Удалить</button></td>`;
 tr.querySelector("button").onclick=()=>tr.remove();return tr;}
 
-async function loadRates(region){const j=await fetch(`/api/admin/rates?region=${region}`).then(r=>r.json());
-const body=document.getElementById("ratesBody");body.innerHTML="";(j.rules||[]).forEach(rule=>body.appendChild(rowTemplate(rule.min, rule.max??"", rule.rate)));}
-async function saveRates(){const region=document.getElementById("regionSel").value;
-const rules=[...document.querySelectorAll("#ratesBody tr")].map(tr=>{const i=tr.querySelectorAll("input");
+async function loadRates(region, type="main", bodyId="ratesBody"){const j=await fetch(`/api/admin/rates?region=${region}&type=${type}`).then(r=>r.json());
+const body=document.getElementById(bodyId);body.innerHTML="";(j.rules||[]).forEach(rule=>body.appendChild(rowTemplate(rule.min, rule.max??"", rule.rate)));}
+async function saveRates(type="main", regionId="regionSel", bodyId="ratesBody"){const region=document.getElementById(regionId).value;
+const rules=[...document.querySelectorAll(`#${bodyId} tr`)].map(tr=>{const i=tr.querySelectorAll("input");
 const min=Number(i[0].value);const maxRaw=i[1].value.trim();const max=maxRaw===""?null:Number(maxRaw);const rate=Number(i[2].value);return {min,max,rate};});
-const j=await fetch(`/api/admin/rates`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({region,rules})}).then(r=>r.json());
+const j=await fetch(`/api/admin/rates`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({region,type,rules})}).then(r=>r.json());
 alert(j.ok?"Сохранено":"Ошибка");}
+function loadDiscountRates(region){return loadRates(region,"discount","discountRatesBody");}
+function saveDiscountRates(){return saveRates("discount","discountRegionSel","discountRatesBody");}
 
 // --- Subscription prices (PS Plus + EA Play) ---
 function subsRow(region, label, key){
@@ -2327,12 +2339,15 @@ document.getElementById("btnAllImport").onclick=doImportAllGames;
 document.getElementById("btnAddAllGame").onclick=addAllGame;
 document.getElementById("regionSel").onchange=e=>loadRates(e.target.value);
 document.getElementById("addRow").onclick=()=>document.getElementById("ratesBody").appendChild(rowTemplate());
-document.getElementById("saveRates").onclick=saveRates;
+document.getElementById("saveRates").onclick=()=>saveRates();
+document.getElementById("discountRegionSel").onchange=e=>loadDiscountRates(e.target.value);
+document.getElementById("addDiscountRow").onclick=()=>document.getElementById("discountRatesBody").appendChild(rowTemplate());
+document.getElementById("saveDiscountRates").onclick=saveDiscountRates;
 document.getElementById("saveSubsPrices").onclick=saveSubsPrices;
 document.getElementById("saveSettings").onclick=saveSettings;
 const _btnVis = document.getElementById("btnReloadVisitors");
 if(_btnVis) _btnVis.onclick = loadVisitors;
-loadRates("TR");loadSubsPrices();loadSettings();loadVisitors();loadGamesList();loadPreordersList();loadAllGamesList();loadNewReleasesStatus();
+loadRates("TR");loadDiscountRates("TR");loadSubsPrices();loadSettings();loadVisitors();loadGamesList();loadPreordersList();loadAllGamesList();loadNewReleasesStatus();
 
 loadVisitors();
 
