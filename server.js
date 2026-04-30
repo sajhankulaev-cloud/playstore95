@@ -1475,10 +1475,30 @@ function requireAdmin(req, res, next) {
   return res.status(401).json({ error: "invalid_credentials" });
 }
 
+function defaultDiscountRates(){
+  return {
+    TR:[
+      {min:0,max:97,rate:5.20},{min:97,max:297,rate:4.00},{min:297,max:397,rate:3.60},
+      {min:397,max:497,rate:3.30},{min:497,max:597,rate:3.20},{min:597,max:797,rate:3.10},
+      {min:797,max:997,rate:3.00},{min:997,max:1297,rate:2.80},{min:1297,max:1497,rate:2.70},
+      {min:1497,max:2197,rate:2.60},{min:2197,max:2497,rate:2.50},{min:2497,max:null,rate:2.40}
+    ],
+    UA:[
+      {min:0,max:297,rate:3.60},{min:297,max:397,rate:3.40},{min:397,max:497,rate:3.20},
+      {min:497,max:597,rate:3.10},{min:597,max:797,rate:2.95},{min:797,max:1197,rate:2.85},
+      {min:1197,max:1597,rate:2.75},{min:1597,max:1897,rate:2.55},{min:1897,max:2097,rate:2.45},
+      {min:2097,max:3397,rate:2.40},{min:3397,max:null,rate:2.25}
+    ]
+  };
+}
+
 function readStore() {
-  const s = readJson(STORE_PATH, { settings:{roundStep:50, whatsappLink:"", minPriceRub:450}, rates:{TR:[],UA:[]} });
+  const s = readJson(STORE_PATH, { settings:{roundStep:50, whatsappLink:"", minPriceRub:450}, rates:{TR:[],UA:[]}, discountRates:defaultDiscountRates() });
   if(!s.settings) s.settings = { roundStep:50, whatsappLink:"", minPriceRub:450 };
   if(typeof s.settings.minPriceRub === "undefined") s.settings.minPriceRub = 450;
+  if(!s.discountRates) s.discountRates = defaultDiscountRates();
+  if(!Array.isArray(s.discountRates.TR)) s.discountRates.TR = defaultDiscountRates().TR;
+  if(!Array.isArray(s.discountRates.UA)) s.discountRates.UA = defaultDiscountRates().UA;
   // Subscription prices live in the same store.json and are editable from admin.
   // If missing (older installs) – seed defaults.
   if(!s.subscriptionsPrices){
@@ -1524,6 +1544,7 @@ function pickRate(rules, price) {
   return rules.length ? rules[rules.length - 1].rate : 1;
 }
 function roundUp(value, step) { const s = Number(step) || 50; return Math.ceil(value / s) * s; }
+function roundDown(value, step) { const s = Number(step) || 50; return Math.floor(value / s) * s; }
 
 // --- parsing helpers
 function extractTitle(html){
@@ -2074,6 +2095,7 @@ app.get("/api/meta", (req, res) => {
   }
   res.json({
     settings: store.settings,
+    discountRates: store.discountRates || defaultDiscountRates(),
     updatedAt: { games: games.updatedAt || null },
     hasAnyUntil,
     total: Array.isArray(games.items) ? games.items.length : 0,
@@ -2361,15 +2383,24 @@ app.get("/api/games", (req, res) => {
 app.get("/api/admin/rates", requireAdmin, (req, res) => {
   const store = readStore();
   const region = String(req.query.region || "TR").toUpperCase();
-  res.json({ region, rules: store.rates[region] || [] });
+  const type = String(req.query.type || "main");
+  const bucket = type === "discount" ? store.discountRates : store.rates;
+  res.json({ region, type, rules: bucket[region] || [] });
 });
 app.put("/api/admin/rates", requireAdmin, (req, res) => {
   const store = readStore();
   const region = String(req.body.region || "TR").toUpperCase();
+  const type = String(req.body.type || "main");
   const rules = Array.isArray(req.body.rules) ? req.body.rules : [];
-  store.rates[region] = rules
+  const cleaned = rules
     .map(r => ({ min:Number(r.min), max:(r.max===null||r.max===""||typeof r.max==="undefined")?null:Number(r.max), rate:Number(r.rate) }))
     .filter(r => Number.isFinite(r.min) && (r.max===null || Number.isFinite(r.max)) && Number.isFinite(r.rate));
+  if(type === "discount"){
+    store.discountRates = store.discountRates || defaultDiscountRates();
+    store.discountRates[region] = cleaned;
+  }else{
+    store.rates[region] = cleaned;
+  }
   writeJson(STORE_PATH, store);
   res.json({ ok:true });
 });
