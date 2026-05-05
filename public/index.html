@@ -926,9 +926,27 @@ function formatDateDMY(dateStr) {
 
   // DD.MM.YYYY (если вдруг уже так)
   const m2 = s.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
-  if (m2) return `до ${m2[1]}.${m2[2]}.${m2[3]}`;
+  if (m2) return ` ${m2[1]}.${m2[2]}.${m2[3]}`;
 
   return "";
+}
+
+function releaseDateToYMD(dateStr){
+  if(!dateStr) return "";
+  const s = String(dateStr).trim();
+  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m) return `${m[1]}-${m[2]}-${m[3]}`;
+  m = s.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if(m) return `${m[3]}-${m[2]}-${m[1]}`;
+  return "";
+}
+
+function isFutureReleaseDate(dateStr){
+  const ymd = releaseDateToYMD(dateStr);
+  if(!ymd) return false;
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
+  return ymd > today;
 }
 
 function formatDateRuLong(dateStr){
@@ -1376,6 +1394,38 @@ function gmRenderEditionItem(g, activeId){
   </button>`;
 }
 
+
+function gmPlayersText(g){
+  const raw = String(g && g.players || '').trim();
+  if(!raw) return '1 игрок';
+  const n = raw.replace(/[–—]/g,'-').match(/^(\d+)(?:\s*-\s*(\d+))?/);
+  if(!n) return raw;
+  if(!n[2] && Number(n[1]) === 1) return '1 игрок';
+  return raw;
+}
+function gmPlayersIconCount(playersText){
+  const raw = String(playersText || '').replace(/[–—]/g,'-');
+  const n = raw.match(/^(\d+)(?:\s*-\s*(\d+))?/);
+  if(!n) return 1;
+  const max = Number(n[2] || n[1] || 1);
+  if(max >= 4) return 3;
+  if(max >= 2) return 2;
+  return 1;
+}
+function gmPlayersIconsHtml(count){
+  let html = '';
+  for(let i = 0; i < count; i++){
+    html += '<span class="gmv2PlayerAvatar" aria-hidden="true"></span>';
+  }
+  return html;
+}
+function gmUpdatePlayersInfo(game){
+  const p = document.getElementById('gmPlayersInfo');
+  if(!p) return;
+  const text = gmPlayersText(game);
+  p.innerHTML = `<span class="gmv2PlayersIcons">${gmPlayersIconsHtml(gmPlayersIconCount(text))}</span><span class="gmv2PlayersText">${escapeHtml(text)}</span>`;
+}
+
 function openGameModal(game){
   const overlay=document.getElementById("gameModal");
   if(!overlay) return;
@@ -1431,8 +1481,10 @@ function openGameModal(game){
     }
   }
 
+  gmUpdatePlayersInfo(game);
+
   if(relEl){
-    const hasRel = !!(game && game.isPreorder && game.releaseDate);
+    const hasRel = !!(game && game.isPreorder && isFutureReleaseDate(game.releaseDate));
     relEl.style.display = hasRel ? "" : "none";
     relEl.textContent = hasRel ? `Релиз: ${formatDateDMY(game.releaseDate)}` : "";
   }
@@ -2050,6 +2102,7 @@ load();
       </div>
       <div class="gmv2BuyRow">
         <button class="gmv2Wish" id="gmWishBtn" type="button" aria-label="В желаемое" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z"/></svg></button>
+        <div class="gmv2PlayersInfo" id="gmPlayersInfo"><span class="gmv2PlayersIcons"><span class="gmv2PlayerAvatar" aria-hidden="true"></span></span><span class="gmv2PlayersText">1 игрок</span></div>
         <button class="gmv2CartBtn" id="gmBuyBtn" type="button" aria-pressed="false">В корзину</button>
       </div>
     </div>
@@ -2057,18 +2110,10 @@ load();
     <section class="gmv2EditionsSection" id="gmEditionsSection" style="display:none">
       <div class="gmv2SectionHead">
         <h3>Другие издания</h3>
-        <!--<button class="gmv2Compare" type="button">⚖ Сравнить издания</button>-->
+        <button class="gmv2Compare" type="button">⚖ Сравнить издания</button>
       </div>
       <div class="gmv2EditionsList" id="gmEditionsList"></div>
     </section>
-	
-	<!--
-    <div class="gmv2Features">
-      <div><span class="gmv2FeatureIcon">👤</span><span>1 игрок</span></div>
-      <div><span class="gmv2FeatureIcon">💾</span><span>Уточняйте размер</span></div>
-      <div><span class="gmv2FeatureIcon">🎮</span><span>Поддержка геймпада</span></div>
-    </div>
-	-->
   </div>
 </div>
 
