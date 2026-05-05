@@ -194,6 +194,19 @@ function cleanPsDescriptionText(v){
   s = s.replace(/\n{3,}/g,'\n\n').trim();
   return s;
 }
+
+function preserveAdminDescriptionText(v){
+  let s = String(v||'');
+  try{ s = JSON.parse('"' + s.replace(/"/g,'\\"') + '"'); }catch(_e){}
+  s = decodeHtmlEntities(s);
+  s = s.replace(/<br\s*\/?>/gi,'\n');
+  s = s.replace(/<\/p>/gi,'\n\n');
+  s = s.replace(/<[^>]+>/g,'');
+  s = s.replace(/\\n/g,'\n').replace(/\\r/g,'');
+  s = s.replace(/\r\n?/g,'\n');
+  s = s.replace(/\n{4,}/g,'\n\n\n');
+  return s.trim();
+}
 function isGoodPsDescription(s){
   s = cleanPsDescriptionText(s);
   if(!s || s.length < 60 || s.length > 5000) return false;
@@ -4308,7 +4321,7 @@ app.put("/api/admin/allgames/:id", requireAdmin, (req, res) => {
     if(typeof body.cover !== 'undefined') next.cover = body.cover ? String(body.cover) : null;
     if(typeof body.platform !== 'undefined') next.platform = String(body.platform||'');
     if(typeof body.edition !== 'undefined') next.edition = (body.edition===null) ? null : String(body.edition||'');
-    if(typeof body.description !== 'undefined') next.description = cleanPsDescriptionText(body.description || '');
+    if(typeof body.description !== 'undefined') next.description = preserveAdminDescriptionText(body.description || '');
     if(typeof body.conceptId !== 'undefined') next.conceptId = body.conceptId ? String(body.conceptId).trim() : null;
 
     if(typeof body.productIds !== 'undefined'){
@@ -4486,7 +4499,7 @@ app.put("/api/admin/preorders/:id", requireAdmin, (req, res) => {
     if(typeof body.platform !== 'undefined') next.platform = String(body.platform||'');
     if(typeof body.edition !== 'undefined') next.edition = (body.edition===null) ? null : String(body.edition||'');
     if(typeof body.releaseDate !== 'undefined') next.releaseDate = dateOrNull(body.releaseDate);
-    if(typeof body.description !== 'undefined') next.description = cleanPsDescriptionText(body.description || '');
+    if(typeof body.description !== 'undefined') next.description = preserveAdminDescriptionText(body.description || '');
     if(typeof body.conceptId !== 'undefined'){
       const s = String(body.conceptId||'').trim();
       next.conceptId = s || null;
