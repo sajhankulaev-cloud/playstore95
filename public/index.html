@@ -1352,11 +1352,9 @@ function gmEditionShortText(g){
 }
 function gmEditionSubText(g){
   const ed = gmEditionShortText(g).toLowerCase();
-  if(ed.includes('ultimate')) return 'Включает расширенный набор контента';
-  if(ed.includes('deluxe')) return 'Включает бонусный контент';
-  if(ed.includes('special')) return 'Включает дополнительный контент';
-  if(ed.includes('bundle')) return 'Комплект игры и материалов';
-  return 'Базовая версия игры';
+  if(ed.includes('standard')) return 'Базовая версия игры';
+  if(ed.includes('gold') || ed.includes('deluxe')) return 'Включает бонусный контент';
+  return 'Включает расширенный набор контента';
 }
 function gmRenderEditionItem(g, activeId){
   const active = String(g.id||'') === String(activeId||'');
@@ -1453,65 +1451,36 @@ function openGameModal(game){
 
   if(descEl && readMoreEl){
     const descWrap = document.getElementById('gmDescWrap');
-    const collapseEl = document.getElementById('gmCollapseDesc');
     const desc = String(game.description || '').trim();
     if(desc){
-      let descStep = 0; // 0 = short, 1 = medium, 2 = full
-      const stepHeights = [110, 220];
-      const needsControls = ()=>{
-        if(!descEl) return false;
-        const prevMax = descEl.style.maxHeight;
-        descEl.style.maxHeight = 'none';
-        const full = descEl.scrollHeight;
-        descEl.style.maxHeight = prevMax;
-        return full > stepHeights[0] + 8;
-      };
-      const isFullyShown = ()=>{
-        if(!descEl || descStep >= 2) return descStep >= 2;
-        const prevMax = descEl.style.maxHeight;
-        descEl.style.maxHeight = 'none';
-        const full = descEl.scrollHeight;
-        descEl.style.maxHeight = prevMax;
-        return full <= (stepHeights[descStep] || 99999) + 8;
-      };
+      let isOpen = false;
       const renderDesc = ()=>{
         if(descWrap) descWrap.style.display = '';
         descEl.textContent = desc;
-        descEl.classList.toggle('isExpanded', descStep > 0);
-        descEl.classList.toggle('isFull', descStep >= 2);
-        descEl.style.maxHeight = descStep >= 2 ? 'none' : `${stepHeights[descStep]}px`;
+        descEl.classList.toggle('isHidden', !isOpen);
+        descEl.classList.toggle('isExpanded', isOpen);
+        descEl.classList.remove('isFull');
         if(descWrap){
-          descWrap.classList.toggle('isExpanded', descStep > 0);
-          descWrap.classList.toggle('isFull', descStep >= 2);
+          descWrap.classList.remove('isEmpty');
+          descWrap.classList.toggle('isExpanded', isOpen);
+          descWrap.classList.remove('isFull');
         }
-        requestAnimationFrame(()=>{
-          const controls = needsControls();
-          const fullNow = isFullyShown();
-          if(readMoreEl){
-            readMoreEl.style.display = controls && !fullNow ? '' : 'none';
-            readMoreEl.textContent = descStep === 0 ? 'Читать далее ↓' : 'Показать ещё ↓';
-          }
-          if(collapseEl){
-            collapseEl.style.display = descStep > 0 ? '' : 'none';
-          }
-        });
+        readMoreEl.style.display = '';
+        readMoreEl.textContent = isOpen ? 'Скрыть Описание' : 'Читать Описание';
       };
       readMoreEl.onclick = ()=>{
-        descStep = Math.min(2, descStep + 1);
+        isOpen = !isOpen;
         renderDesc();
       };
-      if(collapseEl){
-        collapseEl.onclick = ()=>{
-          descStep = 0;
-          renderDesc();
-        };
-      }
       renderDesc();
     }else{
-      if(descWrap) descWrap.style.display = 'none';
+      if(descWrap){
+        descWrap.style.display = 'none';
+        descWrap.classList.add('isEmpty');
+      }
       descEl.textContent = '';
+      descEl.classList.add('isHidden');
       readMoreEl.style.display = 'none';
-      if(collapseEl) collapseEl.style.display = 'none';
     }
   }
 
@@ -2068,11 +2037,10 @@ load();
     </div>
 
     <div class="gmv2DescWrap" id="gmDescWrap" style="display:none">
-      <div class="gmv2Description" id="gmDescription"></div>
       <div class="gmv2ReadActions" id="gmReadActions">
-        <button class="gmv2ReadMore" id="gmReadMore" type="button">Читать далее ↓</button>
-        <button class="gmv2ReadMore gmv2Collapse" id="gmCollapseDesc" type="button" style="display:none">Свернуть ↑</button>
+        <button class="gmv2ReadMore" id="gmReadMore" type="button">Читать Описание</button>
       </div>
+      <div class="gmv2Description isHidden" id="gmDescription"></div>
     </div>
 
     <div class="gmv2BuyPanel">
