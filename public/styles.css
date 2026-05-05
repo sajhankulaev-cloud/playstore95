@@ -2395,6 +2395,8 @@ footer{
   overflow:visible !important;
 }
 #gameModal.gameModalOverlayV2 .gmv2Description{
+  background: #f6f8fb;
+  padding: 3px 10px;
   display:block !important;
   clear:none !important;
   color:#102248 !important;
@@ -2404,10 +2406,11 @@ footer{
   white-space:pre-line !important;
   max-height:calc(clamp(14px, 2.35vw, 20px) * 1.48 * 4) !important;
   overflow:hidden !important;
+  border-radius: 8px;
   transition:max-height .22s ease !important;
 }
 #gameModal.gameModalOverlayV2 .gmv2Description.isExpanded{
-  max-height:calc(clamp(15px, 2.35vw, 20px) * 1.48 * 8) !important;
+  max-height:calc(clamp(10px, 2.35vw, 20px) * 1.48 * 8) !important;
 }
 #gameModal.gameModalOverlayV2 .gmv2Description.isFull{max-height:none !important;}
 #gameModal.gameModalOverlayV2 .gmv2ReadActions{
@@ -2416,7 +2419,7 @@ footer{
   align-items:center !important;
   gap:14px !important;
   flex-wrap:wrap !important;
-  padding-top:8px !important;
+  padding-top:0px !important;
 }
 #gameModal.gameModalOverlayV2 .gmv2ReadMore{
   font-size:clamp(12px, 2.4vw, 20px) !important;
@@ -2542,3 +2545,7 @@ footer{
   max-width:100% !important;
   overflow-wrap:anywhere !important;
 }
+
+#gameModal.gameModalOverlayV2 .gmv2DescWrap.isEmpty{display:none !important;}
+#gameModal.gameModalOverlayV2 .gmv2Description.isHidden{display:none !important;}
+#gameModal.gameModalOverlayV2 .gmv2Description.isExpanded{overflow:auto !important;}
