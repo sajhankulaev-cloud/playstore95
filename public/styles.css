@@ -2475,7 +2475,7 @@ footer{
 #gameModal.gameModalOverlayV2 .gmv2EditionPrice{font-size:clamp(16px, 2.3vw, 22px) !important;}
 #gameModal.gameModalOverlayV2 .gmv2EditionBtn{font-size:clamp(11px, 1.8vw, 15px) !important;}
 @media (max-width:460px){
-  #gameModal.gameModalOverlayV2 .gameModalV2{width:calc(100vw - 8px) !important; padding:8px 0px 8px 8px  !important; max-height: min(606px, calc(100vh - 24px)) !important;}
+  #gameModal.gameModalOverlayV2 .gameModalV2{width:calc(100vw - 8px) !important; padding:8px 0px 8px 8px  !important; max-height: min(600px, calc(100vh - 24px)) !important;}
   #gameModal.gameModalOverlayV2 .gmv2Top{grid-template-columns:122px minmax(0,1fr) !important; gap:10px !important;}
   #gameModal.gameModalOverlayV2 .gmv2Right{padding-right:10px !important;}
   #gameModal.gameModalOverlayV2 .gmv2Title{font-size:20px !important; font-weight:500 !important; color:#102248 !important;}
