@@ -265,6 +265,8 @@ button{ color:#0f172a !important; }
         <input id="preName" class="input" type="text" />
         <div class="small" style="margin-top:8px;">Edition</div>
         <input id="preEdition" class="input" type="text" placeholder="Standard / Deluxe / Premium..." />
+        <div class="small" style="margin-top:8px;">Описание</div>
+        <textarea id="preDescription" class="input" rows="7" placeholder="Описание на русском из PS Store UA"></textarea>
 
         <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;">
           <div style="flex:1;min-width:180px;">
@@ -376,6 +378,8 @@ button{ color:#0f172a !important; }
           <input id="allName" class="input" type="text" />
           <div class="small" style="margin-top:8px;">Edition</div>
           <input id="allEdition" class="input" type="text" placeholder="Standard / Deluxe / Premium..." />
+          <div class="small" style="margin-top:8px;">Описание</div>
+          <textarea id="allDescription" class="input" rows="7" placeholder="Описание на русском из PS Store UA"></textarea>
 
           <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;">
             <div style="flex:1;min-width:180px;">
@@ -459,6 +463,8 @@ button{ color:#0f172a !important; }
     <button class="btnGhost" id="refreshDiscountsFromPS">Обновить скидки (PS Store)</button>
     <button class="btnGhost" id="refreshNewReleases">Обновить «Новинки»</button>
     <button class="btnGhost" id="backfillConceptId">Заполнить Concept ID</button>
+    <button class="btnGhost" id="backfillDescriptions">Обновить описание</button>
+    <button class="btnGhost" id="cleanDescriptions">Очистить мусор описаний</button>
     <span class="small" id="newReleasesStatus"></span>
     <span class="small" id="gamesCount"></span>
   </div>
@@ -1388,6 +1394,55 @@ document.getElementById('refreshNewReleases').onclick = async ()=>{
   }
 };
 
+
+async function fetchRuDescription(productId, conceptId){
+  const id = String(productId || conceptId || '').trim();
+  if(!id) return '';
+  const j = await fetch('/api/admin/description/fetch', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ productId: id, conceptId: conceptId || null })
+  }).then(r=>r.json()).catch(()=>({ok:false}));
+  return (j && j.ok && j.description) ? String(j.description) : '';
+}
+async function fillDescriptionTextarea(textareaId, productId, conceptId, statusId){
+  const el = document.getElementById(textareaId);
+  if(!el) return;
+  const st = statusId ? document.getElementById(statusId) : null;
+  if(st) st.textContent = 'Получаю описание...';
+  const desc = await fetchRuDescription(productId, conceptId);
+  if(desc) el.value = desc;
+  if(st) st.textContent = desc ? 'Описание получено.' : 'Описание не найдено.';
+}
+
+const cleanDescriptionsBtn = document.getElementById('cleanDescriptions');
+if(cleanDescriptionsBtn){
+  cleanDescriptionsBtn.onclick = async ()=>{
+    const el = document.getElementById('gamesCount');
+    if(el) el.textContent = 'Описания: очистка мусора...';
+    const j = await fetch('/api/admin/descriptions/clean', { method:'POST' }).then(r=>r.json()).catch(()=>({ok:false,error:'network'}));
+    if(el) el.textContent = j.ok ? `Описания: очищено ${j.cleaned}` : `Описания: ошибка ${j.error||''}`;
+  };
+}
+const backfillDescriptionsBtn = document.getElementById('backfillDescriptions');
+if(backfillDescriptionsBtn){
+  backfillDescriptionsBtn.onclick = async ()=>{
+    if(!confirm('Обновить отсутствующие описания? Игры с нормальным описанием будут пропущены.')) return;
+    const el = document.getElementById('gamesCount');
+    if(el) el.textContent = 'Описания: обрабатываю следующие 50 игр...';
+    const j = await fetch('/api/admin/descriptions/backfill', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ concurrency: 50, limit: 50, force: false })
+    }).then(r=>r.json()).catch(()=>({ok:false,error:'network'}));
+    if(el){
+      if(j.ok) el.textContent = `Описания: проверено ${j.checked}/50, обновлено ${j.updated}, осталось примерно ${j.remaining}, ошибок ${j.failed}. Следующий старт: ${j.nextFile} #${j.nextIndex}`;
+      else el.textContent = `Описания: ошибка ${j.error||''}`;
+    }
+    try{ await loadAllGamesList(); await loadPreordersList(); }catch(_e){}
+  };
+}
+
 document.getElementById('backfillConceptId').onclick = async ()=>{
   const el = document.getElementById('newReleasesStatus');
   if(el) el.textContent = 'Concept ID: заполнение...';
@@ -1545,6 +1600,7 @@ async function doImportPreorder(){
   document.getElementById("preIdUA").value=pidUA||"";
   document.getElementById("preConceptId").value = (tr.conceptId || ua.conceptId || "");
   document.getElementById("preName").value=name||"";
+  await fillDescriptionTextarea("preDescription", pidUA || pidTR, (tr.conceptId || ua.conceptId || ""), "preImportStatus");
 
   const plat = (tr.platform) || (ua.platform) || "";
   const platEl = document.getElementById("prePlatform");
@@ -1605,6 +1661,7 @@ async function addPreorder(){
     platform: (document.getElementById("prePlatform").value||"").trim(),
     edition: (document.getElementById("preEdition").value||"").trim() || "Standard Edition",
     releaseDate: (document.getElementById("preReleaseDate").value||"").trim() || null,
+    description: (document.getElementById("preDescription")?.value||"").trim(),
     regions:{
       TR:{ salePrice: Number(document.getElementById("preTrPrice").value||0), ru: (document.getElementById("preRuTR").value||"unknown"), sub: (document.getElementById("preSub").value||"") },
       UA:{ salePrice: Number(document.getElementById("preUaPrice").value||0), ru: (document.getElementById("preRuUA").value||"unknown"), sub: (document.getElementById("preSub").value||"") }
@@ -1867,6 +1924,10 @@ async function openPreorderEdit(id, anchorTr){
           <input class="input" data-f="edition" type="text" value="${String(g.edition||'').replace(/"/g,'&quot;')}" />
         </div>
         <div style="grid-column:1 / span 2;">
+          <div class="small">Описание</div>
+          <textarea class="input" data-f="description" rows="7">${String(g.description||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
+        </div>
+        <div style="grid-column:1 / span 2;">
           <div class="small">Cover URL</div>
           <input class="input" data-f="cover" type="text" value="${String(g.cover||'').replace(/"/g,'&quot;')}" placeholder="https://...png" />
         </div>
@@ -1984,6 +2045,7 @@ async function doImportAllGames(){
   document.getElementById("allIdUA").value=pidUA||"";
   document.getElementById("allConceptId").value = (j.parsed?.TR?.conceptId || j.parsed?.UA?.conceptId || "");
   document.getElementById("allName").value=name||"";
+  await fillDescriptionTextarea("allDescription", pidUA || pidTR, (j.parsed?.TR?.conceptId || j.parsed?.UA?.conceptId || ""), "allImportStatus");
 
   // Platform auto-fill (same as скидки)
   const plat = (j.parsed?.TR?.platform) || (j.parsed?.UA?.platform) || "";
@@ -2044,6 +2106,7 @@ async function addAllGame(){
     platform: (document.getElementById("allPlatform").value||"").trim(),
     edition: (document.getElementById("allEdition").value||"").trim() || "Standard Edition",
     conceptId: (document.getElementById("allConceptId").value||"").trim() || null,
+    description: (document.getElementById("allDescription")?.value||"").trim(),
     regions:{
       TR:{
         salePrice: Number(document.getElementById("allTrPrice").value||0),
@@ -2232,6 +2295,10 @@ async function openAllGameEdit(id, anchorTr){
         <div>
           <div class="small">Edition</div>
           <input class="input" data-f="edition" type="text" value="${String(g.edition||'').replace(/"/g,'&quot;')}" />
+        </div>
+        <div style="grid-column:1 / span 2;">
+          <div class="small">Описание</div>
+          <textarea class="input" data-f="description" rows="7">${String(g.description||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
         </div>
         <div style="grid-column:1 / span 2;">
           <div class="small">Cover URL</div>
