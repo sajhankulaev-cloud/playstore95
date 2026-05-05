@@ -1395,7 +1395,7 @@ function openGameModal(game){
   const readMoreEl=document.getElementById("gmReadMore");
   const editionsWrap=document.getElementById("gmEditionsList");
   const editionsSection=document.getElementById("gmEditionsSection");
-
+  descEl.scrollTop = 0;
   if(coverWrap){
     coverWrap.innerHTML = game.cover ? modalCoverImg(game.cover) : `<div class="noCoverBox">NO COVER</div>`;
   }
