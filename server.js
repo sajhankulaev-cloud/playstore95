@@ -1741,6 +1741,13 @@ function todayYMDAmsterdam(){
   }
 }
 
+
+function isFutureReleaseDateYMD(dateStr){
+  const d = dateStr ? String(dateStr).slice(0,10) : '';
+  if(!/^20\d{2}-\d{2}-\d{2}$/.test(d)) return false;
+  return d > todayYMDAmsterdam();
+}
+
 function moveReleasedPreordersToAllGames(){
   // If a preorder has releaseDate <= today, move it into all_games.json
   const today = todayYMDAmsterdam();
@@ -2125,6 +2132,77 @@ function extractDiscountedUntil(html, jsonLd){
 
 
 
+
+
+function normalizeGameMetaField(v){
+  if(v === null || typeof v === "undefined") return null;
+  const s = String(v).replace(/\s+/g," ").trim();
+  return s || null;
+}
+function normalizeRatingValue(v){
+  if(v === null || typeof v === "undefined") return null;
+  let s = String(v).replace(",", ".").trim();
+  const m = s.match(/(\d+(?:\.\d+)?)/);
+  if(!m) return null;
+  const n = Number(m[1]);
+  if(!Number.isFinite(n)) return null;
+  return Math.max(0, Math.min(5, n));
+}
+function extractGameMeta(html, jsonLd){
+  const text = String(html||"")
+    .replace(/<script[\s\S]*?<\/script>/gi," ")
+    .replace(/<style[\s\S]*?<\/style>/gi," ")
+    .replace(/<[^>]+>/g," ")
+    .replace(/&nbsp;|&#160;/gi," ")
+    .replace(/&amp;/gi,"&")
+    .replace(/\s+/g," ")
+    .trim();
+  const lower = text.toLowerCase();
+
+  let rating = null;
+  const walk = (node)=>{
+    if(!node || rating !== null) return;
+    if(Array.isArray(node)){ node.forEach(walk); return; }
+    if(typeof node === 'object'){
+      const ar = node.aggregateRating || node.aggregateRatings || null;
+      if(ar && typeof ar === 'object'){
+        rating = normalizeRatingValue(ar.ratingValue || ar.rating || ar.value);
+        if(rating !== null) return;
+      }
+      if(node.ratingValue || node.rating){
+        rating = normalizeRatingValue(node.ratingValue || node.rating);
+        if(rating !== null) return;
+      }
+      Object.values(node).forEach(walk);
+    }
+  };
+  try{ walk(jsonLd); }catch(_e){}
+  if(rating === null){
+    const m = text.match(/(?:rating|рейтинг|оценка)\s*[:：]?\s*(\d+(?:[.,]\d+)?)\s*(?:\/|из)\s*5/i) || text.match(/(\d+(?:[.,]\d+)?)\s*(?:\/|из)\s*5\s*(?:stars|зв[её]зд)/i);
+    if(m) rating = normalizeRatingValue(m[1]);
+  }
+
+  let size = null;
+  const sizeMatch = text.match(/(?:Размер|File size|Size|Storage|Место на диске|Память)\s*[:：]?\s*(\d+(?:[.,]\d+)?\s*(?:ГБ|GB|МБ|MB))/i) || text.match(/\b(\d+(?:[.,]\d+)?\s*(?:ГБ|GB|МБ|MB))\b/i);
+  if(sizeMatch) size = normalizeGameMetaField(sizeMatch[1].replace(/GB/i,'ГБ').replace(/MB/i,'МБ').replace('.',','));
+
+  let players = null;
+  const playerPatterns = [
+    /(?:Offline players|Players|Игроки|Локальные игроки|Количество игроков)\s*[:：]?\s*(\d+\s*[-–—]\s*\d+|\d+)\s*(?:players?|игрока?|игроков)?/i,
+    /(\d+\s*[-–—]\s*\d+|\d+)\s*(?:offline\s*)?(?:players?|игрока?|игроков)\b/i
+  ];
+  for(const re of playerPatterns){
+    const m = text.match(re);
+    if(m){
+      const v = String(m[1]).replace(/[–—]/g,'-').replace(/\s+/g,'');
+      if(/^\d+(?:-\d+)?$/.test(v)){
+        players = v === '1' ? '1 игрок' : `${v} игрока`;
+        break;
+      }
+    }
+  }
+  return { players: normalizeGameMetaField(players), size: normalizeGameMetaField(size), rating };
+}
 
 // Extract release date in format yyyy-mm-dd.
 // Used for "Предзаказы" in admin.
@@ -2729,6 +2807,9 @@ app.get("/api/games", (req, res) => {
         // Prefer TR value (admin currently sets it there), fallback to UA.
         sub: anySub,
         platform: g.platform || "PS4 / PS5",
+        players: g.players || null,
+        size: g.size || null,
+        rating: (typeof g.rating !== "undefined" ? g.rating : null),
         cover: g.cover || "",
         description: descriptionForPublicGame(g, descIndex),
         discPerc: reg ? Number(reg.discPerc || 0) : 0,
@@ -2835,6 +2916,9 @@ app.get("/api/game-editions", (req, res) => {
         ru: normalizeRuVal(reg && (reg.ru ?? reg.ruLang ?? reg.russian ?? reg.rus ?? reg.langRu ?? reg.languageRu)),
         sub: anySub,
         platform: g.platform || "PS4 / PS5",
+        players: g.players || null,
+        size: g.size || null,
+        rating: (typeof g.rating !== "undefined" ? g.rating : null),
         cover: g.cover || "",
         description: descriptionForPublicGame(g, descIndex),
         discPerc,
@@ -2844,7 +2928,7 @@ app.get("/api/game-editions", (req, res) => {
         oldPriceRub: (discPerc > 0 ? clampMinGamePriceRub(store, roundUp(baseStorePrice * pickRate(rules, baseStorePrice), step)) : 0),
         conceptId: cid,
         releaseDate: g.releaseDate || null,
-        isPreorder: !!g.releaseDate || entry.source === 'preorder'
+        isPreorder: entry.source === 'preorder' && isFutureReleaseDateYMD(g.releaseDate)
       };
       const key = String(item.id || '').trim();
       if(!key) continue;
@@ -3103,6 +3187,9 @@ app.put("/api/admin/games/:id", requireAdmin, (req, res) => {
     if(typeof body.cover !== "undefined") next.cover = body.cover ? String(body.cover) : null;
     if(typeof body.platform !== "undefined") next.platform = String(body.platform || "");
     if(typeof body.edition !== "undefined") next.edition = (body.edition===null) ? null : String(body.edition || "");
+    if(typeof body.players !== "undefined") next.players = normalizeGameMetaField(body.players);
+    if(typeof body.size !== "undefined") next.size = normalizeGameMetaField(body.size);
+    if(typeof body.rating !== "undefined") next.rating = normalizeRatingValue(body.rating);
 
     next.regions = next.regions && typeof next.regions === "object" ? next.regions : {};
     const updRegion = (code)=>{
@@ -3689,6 +3776,9 @@ app.get("/api/allgames", async (req, res) => {
         ru: normalizeRuVal(reg && (reg.ru ?? reg.ruLang ?? reg.russian ?? reg.rus ?? reg.langRu ?? reg.languageRu)),
         sub: anySub,
         platform: g.platform || "PS4 / PS5",
+        players: g.players || null,
+        size: g.size || null,
+        rating: (typeof g.rating !== "undefined" ? g.rating : null),
         cover: g.cover || "",
         description: descriptionForPublicGame(g, descIndex),
         discPerc,
@@ -3874,6 +3964,9 @@ app.get("/api/newreleases", async (req, res) => {
         ru: normalizeRuVal(reg && (reg.ru ?? reg.ruLang ?? reg.russian ?? reg.rus ?? reg.langRu ?? reg.languageRu)),
         sub: anySub,
         platform: g.platform || "PS4 / PS5",
+        players: g.players || null,
+        size: g.size || null,
+        rating: (typeof g.rating !== "undefined" ? g.rating : null),
         cover: g.cover || "",
         description: descriptionForPublicGame(g, descIndex),
         discPerc: 0,
@@ -4037,6 +4130,9 @@ app.get("/api/subgames", async (req, res) => {
         ru: normalizeRuVal(reg && (reg.ru ?? reg.ruLang ?? reg.russian ?? reg.rus ?? reg.langRu ?? reg.languageRu)),
         sub: anySub,
         platform: g.platform || "PS4 / PS5",
+        players: g.players || null,
+        size: g.size || null,
+        rating: (typeof g.rating !== "undefined" ? g.rating : null),
         cover: g.cover || "",
         discPerc,
         discountedUntil,
@@ -4137,6 +4233,9 @@ app.get("/api/preorders", async (req, res) => {
         ru: normalizeRuVal(reg && (reg.ru ?? reg.ruLang ?? reg.russian ?? reg.rus ?? reg.langRu ?? reg.languageRu)),
         sub: anySub,
         platform: g.platform || "PS4 / PS5",
+        players: g.players || null,
+        size: g.size || null,
+        rating: (typeof g.rating !== "undefined" ? g.rating : null),
         cover: g.cover || "",
         description: descriptionForPublicGame(g, descIndex),
         discPerc: 0,
@@ -4147,7 +4246,7 @@ app.get("/api/preorders", async (req, res) => {
         conceptId: conceptForGame(g, conceptIndex),
         popRank: g.popRank || 999999,
         releaseDate: g.releaseDate || null,
-        isPreorder: true,
+        isPreorder: isFutureReleaseDateYMD(g.releaseDate),
         psRank: firstFinite(
           // 1) Prefer conceptId (stable across editions and matches PS browse tiles)
           psRanksById[String(g.conceptId || "").trim()],
@@ -4260,6 +4359,9 @@ app.post("/api/admin/allgames/add", requireAdmin, (req, res) => {
       next.cover = g.cover ? String(g.cover) : null;
       next.platform = String(g.platform||"");
       next.edition = (g.edition===null || typeof g.edition==='undefined') ? "Standard Edition" : (String(g.edition||"").trim()||"Standard Edition");
+      next.players = normalizeGameMetaField(g.players);
+      next.size = normalizeGameMetaField(g.size);
+      next.rating = normalizeRatingValue(g.rating);
       next.description = cleanPsDescriptionText(g.description || "");
 
       // Concept ID groups multiple editions of the same game.
@@ -4321,6 +4423,9 @@ app.put("/api/admin/allgames/:id", requireAdmin, (req, res) => {
     if(typeof body.cover !== 'undefined') next.cover = body.cover ? String(body.cover) : null;
     if(typeof body.platform !== 'undefined') next.platform = String(body.platform||'');
     if(typeof body.edition !== 'undefined') next.edition = (body.edition===null) ? null : String(body.edition||'');
+    if(typeof body.players !== 'undefined') next.players = normalizeGameMetaField(body.players);
+    if(typeof body.size !== 'undefined') next.size = normalizeGameMetaField(body.size);
+    if(typeof body.rating !== 'undefined') next.rating = normalizeRatingValue(body.rating);
     if(typeof body.description !== 'undefined') next.description = preserveAdminDescriptionText(body.description || '');
     if(typeof body.conceptId !== 'undefined') next.conceptId = body.conceptId ? String(body.conceptId).trim() : null;
 
@@ -4439,6 +4544,9 @@ app.post("/api/admin/preorders/add", requireAdmin, (req, res) => {
       next.cover = g.cover ? String(g.cover) : null;
       next.platform = String(g.platform||"");
       next.edition = (g.edition===null || typeof g.edition==='undefined') ? "Standard Edition" : (String(g.edition||"").trim()||"Standard Edition");
+      next.players = normalizeGameMetaField(g.players);
+      next.size = normalizeGameMetaField(g.size);
+      next.rating = normalizeRatingValue(g.rating);
       next.description = cleanPsDescriptionText(g.description || "");
       next.releaseDate = dateOrNull(g.releaseDate);
 
@@ -4498,6 +4606,9 @@ app.put("/api/admin/preorders/:id", requireAdmin, (req, res) => {
     if(typeof body.cover !== 'undefined') next.cover = body.cover ? String(body.cover) : null;
     if(typeof body.platform !== 'undefined') next.platform = String(body.platform||'');
     if(typeof body.edition !== 'undefined') next.edition = (body.edition===null) ? null : String(body.edition||'');
+    if(typeof body.players !== 'undefined') next.players = normalizeGameMetaField(body.players);
+    if(typeof body.size !== 'undefined') next.size = normalizeGameMetaField(body.size);
+    if(typeof body.rating !== 'undefined') next.rating = normalizeRatingValue(body.rating);
     if(typeof body.releaseDate !== 'undefined') next.releaseDate = dateOrNull(body.releaseDate);
     if(typeof body.description !== 'undefined') next.description = preserveAdminDescriptionText(body.description || '');
     if(typeof body.conceptId !== 'undefined'){
@@ -4826,9 +4937,10 @@ app.post("/api/admin/import", requireAdmin, async (req, res) => {
       const edition = extractEdition(jsonLd, nameRaw0, html);
       const conceptId = extractConceptIdFromProductHtml(html, expectedSku || productId);
       const releaseDate = extractReleaseDate(html, jsonLd);
+      const meta = extractGameMeta(html, jsonLd);
       // Discount end date: pull from Store (one region is enough; we later copy TR->UA)
       const until = (discPerc && discPerc > 0) ? (extractDiscountedUntil(html, jsonLd) || extractUntilDate(html)) : null;
-      return { blocked:false, name, edition, cover, platform, conceptId: conceptId || null, salePrice: (offer && Number.isFinite(offer.price) ? offer.price : null), currency: offer ? offer.currency : null, discPerc: discPerc || 0, discountedUntil: until || null, releaseDate: releaseDate || null };
+      return { blocked:false, name, edition, cover, platform, conceptId: conceptId || null, salePrice: (offer && Number.isFinite(offer.price) ? offer.price : null), currency: offer ? offer.currency : null, discPerc: discPerc || 0, discountedUntil: until || null, releaseDate: releaseDate || null, players: meta.players || null, size: meta.size || null, rating: meta.rating };
     }
 
 	    let parsedTR = parse(tr.html, productId);
@@ -5140,6 +5252,9 @@ app.post("/api/admin/games/add", requireAdmin, async (req, res) => {
       cover: g.cover ? String(g.cover) : null,
       platform: g.platform ? String(g.platform) : "PS4 / PS5",
       edition: g.edition ? String(g.edition) : null,
+      players: normalizeGameMetaField(g.players),
+      size: normalizeGameMetaField(g.size),
+      rating: normalizeRatingValue(g.rating),
 
       // If we found a PS browse rank, use it. Otherwise keep unknown titles at the end.
       popRank: Number.isFinite(psRank) ? psRank : 1000000000,
@@ -5297,6 +5412,9 @@ app.get("/api/search", async (req, res) => {
         ru: normalizeRuVal(reg && (reg.ru ?? reg.ruLang ?? reg.russian ?? reg.rus ?? reg.langRu ?? reg.languageRu)),
         sub: anySub,
         platform: g.platform || "PS4 / PS5",
+        players: g.players || null,
+        size: g.size || null,
+        rating: (typeof g.rating !== "undefined" ? g.rating : null),
         cover: g.cover || "",
         discPerc,
         discountedUntil,
@@ -5304,7 +5422,7 @@ app.get("/api/search", async (req, res) => {
         finalPriceRub: rub,
         popRank: g.popRank || 999999,
         releaseDate: g.releaseDate || null,
-        isPreorder: (g._src === "pre") || !!g.isPreorder
+        isPreorder: ((g._src === "pre") || !!g.isPreorder) && isFutureReleaseDateYMD(g.releaseDate)
       };
       if(q) base._score = relevanceScore([g.name, g.edition].filter(Boolean).join(" "), q);
       return base;
