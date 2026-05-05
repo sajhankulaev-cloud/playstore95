@@ -168,6 +168,18 @@ button{ color:#0f172a !important; }
         <div class="small" style="margin-top:8px;">Edition</div>
         <input id="impEdition" class="input" type="text" placeholder="Standard / Deluxe / Premium..." />
 
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;">
+          <div style="flex:1;min-width:150px;">
+            <div class="small">Игроки</div>
+            <select id="impPlayers" class="select" style="width:100%;">
+              <option value="1 игрок" selected>1 игрок</option>
+              <option value="1 - 2 игрока">1 - 2 игрока</option>
+              <option value="1 - 4 игрока">1 - 4 игрока</option>
+              <option value="1 - 6 игроков">1 - 6 игроков</option>
+            </select>
+          </div>
+        </div>
+
         <div class="small" style="margin-top:8px;">Русский язык</div>
         <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px;">
           <div style="flex:1;min-width:180px;">
@@ -265,6 +277,18 @@ button{ color:#0f172a !important; }
         <input id="preName" class="input" type="text" />
         <div class="small" style="margin-top:8px;">Edition</div>
         <input id="preEdition" class="input" type="text" placeholder="Standard / Deluxe / Premium..." />
+
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;">
+          <div style="flex:1;min-width:150px;">
+            <div class="small">Игроки</div>
+            <select id="prePlayers" class="select" style="width:100%;">
+              <option value="1 игрок" selected>1 игрок</option>
+              <option value="1 - 2 игрока">1 - 2 игрока</option>
+              <option value="1 - 4 игрока">1 - 4 игрока</option>
+              <option value="1 - 6 игроков">1 - 6 игроков</option>
+            </select>
+          </div>
+        </div>
         <div class="small" style="margin-top:8px;">Описание</div>
         <textarea id="preDescription" class="input" rows="7" placeholder="Описание на русском из PS Store UA"></textarea>
 
@@ -378,6 +402,18 @@ button{ color:#0f172a !important; }
           <input id="allName" class="input" type="text" />
           <div class="small" style="margin-top:8px;">Edition</div>
           <input id="allEdition" class="input" type="text" placeholder="Standard / Deluxe / Premium..." />
+
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;">
+          <div style="flex:1;min-width:150px;">
+            <div class="small">Игроки</div>
+            <select id="allPlayers" class="select" style="width:100%;">
+              <option value="1 игрок" selected>1 игрок</option>
+              <option value="1 - 2 игрока">1 - 2 игрока</option>
+              <option value="1 - 4 игрока">1 - 4 игрока</option>
+              <option value="1 - 6 игроков">1 - 6 игроков</option>
+            </select>
+          </div>
+        </div>
           <div class="small" style="margin-top:8px;">Описание</div>
           <textarea id="allDescription" class="input" rows="7" placeholder="Описание на русском из PS Store UA"></textarea>
 
@@ -1030,7 +1066,7 @@ function renderGames(){
       </div>
       <div style="overflow:auto;">
         <table>
-          <thead><tr><th>ID</th><th>Название</th><th>Платформа</th><th>Действия</th></tr></thead>
+          <thead><tr><th>ID</th><th>Название</th><th>Издание</th><th>Платформа</th><th>Действия</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -1049,7 +1085,8 @@ function renderGames(){
     const tbody = card.querySelector("tbody");
     for(const g of slice){
       const tr=document.createElement("tr");
-      tr.innerHTML = `<td>${g.id}</td><td>${g.name||""}</td><td>${g.platform||""}</td><td style="display:flex;gap:8px;flex-wrap:wrap;"><button class="btnDark" data-act="edit">Редактировать</button><button class="btnGhost" data-act="del">Удалить</button></td>`;
+      const escCell = (v)=>String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+      tr.innerHTML = `<td>${escCell(g.id)}</td><td>${escCell(g.name||"")}</td><td style="white-space:nowrap;">${escCell(g.edition||"")}</td><td>${escCell(g.platform||"")}</td><td style="display:flex;gap:8px;flex-wrap:wrap;"><button class="btnDark" data-act="edit">Редактировать</button><button class="btnGhost" data-act="del">Удалить</button></td>`;
       tr.querySelector("button[data-act=edit]").onclick=()=>openDiscountEdit(g.id, tr);
       tr.querySelector("button[data-act=del]").onclick=async ()=>{
         if(!confirm(`Удалить "${g.name}"?`)) return;
@@ -1200,7 +1237,7 @@ async function openDiscountEdit(id, anchorTr){
   const row = document.createElement('tr');
   row.className = 'inlineEditRow';
   row.innerHTML = `
-    <td colspan="4" style="padding:12px; background:#f8fafc;">
+    <td colspan="5" style="padding:12px; background:#f8fafc;">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
         <div>
           <div style="font-weight:950;">Редактирование</div>
@@ -1229,6 +1266,10 @@ async function openDiscountEdit(id, anchorTr){
         <div>
           <div class="small">Edition</div>
           <input class="input" data-f="edition" type="text" value="${(g.edition||'').replace(/"/g,'&quot;')}" />
+        </div>
+        <div>
+          <div class="small">Игроки</div>
+          ${playersSelectHtml(g.players)}
         </div>
         <div style="grid-column:1 / span 2;">
           <div class="small">Cover URL</div>
@@ -1288,6 +1329,7 @@ async function openDiscountEdit(id, anchorTr){
       name: (row.querySelector('[data-f="name"]').value||'').trim(),
       platform: row.querySelector('select[data-f="platform"]').value,
       edition: (row.querySelector('[data-f="edition"]').value||'').trim(),
+      players: normalizePlayersChoice(row.querySelector('[data-f="players"]')?.value || ''),
       description: (row.querySelector('[data-f="description"]')?.value||'').trim(),
       cover: (row.querySelector('[data-f="cover"]').value||'').trim() || null,
       regions: {
@@ -1472,6 +1514,37 @@ document.getElementById('backfillConceptId').onclick = async ()=>{
   }
 };
 
+
+function pickMeta(tr, ua, field){
+  return (tr && tr[field] != null && String(tr[field]).trim() !== '') ? tr[field] : ((ua && ua[field] != null) ? ua[field] : '');
+}
+function normalizePlayersChoice(value){
+  const raw = String(value || '').trim().replace(/[–—]/g, '-');
+  const m = raw.match(/(\d+)\s*(?:-|до)\s*(\d+)/i);
+  if(m){
+    const max = Number(m[2]);
+    if(max === 2) return '1 - 2 игрока';
+    if(max === 4) return '1 - 4 игрока';
+    if(max === 6) return '1 - 6 игроков';
+  }
+  return '1 игрок';
+}
+function playersSelectHtml(value){
+  const v = normalizePlayersChoice(value);
+  const opts = ['1 игрок','1 - 2 игрока','1 - 4 игрока','1 - 6 игроков'];
+  return `<select class="select" data-f="players" style="width:100%;">${opts.map(o=>`<option value="${o}" ${o===v?'selected':''}>${o}</option>`).join('')}</select>`;
+}
+function setMetaFields(prefix, tr, ua){
+  const p = normalizePlayersChoice(pickMeta(tr, ua, 'players'));
+  const pe = document.getElementById(prefix + 'Players');
+  if(pe) pe.value = p;
+}
+function readMetaFields(prefix){
+  return {
+    players: normalizePlayersChoice(document.getElementById(prefix + 'Players')?.value || '')
+  };
+}
+
 async function doImport(){
   const url=document.getElementById("importUrl").value.trim();
   if(!url){alert("Вставь ссылку");return;}
@@ -1503,6 +1576,7 @@ async function doImport(){
     const ed = (tr.edition || ua.edition || "Standard Edition");
     const edEl = document.getElementById("impEdition");
     if(edEl) edEl.value = ed;
+    setMetaFields("imp", tr, ua);
     const ruTR = (tr.ru || "none");
   const ruUA = (ua.ru || "none");
   const ruTrEl = document.getElementById("impRuTR");
@@ -1547,6 +1621,7 @@ async function addGame(){
     cover: document.getElementById("impCover").style.display==="block" ? document.getElementById("impCover").src : null,
     platform: document.getElementById("impPlatform").value,
     edition: (document.getElementById("impEdition")?.value || "").trim() || "Standard Edition",
+    ...readMetaFields("imp"),
     regions:{
       TR:{
         salePrice:Number(document.getElementById("impTrPrice").value||0),
@@ -1617,6 +1692,7 @@ async function doImportPreorder(){
 
   const ed = (tr.edition || ua.edition || "Standard Edition");
   document.getElementById("preEdition").value = ed;
+  setMetaFields("pre", tr, ua);
 
   // RU default: unknown (until release)
   document.getElementById("preRuTR").value = (tr.ru || "unknown");
@@ -1661,6 +1737,7 @@ async function addPreorder(){
     cover: (document.getElementById("preCover").style.display==="block") ? document.getElementById("preCover").src : null,
     platform: (document.getElementById("prePlatform").value||"").trim(),
     edition: (document.getElementById("preEdition").value||"").trim() || "Standard Edition",
+    ...readMetaFields("pre"),
     releaseDate: (document.getElementById("preReleaseDate").value||"").trim() || null,
     description: (document.getElementById("preDescription")?.value||"").trim(),
     regions:{
@@ -1726,6 +1803,7 @@ function beginPreorderEdit(id){
 
   document.getElementById("preName").value = g.name || '';
   document.getElementById("preEdition").value = g.edition || '';
+  setMetaFields("pre", g, {});
   document.getElementById("prePlatform").value = g.platform || 'PS4 / PS5';
   document.getElementById("preReleaseDate").value = g.releaseDate ? String(g.releaseDate).slice(0,10) : '';
   document.getElementById("preIdTR").value = (g.productIds && g.productIds.TR) ? g.productIds.TR : '';
@@ -1791,18 +1869,18 @@ function renderPreorders(){
   let html = '';
   html += `<div style="overflow:auto;">`;
   html += `<table><thead><tr>`;
-  html += `<th>ID</th><th>Название</th><th>Релиз</th><th>Платформа</th><th>Действия</th>`;
+  html += `<th>ID</th><th>Название</th><th>Издание</th><th>Платформа</th><th>Действия</th>`;
   html += `</tr></thead><tbody>`;
 
   for(const g of slice){
     const pidTR = g.productIds?.TR || '';
     const pidUA = g.productIds?.UA || '';
     const showId = pidTR || pidUA || (g.id||'');
-    const rel = g.releaseDate ? String(g.releaseDate) : '';
+    const edition = g.edition ? String(g.edition) : '';
     html += `<tr>`;
     html += `<td style="min-width:260px;">${esc(showId)}</td>`;
     html += `<td>${esc(g.name||'')}</td>`;
-    html += `<td style="white-space:nowrap;">${esc(rel)}</td>`;
+    html += `<td style="white-space:nowrap;">${esc(edition)}</td>`;
     html += `<td>${esc(g.platform||'')}</td>`;
     html += `<td style="display:flex;gap:8px;flex-wrap:wrap;">`;
     html += `<button class="btnGhost" data-pre-edit="${esc(g.id||'')}">Редактировать</button>`;
@@ -1924,6 +2002,10 @@ async function openPreorderEdit(id, anchorTr){
           <div class="small">Edition</div>
           <input class="input" data-f="edition" type="text" value="${String(g.edition||'').replace(/"/g,'&quot;')}" />
         </div>
+        <div>
+          <div class="small">Игроки</div>
+          ${playersSelectHtml(g.players)}
+        </div>
         <div style="grid-column:1 / span 2;">
           <div class="small">Описание</div>
           <textarea class="input" data-f="description" rows="7">${String(g.description||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
@@ -1998,6 +2080,7 @@ async function openPreorderEdit(id, anchorTr){
       name: (row.querySelector('[data-f="name"]').value||'').trim(),
       platform: row.querySelector('select[data-f="platform"]').value,
       edition: (row.querySelector('[data-f="edition"]').value||'').trim(),
+      players: normalizePlayersChoice(row.querySelector('[data-f="players"]')?.value || ''),
       description: (row.querySelector('[data-f="description"]')?.value||'').trim(),
       cover: (row.querySelector('[data-f="cover"]').value||'').trim() || null,
       releaseDate: rd || null,
@@ -2067,6 +2150,7 @@ async function doImportAllGames(){
   const ed = (tr.edition || ua.edition || "Standard Edition");
   const edEl = document.getElementById("allEdition");
   if(edEl) edEl.value = ed;
+  setMetaFields("all", tr, ua);
 
   // RU per region
   document.getElementById("allRuTR").value = (tr.ru || "none");
@@ -2174,7 +2258,7 @@ function renderAllGames(){
   let html = '';
   html += `<div style="overflow:auto;">`;
   html += `<table><thead><tr>`;
-  html += `<th>ID</th><th>Название</th><th>Платформа</th><th>Действия</th>`;
+  html += `<th>ID</th><th>Название</th><th>Издание</th><th>Платформа</th><th>Действия</th>`;
   html += `</tr></thead><tbody>`;
 
   for(const g of slice){
@@ -2184,6 +2268,7 @@ function renderAllGames(){
     html += `<tr>`;
     html += `<td style="min-width:260px;">${esc(showId)}</td>`;
     html += `<td>${esc(g.name||'')}</td>`;
+    html += `<td style="white-space:nowrap;">${esc(g.edition||'')}</td>`;
     html += `<td>${esc(g.platform||'')}</td>`;
     html += `<td style="display:flex;gap:8px;flex-wrap:wrap;">`;
     html += `<button class="btnDark" data-edit="${esc(g.id||'')}">Редактировать</button>`;
@@ -2268,7 +2353,7 @@ async function openAllGameEdit(id, anchorTr){
   const row = document.createElement('tr');
   row.className = 'inlineEditRow';
   row.innerHTML = `
-    <td colspan="4" style="padding:12px; background:#f8fafc;">
+    <td colspan="5" style="padding:12px; background:#f8fafc;">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
         <div>
           <div style="font-weight:950;">Редактирование</div>
@@ -2297,6 +2382,10 @@ async function openAllGameEdit(id, anchorTr){
         <div>
           <div class="small">Edition</div>
           <input class="input" data-f="edition" type="text" value="${String(g.edition||'').replace(/"/g,'&quot;')}" />
+        </div>
+        <div>
+          <div class="small">Игроки</div>
+          ${playersSelectHtml(g.players)}
         </div>
         <div style="grid-column:1 / span 2;">
           <div class="small">Описание</div>
@@ -2365,6 +2454,7 @@ async function openAllGameEdit(id, anchorTr){
       name: (row.querySelector('[data-f="name"]').value||'').trim(),
       platform: row.querySelector('select[data-f="platform"]').value,
       edition: (row.querySelector('[data-f="edition"]').value||'').trim(),
+      players: normalizePlayersChoice(row.querySelector('[data-f="players"]')?.value || ''),
       description: (row.querySelector('[data-f="description"]')?.value||'').trim(),
       cover: (row.querySelector('[data-f="cover"]').value||'').trim() || null,
       conceptId: (row.querySelector('[data-f="conceptId"]').value||'').trim() || null,
