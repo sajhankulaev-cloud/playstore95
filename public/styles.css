@@ -2321,7 +2321,7 @@ footer{
 /* ADAPTIVE FINAL: stable card layout. Description is always below the cover/header. */
 #gameModal.gameModalOverlayV2 .gameModalV2{
   width:clamp(340px, 92vw, 860px) !important;
-  max-height:min(780px, calc(100vh - 24px)) !important;
+  max-height:min(626px, calc(100vh - 24px)) !important;
   overflow:auto !important;
   padding:clamp(14px, 2.4vw, 28px) !important;
   border-radius:clamp(10px, 3vw, 30px) !important;
