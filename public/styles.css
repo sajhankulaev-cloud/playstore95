@@ -2477,7 +2477,7 @@ footer{
 @media (max-width:460px){
   #gameModal.gameModalOverlayV2 .gameModalV2{width:calc(100vw - 8px) !important; padding:10px !important;}
   #gameModal.gameModalOverlayV2 .gmv2Top{grid-template-columns:122px minmax(0,1fr) !important; gap:10px !important;}
-  #gameModal.gameModalOverlayV2 .gmv2Right{padding-right:30px !important;}
+  #gameModal.gameModalOverlayV2 .gmv2Right{padding-right:10px !important;}
   #gameModal.gameModalOverlayV2 .gmv2Title{font-size:20px !important; font-weight:500 !important; color:#102248 !important;}
   #gameModal.gameModalOverlayV2 .gmv2EditionText{font-size:18px !important;}
   #gameModal.gameModalOverlayV2 .gmv2PromoLine{align-items:center !important;}
