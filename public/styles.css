@@ -2557,7 +2557,7 @@ footer{
 #gameModal.gameModalOverlayV2 .gmv2PlayersInfo{
   min-width:0;
   height:clamp(30px, 7.2vw, 48px);
-  color:#102248 !important;
+  color:#1452e7 !important;
   display:flex;
   flex-direction:column;
   align-items:center;
@@ -2595,7 +2595,7 @@ footer{
   aspect-ratio:1/1;
   transform:translateX(-50%);
   border-radius:50%;
-  background:#633492;
+  background:#1452e7;
 }
 #gameModal.gameModalOverlayV2 .gmv2PlayerAvatar::after{
   content:"";
@@ -2605,7 +2605,7 @@ footer{
   bottom:0;
   height:62%;
   border-radius:50% 50% 20% 20% / 58% 58% 25% 25%;
-  background:#633492;
+  background:#1452e7;
 }
 #gameModal.gameModalOverlayV2 .gmv2PlayersText{
   display:block;
