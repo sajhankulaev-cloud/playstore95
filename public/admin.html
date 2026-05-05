@@ -1288,6 +1288,7 @@ async function openDiscountEdit(id, anchorTr){
       name: (row.querySelector('[data-f="name"]').value||'').trim(),
       platform: row.querySelector('select[data-f="platform"]').value,
       edition: (row.querySelector('[data-f="edition"]').value||'').trim(),
+      description: (row.querySelector('[data-f="description"]')?.value||'').trim(),
       cover: (row.querySelector('[data-f="cover"]').value||'').trim() || null,
       regions: {
         TR: {
@@ -1997,6 +1998,7 @@ async function openPreorderEdit(id, anchorTr){
       name: (row.querySelector('[data-f="name"]').value||'').trim(),
       platform: row.querySelector('select[data-f="platform"]').value,
       edition: (row.querySelector('[data-f="edition"]').value||'').trim(),
+      description: (row.querySelector('[data-f="description"]')?.value||'').trim(),
       cover: (row.querySelector('[data-f="cover"]').value||'').trim() || null,
       releaseDate: rd || null,
       productIds: { TR: newIdTR || null, UA: newIdUA || null },
@@ -2363,6 +2365,7 @@ async function openAllGameEdit(id, anchorTr){
       name: (row.querySelector('[data-f="name"]').value||'').trim(),
       platform: row.querySelector('select[data-f="platform"]').value,
       edition: (row.querySelector('[data-f="edition"]').value||'').trim(),
+      description: (row.querySelector('[data-f="description"]')?.value||'').trim(),
       cover: (row.querySelector('[data-f="cover"]').value||'').trim() || null,
       conceptId: (row.querySelector('[data-f="conceptId"]').value||'').trim() || null,
       productIds: {
