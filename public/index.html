@@ -1335,9 +1335,53 @@ function buildCard(game, whatsapp, showUntil){
   return div;
 }
 
+
+function gmRuLabel(ru){
+  const v = String(ru || 'none').toLowerCase();
+  if(v === 'voice') return 'RU Озвучка';
+  if(v === 'text') return 'RU Текст';
+  if(v === 'unknown') return 'RU Неизвестно';
+  return '🇷🇺 Отсутствует';
+}
+function gmIsRuPositive(ru){ return String(ru||'').toLowerCase()==='voice' || String(ru||'').toLowerCase()==='text'; }
+function gmEditionShortText(g){
+  const ed = String(g.edition || '').trim();
+  if(ed) return ed;
+  const n = String(g.name || '').trim();
+  return n || 'Standard Edition';
+}
+function gmEditionSubText(g){
+  const ed = gmEditionShortText(g).toLowerCase();
+  if(ed.includes('ultimate')) return 'Включает расширенный набор контента';
+  if(ed.includes('deluxe')) return 'Включает бонусный контент';
+  if(ed.includes('special')) return 'Включает дополнительный контент';
+  if(ed.includes('bundle')) return 'Комплект игры и материалов';
+  return 'Базовая версия игры';
+}
+function gmRenderEditionItem(g, activeId){
+  const active = String(g.id||'') === String(activeId||'');
+  const img = g.cover ? `<img src="${escapeHtml(optimizedPsImageUrl(g.cover, 160))}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : `<div class="gmv2EditionNoCover"></div>`;
+  const disc = Number(g.discPerc||0) ? `<span class="gmv2EditionDiscount">-${Number(g.discPerc||0)}%</span>` : ``;
+  const old = Number(g.oldPriceRub||0) ? `<div class="gmv2EditionOld">${escapeHtml(fmtRub(g.oldPriceRub))}</div>` : '';
+  const price = Number(g.finalPriceRub||0) ? escapeHtml(fmtRub(g.finalPriceRub)) : '—';
+  return `<button class="gmv2Edition ${active?'isActive':''}" type="button" data-gmv2-edition="${escapeHtml(g.id||'')}" aria-pressed="${active?'true':'false'}">
+    <div class="gmv2EditionCover">${img}</div>
+    <div class="gmv2EditionInfo">
+      <div class="gmv2EditionName">${escapeHtml(gmEditionShortText(g))}</div>
+      <div class="gmv2EditionPlatform">${escapeHtml(g.platform || '')}</div>
+      <div class="gmv2EditionSub">${escapeHtml(gmEditionSubText(g))}</div>
+    </div>
+    <div class="gmv2EditionBuy">
+      <div class="gmv2EditionPriceLine">${disc}<span class="gmv2EditionPrice">${price}</span></div>
+      ${old}
+    </div>
+  </button>`;
+}
+
 function openGameModal(game){
   const overlay=document.getElementById("gameModal");
   if(!overlay) return;
+  game = game || {};
 
   const coverWrap=document.getElementById("gmCoverWrap");
   const plats=document.getElementById("gmPlatforms");
@@ -1347,74 +1391,171 @@ function openGameModal(game){
   const until=document.getElementById("gmUntil");
   const relEl=document.getElementById("gmRelease");
   const price=document.getElementById("gmPrice");
+  const oldPrice=document.getElementById("gmOldPrice");
   const buy=document.getElementById("gmBuyBtn");
+  const descEl=document.getElementById("gmDescription");
+  const readMoreEl=document.getElementById("gmReadMore");
+  const editionsWrap=document.getElementById("gmEditionsList");
+  const editionsSection=document.getElementById("gmEditionsSection");
 
-  // cover
   if(coverWrap){
-    if(game.cover){
-      coverWrap.innerHTML=modalCoverImg(game.cover);
-    }else{
-      coverWrap.innerHTML=`<div class="noCoverBox">NO COVER</div>`;
-    }
+    coverWrap.innerHTML = game.cover ? modalCoverImg(game.cover) : `<div class="noCoverBox">NO COVER</div>`;
   }
   if(plats) plats.textContent = game.platform || "PS4 / PS5";
-
   if(title) title.textContent = game.name || "";
-  if(edition) edition.textContent = game.edition || "Standard Edition";
+  if(edition){
+    const platformText = escapeHtml(game.platform || "PS4 / PS5");
+    const editionText = escapeHtml(gmEditionShortText(game));
+    edition.innerHTML = `<span class="gmv2InlinePlatform">${platformText}</span><span class="gmv2InlineEdition">${editionText}</span>`;
+  }
 
   const ruEl=document.getElementById("gmRu");
   if(ruEl){
-    const ru = (game.ru || "none");
-    const label = ru==="voice" ? "Озвучка" : (ru==="text" ? "Текст" : (ru==="unknown" ? "Неизвестно" : "Отсутствует"));
-    ruEl.textContent = `🇷🇺 ${label}`;
-    ruEl.classList.toggle("hasRu", (ru==="voice" || ru==="text"));
-    ruEl.classList.toggle("noRu", ru==="none");
-    ruEl.classList.toggle("ruUnknown", ru==="unknown");
+    ruEl.textContent = gmRuLabel(game.ru);
+    ruEl.classList.toggle("hasRu", gmIsRuPositive(game.ru));
+    ruEl.classList.toggle("noRu", !gmIsRuPositive(game.ru));
+    ruEl.classList.toggle("ruUnknown", String(game.ru||'').toLowerCase()==='unknown');
   }
-
-  // Release date (only for preorders)
-  if(relEl){
-    const hasRel = !!(game && game.isPreorder && game.releaseDate);
-    relEl.style.display = hasRel ? "" : "none";
-    relEl.textContent = hasRel ? `Релиз: ${formatDateDMY(game.releaseDate)}` : "";
-  }
-
-
-
-
-
-
 
   const subEl=document.getElementById("gmSub");
   if(subEl){
-    // Supported values from admin: "eaplay" | "psplus_extra" (also accept "extra")
     const s=String(game.sub||"").trim().toLowerCase();
     const isEa = (s==="eaplay" || s==="ea_play" || s==="ea");
     const isExtra = (s==="psplus_extra" || s==="ps_plus_extra" || s==="extra" || s==="psplus");
-
     if(!s || (!isEa && !isExtra)){
       subEl.style.display="none";
       subEl.innerHTML="";
     }else{
-      // Official logos (Wikimedia copies)
-      const EA_ICON = "/img/ea1.png";
-      const PSPLUS_ICON = "/img/psplus1.png";
-
-      const icon = isEa ? EA_ICON : PSPLUS_ICON;
+      const icon = isEa ? "/img/ea1.png" : "/img/psplus1.png";
       const text = isEa ? "Доступна в EaPlay" : "Доступна в Extra";
-
       subEl.style.display="flex";
       subEl.innerHTML = `<img class="subIcon" src="${icon}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.style.display='none'"/><span>${text}</span>`;
     }
   }
 
+  if(relEl){
+    const hasRel = !!(game && game.isPreorder && game.releaseDate);
+    relEl.style.display = hasRel ? "" : "none";
+    relEl.textContent = hasRel ? `Релиз: ${formatDateDMY(game.releaseDate)}` : "";
+  }
   if(disc) disc.textContent = game.discPerc ? (`-${game.discPerc}%`) : "";
-  if(until){
-    if(game.discountedUntil) until.textContent = formatDateRuLong(game.discountedUntil);
-    else until.textContent = "";
+  if(until) until.textContent = game.discountedUntil ? formatDateRuLong(game.discountedUntil) : "";
+  if(price) price.textContent = fmtRub(game.finalPriceRub);
+  if(oldPrice){
+    oldPrice.style.display = Number(game.oldPriceRub||0) ? "" : "none";
+    oldPrice.textContent = Number(game.oldPriceRub||0) ? fmtRub(game.oldPriceRub) : "";
+  }
+  const promoLine=document.getElementById('gmPromoLine');
+  if(promoLine){
+    const hasPromo = !!(game.discPerc || game.discountedUntil);
+    promoLine.style.display = hasPromo ? '' : 'none';
   }
 
-  if(price) price.textContent = fmtRub(game.finalPriceRub);
+  if(descEl && readMoreEl){
+    const descWrap = document.getElementById('gmDescWrap');
+    const collapseEl = document.getElementById('gmCollapseDesc');
+    const desc = String(game.description || '').trim();
+    if(desc){
+      let descStep = 0; // 0 = short, 1 = medium, 2 = full
+      const stepHeights = [110, 220];
+      const needsControls = ()=>{
+        if(!descEl) return false;
+        const prevMax = descEl.style.maxHeight;
+        descEl.style.maxHeight = 'none';
+        const full = descEl.scrollHeight;
+        descEl.style.maxHeight = prevMax;
+        return full > stepHeights[0] + 8;
+      };
+      const isFullyShown = ()=>{
+        if(!descEl || descStep >= 2) return descStep >= 2;
+        const prevMax = descEl.style.maxHeight;
+        descEl.style.maxHeight = 'none';
+        const full = descEl.scrollHeight;
+        descEl.style.maxHeight = prevMax;
+        return full <= (stepHeights[descStep] || 99999) + 8;
+      };
+      const renderDesc = ()=>{
+        if(descWrap) descWrap.style.display = '';
+        descEl.textContent = desc;
+        descEl.classList.toggle('isExpanded', descStep > 0);
+        descEl.classList.toggle('isFull', descStep >= 2);
+        descEl.style.maxHeight = descStep >= 2 ? 'none' : `${stepHeights[descStep]}px`;
+        if(descWrap){
+          descWrap.classList.toggle('isExpanded', descStep > 0);
+          descWrap.classList.toggle('isFull', descStep >= 2);
+        }
+        requestAnimationFrame(()=>{
+          const controls = needsControls();
+          const fullNow = isFullyShown();
+          if(readMoreEl){
+            readMoreEl.style.display = controls && !fullNow ? '' : 'none';
+            readMoreEl.textContent = descStep === 0 ? 'Читать далее ↓' : 'Показать ещё ↓';
+          }
+          if(collapseEl){
+            collapseEl.style.display = descStep > 0 ? '' : 'none';
+          }
+        });
+      };
+      readMoreEl.onclick = ()=>{
+        descStep = Math.min(2, descStep + 1);
+        renderDesc();
+      };
+      if(collapseEl){
+        collapseEl.onclick = ()=>{
+          descStep = 0;
+          renderDesc();
+        };
+      }
+      renderDesc();
+    }else{
+      if(descWrap) descWrap.style.display = 'none';
+      descEl.textContent = '';
+      readMoreEl.style.display = 'none';
+      if(collapseEl) collapseEl.style.display = 'none';
+    }
+  }
+
+  const renderEditions = (editions)=>{
+    if(!editionsWrap || !editionsSection) return;
+    const list = Array.isArray(editions) && editions.length ? editions : [game];
+    editionsSection.style.display = list.length > 1 ? '' : 'none';
+    editionsWrap.innerHTML = list.map(e=>gmRenderEditionItem(e, game.id)).join('');
+    editionsWrap.querySelectorAll('.gmv2Edition[data-gmv2-edition]').forEach(card=>{
+      card.onclick=()=>{
+        const id = card.getAttribute('data-gmv2-edition');
+        const next = list.find(x=>String(x.id||'')===String(id));
+        if(next){
+          next.editions = list;
+          openGameModal(next);
+        }
+      };
+    });
+  };
+
+  if(editionsWrap && editionsSection){
+    renderEditions(Array.isArray(game.editions) && game.editions.length ? game.editions : [game]);
+    if(!game.__editionsLoaded){
+      const conceptId = String(game.conceptId || '').trim();
+      const editionQs = new URLSearchParams({ region: state.region, id: String(game.id || '') });
+      if(conceptId) editionQs.set('conceptId', conceptId);
+      fetch(`/api/game-editions?${editionQs.toString()}`)
+        .then(r=>r.ok?r.json():null)
+        .then(j=>{
+          if(j && Array.isArray(j.items) && j.items.length){
+            const list = j.items;
+            const freshCurrent = list.find(x=>String(x.id||'')===String(game.id||''));
+            const selected = freshCurrent || list[0];
+
+            // The card that opens the modal can be only a lightweight game object.
+            // Use the full edition data immediately, so price/discount/cart block
+            // and the selected edition text are filled before any click in "Другие издания".
+            openGameModal(Object.assign({}, game, selected, { editions:list, __editionsLoaded:true }));
+            return;
+          }
+        })
+        .catch(()=>{});
+    }
+  }
 
   if(buy){
     buy.setAttribute("data-cart-game", String(game.id));
@@ -1904,34 +2045,65 @@ document.addEventListener("keydown",(e)=>{
 
 load();
 </script>
-<div id="gameModal" class="modalOverlay" style="display:none">
-  <div class="modalCard" role="dialog" aria-modal="true">
-    <button class="modalClose" id="gameModalClose" aria-label="Закрыть">×</button>
-    <div class="modalGrid">
-      <div class="modalLeft">
-        <div class="modalCover" id="gmCoverWrap"></div>
-        <div class="modalPlatforms" id="gmPlatforms"></div>
+<div id="gameModal" class="modalOverlay gameModalOverlayV2" style="display:none">
+  <div class="gameModalV2" role="dialog" aria-modal="true" aria-label="Карточка игры">
+    <div class="gmv2Drag" aria-hidden="true"></div>
+    <button class="gmv2Close" id="gameModalClose" aria-label="Закрыть" type="button">×</button>
+
+    <div class="gmv2Top">
+      <div class="gmv2Left">
+        <div class="gmv2Cover" id="gmCoverWrap"></div>
+        <div class="gmv2Platform" id="gmPlatforms"></div>
       </div>
-      <div class="modalRight">
-        <div class="modalTitle" id="gmTitle"></div>
-        <div class="modalEdition" id="gmEdition"></div>
-        <div class="modalRu" id="gmRu"></div>
-        <div class="modalSub" id="gmSub" style="display:none"></div>
-        <div class="modalMetaRow">
-          <div class="modalDiscount" id="gmDiscount"></div>
-          <div class="modalUntil" id="gmUntil"></div>
+
+      <div class="gmv2Right">
+        <div class="gmv2Title" id="gmTitle"></div>
+        <div class="gmv2EditionText" id="gmEdition"></div>
+        <div class="gmv2Badges">
+          <div class="gmv2Ru" id="gmRu"></div>
+          <div class="gmv2Sub" id="gmSub" style="display:none"></div>
         </div>
-        <div class="modalRelease" id="gmRelease" style="display:none"></div>
-        <div class="modalBuyRow">
-          <div class="modalPrice" id="gmPrice"></div>
-          <button class="buyBtn buyBtn--modal" id="gmBuyBtn" type="button" aria-pressed="false">В корзину</button>
-        </div>
+        <div class="gmv2Release" id="gmRelease" style="display:none"></div>
       </div>
     </div>
+
+    <div class="gmv2DescWrap" id="gmDescWrap" style="display:none">
+      <div class="gmv2Description" id="gmDescription"></div>
+      <div class="gmv2ReadActions" id="gmReadActions">
+        <button class="gmv2ReadMore" id="gmReadMore" type="button">Читать далее ↓</button>
+        <button class="gmv2ReadMore gmv2Collapse" id="gmCollapseDesc" type="button" style="display:none">Свернуть ↑</button>
+      </div>
+    </div>
+
+    <div class="gmv2BuyPanel">
+      <div class="gmv2PromoLine" id="gmPromoLine">
+        <div class="gmv2PromoLeft"><div class="gmv2Discount" id="gmDiscount"></div><div class="gmv2Until" id="gmUntil"></div></div>
+        <div class="gmv2PriceBox"><div class="gmv2Price" id="gmPrice"></div><div class="gmv2OldPrice" id="gmOldPrice"></div></div>
+      </div>
+      <div class="gmv2BuyRow">
+        <button class="gmv2Wish" id="gmWishBtn" type="button" aria-label="В желаемое" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z"/></svg></button>
+        <button class="gmv2CartBtn" id="gmBuyBtn" type="button" aria-pressed="false">В корзину</button>
+      </div>
+    </div>
+
+    <section class="gmv2EditionsSection" id="gmEditionsSection" style="display:none">
+      <div class="gmv2SectionHead">
+        <h3>Другие издания</h3>
+        <!--<button class="gmv2Compare" type="button">⚖ Сравнить издания</button>-->
+      </div>
+      <div class="gmv2EditionsList" id="gmEditionsList"></div>
+    </section>
+	
+	<!--
+    <div class="gmv2Features">
+      <div><span class="gmv2FeatureIcon">👤</span><span>1 игрок</span></div>
+      <div><span class="gmv2FeatureIcon">💾</span><span>Уточняйте размер</span></div>
+      <div><span class="gmv2FeatureIcon">🎮</span><span>Поддержка геймпада</span></div>
+    </div>
+	-->
   </div>
 </div>
 
-  
 <div id="wishOverlay" class="cartOverlay wishOverlay" style="display:none" aria-hidden="true">
   <div class="cartDrawer wishDrawer" role="dialog" aria-modal="true" aria-label="Список желаемого">
     <div class="cartHead"><div class="cartTitle">Желаемое <span class="cartRegion" id="wishRegion"></span></div><div class="cartHeadActions"><button class="btnGhost cartClearBtn" id="wishClearBtn" type="button">Очистить</button><button class="cartClose" id="wishCloseBtn" type="button" aria-label="Закрыть">×</button></div></div>
