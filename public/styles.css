@@ -2549,3 +2549,69 @@ footer{
 #gameModal.gameModalOverlayV2 .gmv2DescWrap.isEmpty{display:none !important;}
 #gameModal.gameModalOverlayV2 .gmv2Description.isHidden{display:none !important;}
 #gameModal.gameModalOverlayV2 .gmv2Description.isExpanded{overflow:auto !important;}
+
+/* Players info in game modal buy row */
+#gameModal.gameModalOverlayV2 .gmv2BuyRow{
+  grid-template-columns:clamp(52px, 8vw, 72px) minmax(90px,1fr) clamp(140px, 15.2vw, 180px) !important;
+}
+#gameModal.gameModalOverlayV2 .gmv2PlayersInfo{
+  min-width:0;
+  height:clamp(30px, 7.2vw, 48px);
+  color:#102248 !important;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:0 6px;
+  font-size:clamp(10px, 2vw, 14px);
+  font-weight:500;
+  line-height:1.05;
+  white-space:nowrap;
+}
+#gameModal.gameModalOverlayV2 .gmv2PlayersIcons{
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  height:clamp(12px, 2.8vw, 18px);
+  margin-bottom:clamp(1px, .35vw, 3px);
+}
+#gameModal.gameModalOverlayV2 .gmv2PlayerAvatar{
+  position:relative;
+  display:inline-block;
+  width:clamp(10px, 2.2vw, 16px);
+  height:clamp(12px, 2.7vw, 19px);
+  margin-left:clamp(-3px, -.55vw, -2px);
+}
+#gameModal.gameModalOverlayV2 .gmv2PlayerAvatar:first-child{
+  margin-left:0;
+}
+#gameModal.gameModalOverlayV2 .gmv2PlayerAvatar::before{
+  content:"";
+  position:absolute;
+  top:0;
+  left:50%;
+  width:55%;
+  aspect-ratio:1/1;
+  transform:translateX(-50%);
+  border-radius:50%;
+  background:#633492;
+}
+#gameModal.gameModalOverlayV2 .gmv2PlayerAvatar::after{
+  content:"";
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  height:62%;
+  border-radius:50% 50% 20% 20% / 58% 58% 25% 25%;
+  background:#633492;
+}
+#gameModal.gameModalOverlayV2 .gmv2PlayersText{
+  display:block;
+}
+#gameModal.gameModalOverlayV2 .gmv2CartBtn{
+  position:static !important;
+  right:auto !important;
+  width:100% !important;
+}
