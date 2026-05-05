@@ -169,6 +169,217 @@ function withTimeout(promise, ms){
 }
 
 
+// --- PS Store RU-UA descriptions ---
+function decodeHtmlEntities(s){
+  return String(s||'')
+    .replace(/&nbsp;/g,' ')
+    .replace(/&amp;/g,'&')
+    .replace(/&quot;/g,'"')
+    .replace(/&#39;/g,"'")
+    .replace(/&lt;/g,'<')
+    .replace(/&gt;/g,'>')
+    .replace(/&#x([0-9a-f]+);/gi, (_,h)=>{ try{return String.fromCharCode(parseInt(h,16));}catch{return _;} })
+    .replace(/&#(\d+);/g, (_,d)=>{ try{return String.fromCharCode(parseInt(d,10));}catch{return _;} });
+}
+function cleanPsDescriptionText(v){
+  let s = String(v||'');
+  try{ s = JSON.parse('"' + s.replace(/"/g,'\\"') + '"'); }catch(_e){}
+  s = decodeHtmlEntities(s);
+  s = s.replace(/<br\s*\/?>/gi,'\n');
+  s = s.replace(/<\/p>/gi,'\n\n');
+  s = s.replace(/<[^>]+>/g,' ');
+  s = s.replace(/\\n/g,'\n').replace(/\\r/g,'');
+  s = s.replace(/[ \t]+/g,' ');
+  s = s.replace(/\n[ \t]+/g,'\n').replace(/[ \t]+\n/g,'\n');
+  s = s.replace(/\n{3,}/g,'\n\n').trim();
+  return s;
+}
+function isGoodPsDescription(s){
+  s = cleanPsDescriptionText(s);
+  if(!s || s.length < 60 || s.length > 5000) return false;
+  if(!/[А-Яа-яЁё]/.test(s)) return false;
+  const bad = [
+    '__typename','priceCurrencyCode','Product:','ROOT_QUERY','ADD_TO_CART','UAH','TRY',
+    'Добавить в корзину','Добавить в список пожеланий','Издания:','Скидка с исходной цены',
+    'Минимальная цена за последние 30','Предложение заканчивается',
+    'Условия использования программного обеспечения','Политика отмены PS Store','Меры предосторожности','О рейтингах',
+    'Facebook','Instagram','Приложение для Android','Приложение для iOS','© 2026 Sony',
+    'Центр настроек конфиденциальности','Ваша конфиденциальность','файлы cookie','cookie',
+    'YouTube is a Google owned platform'
+  ];
+  const low = s.toLowerCase();
+  if(bad.some(x => low.includes(String(x).toLowerCase()))) return false;
+  // reject obvious JSON / page dump
+  const jsonPunct = (s.match(/[{}\[\]"]/g)||[]).length;
+  if(jsonPunct > 20) return false;
+  return true;
+}
+function extractJsonStringValuesByKey(html, keys){
+  const out = [];
+  const keyRe = keys.map(k=>k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|');
+  const re = new RegExp('"(' + keyRe + ')"\\s*:\\s*"((?:\\\\.|[^"\\\\])*)"','gi');
+  let m;
+  while((m = re.exec(String(html||''))) !== null){
+    try{
+      const val = JSON.parse('"' + m[2] + '"');
+      out.push({ key:m[1], value:val });
+    }catch(_e){
+      out.push({ key:m[1], value:m[2] });
+    }
+  }
+  return out;
+}
+function extractPsDescriptionFromHtml(html){
+  const candidates = [];
+  const push = (value, source)=>{
+    const text = cleanPsDescriptionText(value);
+    if(isGoodPsDescription(text)) candidates.push({ text, source });
+  };
+
+  // 1) JSON-LD description: useful when PS exposes it, but still filtered strictly.
+  try{
+    const re = /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+    let m;
+    while((m = re.exec(String(html||''))) !== null){
+      const raw = decodeHtmlEntities(m[1]||'').trim();
+      const j = JSON.parse(raw);
+      const arr = Array.isArray(j) ? j : [j];
+      for(const it of arr){
+        if(it && typeof it === 'object' && it.description) push(it.description, 'jsonld.description');
+      }
+    }
+  }catch(_e){}
+
+  // 2) Embedded PS/Apollo JSON values. Never take plain page text, otherwise footer/cookie text is captured.
+  for(const c of extractJsonStringValuesByKey(html, [
+    'longDescription','description','shortDescription','productDescription','overview','about'
+  ])){
+    push(c.value, c.key);
+  }
+
+  // Prefer the longest clean Russian description. Short meta descriptions lose to full text.
+  candidates.sort((a,b)=> b.text.length - a.text.length);
+  return candidates.length ? candidates[0].text : '';
+}
+function hasUsableDescription(g){
+  return isGoodPsDescription(g && g.description ? g.description : '');
+}
+
+function publicDescriptionFromValue(v){
+  const text = cleanPsDescriptionText(v || '');
+  if(!text) return '';
+  // Keep admin-entered short descriptions, but never allow PS page dumps/footer/cookies.
+  const low = text.toLowerCase();
+  const bad = [
+    '__typename','pricecurrencycode','product:','root_query','add_to_cart','uah','try',
+    'добавить в корзину','добавить в список пожеланий','издания:','скидка с исходной цены',
+    'минимальная цена за последние 30','предложение заканчивается',
+    'условия использования программного обеспечения','политика отмены ps store','меры предосторожности','о рейтингах',
+    'facebook','instagram','приложение для android','приложение для ios','© 2026 sony',
+    'центр настроек конфиденциальности','ваша конфиденциальность','файлы cookie','cookie',
+    'youtube is a google owned platform'
+  ];
+  if(bad.some(x => low.includes(x))) return '';
+  const jsonPunct = (text.match(/[{}\[\]"]/g)||[]).length;
+  if(jsonPunct > 20) return '';
+  return text;
+}
+function buildDescriptionIndex(){
+  const idx = new Map();
+  const add = (g)=>{
+    if(!g) return;
+    const desc = publicDescriptionFromValue(g.description || '');
+    if(!desc) return;
+    const keys = [];
+    if(g.id) keys.push(String(g.id).trim());
+    if(g.conceptId) keys.push('concept:' + String(g.conceptId).trim());
+    if(g.productIds && typeof g.productIds === 'object'){
+      for(const v of Object.values(g.productIds)){ if(v) keys.push(String(v).trim()); }
+    }
+    for(const k of keys){
+      if(!k) continue;
+      const prev = idx.get(k) || '';
+      if(desc.length > prev.length) idx.set(k, desc);
+    }
+  };
+  for(const file of [ALL_GAMES_PATH, PREORDERS_PATH, GAMES_PATH]){
+    const doc = readJson(file, { items:[] });
+    const arr = Array.isArray(doc) ? doc : (Array.isArray(doc.items) ? doc.items : []);
+    arr.forEach(add);
+  }
+  return idx;
+}
+function descriptionForPublicGame(g, descIndex){
+  const own = publicDescriptionFromValue(g && g.description ? g.description : '');
+  if(own) return own;
+  const idx = descIndex || buildDescriptionIndex();
+  const keys = [];
+  if(g && g.id) keys.push(String(g.id).trim());
+  if(g && g.conceptId) keys.push('concept:' + String(g.conceptId).trim());
+  if(g && g.productIds && typeof g.productIds === 'object'){
+    for(const v of Object.values(g.productIds)){ if(v) keys.push(String(v).trim()); }
+  }
+  for(const k of keys){
+    const v = idx.get(k);
+    if(v) return v;
+  }
+  return '';
+}
+function buildConceptIndex(){
+  const idx = new Map();
+  const add = (g)=>{
+    if(!g || !g.conceptId) return;
+    const cid = String(g.conceptId).trim();
+    if(!cid) return;
+    if(g.id) idx.set(String(g.id).trim(), cid);
+    if(g.productIds && typeof g.productIds === 'object'){
+      for(const v of Object.values(g.productIds)){ if(v) idx.set(String(v).trim(), cid); }
+    }
+  };
+  for(const file of [ALL_GAMES_PATH, PREORDERS_PATH, GAMES_PATH]){
+    const doc = readJson(file, { items:[] });
+    const arr = Array.isArray(doc) ? doc : (Array.isArray(doc.items) ? doc.items : []);
+    arr.forEach(add);
+  }
+  return idx;
+}
+function conceptForGame(g, conceptIndex){
+  const own = String((g && g.conceptId) || '').trim();
+  if(own) return own;
+  const idx = conceptIndex || buildConceptIndex();
+  if(g && g.id && idx.get(String(g.id).trim())) return idx.get(String(g.id).trim());
+  if(g && g.productIds && typeof g.productIds === 'object'){
+    for(const v of Object.values(g.productIds)){
+      const cid = idx.get(String(v||'').trim());
+      if(cid) return cid;
+    }
+  }
+  return '';
+}
+function pickUaProductId(g){
+  return String((g && g.productIds && (g.productIds.UA || g.productIds.TR)) || (g && g.id) || '').trim();
+}
+async function fetchGameDescriptionFromPs(productIdOrConceptId){
+  const id = String(productIdOrConceptId||'').trim();
+  if(!id) return '';
+  const urls = /^\d+$/.test(id)
+    ? [`https://store.playstation.com/ru-ua/concept/${encodeURIComponent(id)}`]
+    : [`https://store.playstation.com/ru-ua/product/${encodeURIComponent(id)}`];
+  for(const url of urls){
+    try{
+      const html = await fetchText(url, {
+        acceptLanguage: 'ru-UA,ru;q=0.95,uk-UA;q=0.7,en;q=0.5',
+        timeoutMs: 12000,
+        headers: { 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' }
+      });
+      const desc = extractPsDescriptionFromHtml(html);
+      if(desc) return desc;
+    }catch(_e){}
+  }
+  return '';
+}
+
+
 // --- PlayStation Discounts category scraper (TR) ---
 // Admin can trigger a refresh: we scrape the PS Store TR discounts category page,
 // resolve discounted products, match them against our local "Всё игры" library, and rebuild games.json (Скидки).
@@ -216,13 +427,17 @@ function extractProductIdsFromCategoryHtml(html){
 
 function parseTrProductHtmlForDiscount(html, expectedSku){
   // Reuse the same parsing helpers used by /api/admin/import.
-  // Return { discPerc, discountedUntil, trDiscountPrice } when скидка активна.
+  // Return discount meta for this exact product page only.
   if(!html || looksBlocked(html)) return { blocked:true };
   const jsonLd = extractJsonLd(html);
   const offer = extractOfferPrice(jsonLd, expectedSku);
   const discPerc = extractDiscountPercent(html);
   const until = (discPerc && discPerc > 0) ? (extractDiscountedUntil(html, jsonLd) || extractUntilDate(html)) : null;
   const sale = (offer && Number.isFinite(offer.price) ? offer.price : null);
+  // A version is discounted only when it has its own sale price AND its own end date.
+  if(!(discPerc > 0) || !until || sale == null){
+    return { blocked:false, discPerc:0, discountedUntil:null, trDiscountPrice:sale };
+  }
   return { blocked:false, discPerc: discPerc || 0, discountedUntil: until || null, trDiscountPrice: sale };
 }
 
@@ -300,6 +515,93 @@ async function scrapeTrDiscountCategory(opts={}){
   return Array.from(byPid.values());
 }
 
+
+function collectTrProductIdsFromGame(g){
+  const out = [];
+  const add = (v)=>{
+    if(Array.isArray(v)){
+      for(const x of v) add(x);
+      return;
+    }
+    const s = String(v || "").toUpperCase().trim();
+    if(s && /^[A-Z]{2}\d{4}-/.test(s) && !out.includes(s)) out.push(s);
+  };
+  add(g && g.productIds && g.productIds.TR);
+  // fallback for older items where id itself is the TR product id
+  add(g && g.id);
+  return out;
+}
+
+function mergeDiscountListsExact(lists){
+  const byPid = new Map();
+  for(const list of lists || []){
+    for(const it of (Array.isArray(list) ? list : [])){
+      const key = String(it && it.productId || "").toUpperCase().trim();
+      if(!key) continue;
+      const cur = Object.assign({}, it, { productId:key });
+      const prev = byPid.get(key);
+      if(!prev){ byPid.set(key, cur); continue; }
+      const prevScore =
+        (Number(prev.trDiscountPrice) > 0 ? 4 : 0) +
+        (Number(prev.discPerc) > 0 ? 3 : 0) +
+        (prev.discountedUntil ? 1 : 0);
+      const curScore =
+        (Number(cur.trDiscountPrice) > 0 ? 4 : 0) +
+        (Number(cur.discPerc) > 0 ? 3 : 0) +
+        (cur.discountedUntil ? 1 : 0);
+      if(curScore > prevScore || Number(cur.discPerc||0) > Number(prev.discPerc||0)) byPid.set(key, cur);
+    }
+  }
+  return Array.from(byPid.values());
+}
+
+async function scrapeKnownTrProductDiscounts(baseItems, opts={}){
+  // Extra safe pass: check exact product pages from our own base.
+  // This does NOT use conceptId, so Standard/Deluxe/Ultimate cannot be mixed.
+  // It only adds a discount when the exact productId stored in all_games.json has an active discount.
+  const timeoutMs = Number(opts.timeoutMs || 8000);
+  const concurrency = Math.max(1, Math.min(8, Number(opts.concurrency || 5)));
+  const maxProducts = Math.max(1, Math.min(3000, Number(opts.maxProducts || 1200)));
+
+  const ids = [];
+  const seen = new Set();
+  for(const g of (Array.isArray(baseItems) ? baseItems : [])){
+    for(const pid of collectTrProductIdsFromGame(g)){
+      if(seen.has(pid)) continue;
+      seen.add(pid);
+      ids.push(pid);
+      if(ids.length >= maxProducts) break;
+    }
+    if(ids.length >= maxProducts) break;
+  }
+
+  const results = [];
+  let idx = 0;
+  const workers = Array.from({ length: concurrency }, async ()=>{
+    while(true){
+      const i = idx++;
+      if(i >= ids.length) break;
+      const pid = ids[i];
+      const url = `https://store.playstation.com/en-tr/product/${pid}`;
+      try{
+        const html = await fetchText(url, { acceptLanguage: "en-TR,en;q=0.9,tr-TR;q=0.8", timeoutMs });
+        const parsed = parseTrProductHtmlForDiscount(html, pid);
+        if(parsed && !parsed.blocked && Number(parsed.discPerc||0) > 0 && parsed.trDiscountPrice != null){
+          results.push({
+            productId: pid,
+            discPerc: Number(parsed.discPerc || 0),
+            discountedUntil: parsed.discountedUntil || null,
+            trDiscountPrice: Number(parsed.trDiscountPrice || 0),
+            source: "known_product_page"
+          });
+        }
+      }catch(_e){}
+    }
+  });
+  await Promise.all(workers);
+  return mergeDiscountListsExact([results]);
+}
+
 function computeDiscountedPrice(basePrice, discPerc){
   const b = Number(basePrice);
   const d = Number(discPerc);
@@ -308,6 +610,14 @@ function computeDiscountedPrice(basePrice, discPerc){
   const v = b * (1 - (d/100));
   // keep 2 decimals max (UAH/TRY can be .5 sometimes)
   return Math.round(v * 100) / 100;
+}
+
+function computeDiscountPercentFromPrices(basePrice, salePrice){
+  const b = Number(basePrice);
+  const s = Number(salePrice);
+  if(!Number.isFinite(b) || b <= 0 || !Number.isFinite(s) || s <= 0 || s >= b) return 0;
+  const pct = Math.round(((b - s) / b) * 100);
+  return (Number.isFinite(pct) && pct > 0 && pct <= 100) ? pct : 0;
 }
 
 // --- Subscription helpers (PS Plus Extra / EA Play) ---
@@ -1293,6 +1603,7 @@ const STORE_PATH = path.join(DATA_DIR, "store.json");
 const GAMES_PATH = path.join(DATA_DIR, "games.json");
 const ALL_GAMES_PATH = path.join(DATA_DIR, "all_games.json");
 const DISCOUNT_BANNERS_PATH = path.join(DATA_DIR, "discount_banners.json");
+const DESCRIPTION_BACKFILL_STATE_PATH = path.join(DATA_DIR, "description_backfill_state.json");
 
 const PUBLIC_DIR = path.join(__dirname, "public");
 const BANNERS_DIR = path.join(PUBLIC_DIR, "banners");
@@ -1693,8 +2004,25 @@ function extractOfferPrice(jsonLd){
   return null;
 }
 function extractDiscountPercent(html){
-  const m = html.match(/Save\s*(\d{1,3})%/i) || html.match(/%(\d{1,3})\s*indirim/i);
-  return m ? Number(m[1]) : 0;
+  const h = String(html || "");
+  const found = [];
+  const addMatches = (re, groupIndex=1) => {
+    let m;
+    while((m = re.exec(h)) !== null){
+      const pct = Number(m[groupIndex]);
+      if(!Number.isFinite(pct) || pct <= 0 || pct > 100) continue;
+      const start = Math.max(0, m.index - 220);
+      const end = Math.min(h.length, m.index + m[0].length + 220);
+      const ctx = h.slice(start, end).toLowerCase();
+      // PS Plus discounts must not become the game's main discount.
+      if(/ps\s*plus|playstation\s*plus|ps\+|plus/.test(ctx)) continue;
+      found.push(pct);
+    }
+  };
+  addMatches(/Save\s*(\d{1,3})%/gi);
+  addMatches(/%(\d{1,3})\s*indirim/gi);
+  addMatches(/(\d{1,3})%\s*(?:off|discount|indirim)/gi);
+  return found.length ? Math.max(...found) : 0;
 }
 function extractUntilDate(html){
   let m = html.match(/(20\d{2}-\d{2}-\d{2})/);
@@ -2170,17 +2498,15 @@ function readActiveDiscountsIndex(){
   const doc = readJson(GAMES_PATH, { updatedAt:null, items:[] });
   const items = Array.isArray(doc.items) ? doc.items : [];
   const byId = new Map();
-  const byConcept = new Map();
   for(const g of items){
     if(!g || !g.regions) continue;
-    // If the game has an active discount in ANY region, keep it.
+    // Keep discounts exact: one product/version must not give a discount to another edition.
     const tr = g.regions.TR;
     const ua = g.regions.UA;
     if(!isDiscountActiveForRegion(tr) && !isDiscountActiveForRegion(ua)) continue;
     if(g.id) byId.set(String(g.id), g);
-    if(g.conceptId) byConcept.set(String(g.conceptId), g);
   }
-  return { byId, byConcept, updatedAt: doc.updatedAt || null };
+  return { byId, updatedAt: doc.updatedAt || null };
 }
 
 function smartMatch(name, q){
@@ -2286,6 +2612,59 @@ app.get("/api/discount-banners", (req, res) => {
   }
 });
 
+
+function attachPublicEditions(items){
+  if(!Array.isArray(items) || !items.length) return items;
+  const editionPriority = (name)=>{
+    const s = String(name||'');
+    if(/\bstandard\b/i.test(s) && /\bedition\b/i.test(s)) return 0;
+    if(/\bdigital\s+deluxe\b/i.test(s)) return 1;
+    if(/\bdeluxe\b/i.test(s) && /\bedition\b/i.test(s)) return 1;
+    if(/\bspecial\b/i.test(s) && /\bedition\b/i.test(s)) return 2;
+    if(/\bultimate\b/i.test(s) && /\bedition\b/i.test(s)) return 3;
+    if(/\bgold\b/i.test(s) && /\bedition\b/i.test(s)) return 4;
+    if(/\bcomplete\b/i.test(s) && /\bedition\b/i.test(s)) return 5;
+    if(/\bdefinitive\b/i.test(s) && /\bedition\b/i.test(s)) return 6;
+    if(/\bbundle\b/i.test(s) || /\bpack\b/i.test(s)) return 8;
+    return 9;
+  };
+  const groups = new Map();
+  for(const it of items){
+    const conceptKey = String(it.conceptId || '').trim();
+    const titleKey = normText(baseTitleForRank(it.name || '')) || normText(it.name || '');
+    const key = conceptKey ? `c:${conceptKey}` : `t:${titleKey}`;
+    if(!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(it);
+  }
+  for(const it of items){
+    const conceptKey = String(it.conceptId || '').trim();
+    const titleKey = normText(baseTitleForRank(it.name || '')) || normText(it.name || '');
+    const key = conceptKey ? `c:${conceptKey}` : `t:${titleKey}`;
+    const group = (groups.get(key) || []).slice().sort((a,b)=>{
+      const pa=editionPriority(a.edition || a.name), pb=editionPriority(b.edition || b.name);
+      if(pa!==pb) return pa-pb;
+      return (Number(a.finalPriceRub||0)-Number(b.finalPriceRub||0)) || String(a.name||'').localeCompare(String(b.name||''));
+    });
+    it.editions = group.map(e=>({
+      id:e.id,
+      name:e.name,
+      edition:e.edition || 'Standard Edition',
+      platform:e.platform || '',
+      cover:e.cover || '',
+      ru:e.ru || 'none',
+      sub:e.sub || '',
+      discPerc:Number(e.discPerc||0)||0,
+      discountedUntil:e.discountedUntil || null,
+      finalPriceRub:Number(e.finalPriceRub||0)||0,
+      oldPriceRub:Number(e.oldPriceRub||0)||0,
+      description:e.description || '',
+      releaseDate:e.releaseDate || null,
+      isPreorder:!!e.isPreorder
+    }));
+  }
+  return items;
+}
+
 app.get("/api/games", (req, res) => {
   try {
     const store = readStore();
@@ -2310,6 +2689,8 @@ app.get("/api/games", (req, res) => {
     const step = store.settings.roundStep || 50;
 
     const discountsIndex = readActiveDiscountsIndex();
+    const descIndex = buildDescriptionIndex();
+    const conceptIndex = buildConceptIndex();
 
     let computed = all.map(g => {
       const reg = (g.regions && g.regions[region]) ? g.regions[region] : null;
@@ -2336,10 +2717,13 @@ app.get("/api/games", (req, res) => {
         sub: anySub,
         platform: g.platform || "PS4 / PS5",
         cover: g.cover || "",
+        description: descriptionForPublicGame(g, descIndex),
         discPerc: reg ? Number(reg.discPerc || 0) : 0,
         discountedUntil: reg ? (reg.discountedUntil || null) : null,
         storePrice: storePrice,
         finalPriceRub: rub,
+        oldPriceRub: (Number(reg && reg.discPerc || 0) > 0 ? clampMinGamePriceRub(store, roundUp((storePrice / Math.max(0.01, (1 - (Number(reg.discPerc||0)/100)))) * pickRate(rules, (storePrice / Math.max(0.01, (1 - (Number(reg.discPerc||0)/100))))), step)) : 0),
+        conceptId: conceptForGame(g, conceptIndex),
         popRank: g.popRank || 999999
       };
 
@@ -2370,12 +2754,107 @@ app.get("/api/games", (req, res) => {
       computed.sort(tieBySort);
     }
 
+    attachPublicEditions(computed);
+
     const total = computed.length;
     const startIndex = (page - 1) * perPage;
     const items = computed.slice(startIndex, startIndex + perPage).map(({ _score, ...rest }) => rest);
     res.json({ region, page, perPage, total, items, updatedAt: gamesDoc.updatedAt || null });
   } catch (e) {
     res.status(500).json({ error: String(e) });
+  }
+});
+
+
+app.get("/api/game-editions", (req, res) => {
+  try{
+    const store = readStore();
+    const region = String(req.query.region || "TR").toUpperCase();
+    const requestedId = String(req.query.id || '').trim();
+    const requestedConcept = String(req.query.conceptId || '').trim();
+    const rules = store.rates[region] || [];
+    const step = store.settings.roundStep || 50;
+    const descIndex = buildDescriptionIndex();
+    const conceptIndex = buildConceptIndex();
+
+    const collect = [];
+    const pushAll = (file, source)=>{
+      const doc = readJson(file, {items:[]});
+      const arr = Array.isArray(doc) ? doc : (Array.isArray(doc.items) ? doc.items : []);
+      for(const raw of arr){ collect.push({ raw, source }); }
+    };
+    pushAll(ALL_GAMES_PATH, 'all');
+    pushAll(PREORDERS_PATH, 'preorder');
+    pushAll(GAMES_PATH, 'discount');
+
+    let targetConcept = requestedConcept;
+    if(!targetConcept && requestedId){
+      const found = collect.find(x=>{
+        const g=x.raw||{};
+        if(String(g.id||'').trim() === requestedId) return true;
+        if(g.productIds && Object.values(g.productIds).some(v=>String(v||'').trim()===requestedId)) return true;
+        return false;
+      });
+      if(found) targetConcept = conceptForGame(found.raw, conceptIndex);
+    }
+    if(!targetConcept) return res.json({ok:true, items:[]});
+
+    const byId = new Map();
+    for(const entry of collect){
+      const g = entry.raw || {};
+      const cid = conceptForGame(g, conceptIndex);
+      if(String(cid||'') !== String(targetConcept)) continue;
+      const reg = (g.regions && g.regions[region]) ? g.regions[region] : null;
+      const storePrice = reg ? Number(reg.salePrice || 0) : 0;
+      if(!Number.isFinite(storePrice) || storePrice <= 0) continue;
+      const discPerc = reg ? Number(reg.discPerc || 0) : 0;
+      const rate = pickRate(rules, storePrice);
+      let rub = roundUp(storePrice * rate, step);
+      rub = clampMinGamePriceRub(store, rub);
+      const baseStorePrice = discPerc > 0 ? (storePrice / Math.max(0.01, (1 - (discPerc/100)))) : storePrice;
+      const trSub = (g.regions && g.regions.TR && g.regions.TR.sub) ? String(g.regions.TR.sub) : "";
+      const uaSub = (g.regions && g.regions.UA && g.regions.UA.sub) ? String(g.regions.UA.sub) : "";
+      const anySub = trSub || uaSub;
+      const item = {
+        id: g.id,
+        name: g.name,
+        edition: anySub ? "Standard Edition" : (g.edition || "Standard Edition"),
+        ru: normalizeRuVal(reg && (reg.ru ?? reg.ruLang ?? reg.russian ?? reg.rus ?? reg.langRu ?? reg.languageRu)),
+        sub: anySub,
+        platform: g.platform || "PS4 / PS5",
+        cover: g.cover || "",
+        description: descriptionForPublicGame(g, descIndex),
+        discPerc,
+        discountedUntil: reg ? (reg.discountedUntil || null) : null,
+        storePrice,
+        finalPriceRub: rub,
+        oldPriceRub: (discPerc > 0 ? clampMinGamePriceRub(store, roundUp(baseStorePrice * pickRate(rules, baseStorePrice), step)) : 0),
+        conceptId: cid,
+        releaseDate: g.releaseDate || null,
+        isPreorder: !!g.releaseDate || entry.source === 'preorder'
+      };
+      const key = String(item.id || '').trim();
+      if(!key) continue;
+      const prev = byId.get(key);
+      // Prefer discounted library entries, then items with description.
+      if(!prev || entry.source === 'discount' || (!prev.description && item.description)) byId.set(key, item);
+    }
+    let items = Array.from(byId.values());
+    const pr = (name)=>{
+      const s=String(name||'');
+      if(/\bstandard\b/i.test(s) && /\bedition\b/i.test(s)) return 0;
+      if(/\bdeluxe\b/i.test(s)) return 1;
+      if(/\bspecial\b/i.test(s)) return 2;
+      if(/\bultimate\b/i.test(s)) return 3;
+      if(/\bgold\b/i.test(s)) return 4;
+      if(/\bcomplete\b/i.test(s)) return 5;
+      if(/\bbundle\b|\bpack\b/i.test(s)) return 8;
+      return 9;
+    };
+    items.sort((a,b)=> (pr(a.edition||a.name)-pr(b.edition||b.name)) || (Number(a.finalPriceRub||0)-Number(b.finalPriceRub||0)) || String(a.name||'').localeCompare(String(b.name||'')));
+    res.json({ok:true, conceptId:targetConcept, items});
+  }catch(e){
+    res.status(500).json({ok:false, error:String(e && e.message || e)});
   }
 });
 
@@ -2749,11 +3228,18 @@ app.post("/api/admin/discounts/refresh_from_ps", requireAdmin, async (req, res) 
     const baseItems = Array.isArray(baseDoc.items) ? baseDoc.items : [];
     const byTrPid = new Map();
     for(const g of baseItems){
-      const pid = g && g.productIds && g.productIds.TR ? String(g.productIds.TR).toUpperCase().trim() : String(g.id||"").toUpperCase().trim();
-      if(pid) byTrPid.set(pid, g);
+      for(const pid of collectTrProductIdsFromGame(g)){
+        if(pid && !byTrPid.has(pid)) byTrPid.set(pid, g);
+      }
     }
 
-    const discounts = await scrapeTrDiscountCategory({ pages, timeoutMs });
+    const discountsFromCategory = await scrapeTrDiscountCategory({ pages, timeoutMs });
+    const discountsFromKnownProducts = await scrapeKnownTrProductDiscounts(baseItems, {
+      timeoutMs: Math.min(Math.max(3000, timeoutMs), 8000),
+      concurrency: Number(req.body && req.body.extraConcurrency) || 5,
+      maxProducts: Number(req.body && req.body.extraMaxProducts) || 1200
+    });
+    const discounts = mergeDiscountListsExact([discountsFromCategory, discountsFromKnownProducts]);
 
     // Safety: never wipe existing скидки if scraping failed / returned nothing.
     // PS Store иногда блокирует requests (Cloudflare / captcha) и тогда "0" — это не "скидок нет".
@@ -2776,6 +3262,15 @@ app.post("/api/admin/discounts/refresh_from_ps", requireAdmin, async (req, res) 
         continue;
       }
 
+      const trBasePrice = base?.regions?.TR ? Number(base.regions.TR.salePrice || 0) : 0;
+      const trDiscountPrice = Number(d.trDiscountPrice || 0);
+      // A version is discounted only if THIS exact version has a real sale price,
+      // an end date, and the sale price is lower than its own regular TR price.
+      if(!d.discountedUntil || !Number.isFinite(trBasePrice) || trBasePrice <= 0 || !Number.isFinite(trDiscountPrice) || trDiscountPrice <= 0 || trDiscountPrice >= trBasePrice){
+        continue;
+      }
+      const exactDiscPerc = computeDiscountPercentFromPrices(trBasePrice, trDiscountPrice);
+      if(!(exactDiscPerc > 0)) continue;
       const uaBasePrice = base?.regions?.UA ? Number(base.regions.UA.salePrice || 0) : 0;
       const trBaseRu = base?.regions?.TR ? normalizeRuVal(base.regions.TR.ru) : "none";
       const uaBaseRu = base?.regions?.UA ? normalizeRuVal(base.regions.UA.ru) : "none";
@@ -2791,14 +3286,14 @@ app.post("/api/admin/discounts/refresh_from_ps", requireAdmin, async (req, res) 
         regions: {
           TR: {
             salePrice: Number(d.trDiscountPrice || 0),
-            discPerc: Number(d.discPerc || 0),
+            discPerc: exactDiscPerc,
             discountedUntil: d.discountedUntil || null,
             ru: trBaseRu,
             sub
           },
           UA: {
-            salePrice: computeDiscountedPrice(uaBasePrice, d.discPerc),
-            discPerc: Number(d.discPerc || 0),
+            salePrice: computeDiscountedPrice(uaBasePrice, exactDiscPerc),
+            discPerc: exactDiscPerc,
             discountedUntil: d.discountedUntil || null,
             ru: uaBaseRu,
             sub
@@ -2815,6 +3310,8 @@ app.post("/api/admin/discounts/refresh_from_ps", requireAdmin, async (req, res) 
         ok:false,
         error:"no_matches",
         scraped: discounts.length,
+        scrapedFromCategory: discountsFromCategory.length,
+        scrapedFromKnownProducts: discountsFromKnownProducts.length,
         missingInAllGames: missing.length,
         missingSample: missing.slice(0, 20),
         hint:"Скидки нашли, но ни одна не совпала с твоей базой all_games.json (проверяй productIds.TR). Файл скидок НЕ изменён."
@@ -2826,6 +3323,8 @@ app.post("/api/admin/discounts/refresh_from_ps", requireAdmin, async (req, res) 
     res.json({
       ok:true,
       scraped: discounts.length,
+      scrapedFromCategory: discountsFromCategory.length,
+      scrapedFromKnownProducts: discountsFromKnownProducts.length,
       addedOrUpdated: matched.length,
       missingInAllGames: missing.length,
       missingSample: missing.slice(0, 20)
@@ -2835,6 +3334,149 @@ app.post("/api/admin/discounts/refresh_from_ps", requireAdmin, async (req, res) 
   }
 });
 
+
+
+// Admin: fetch one Russian description from PS Store UA region.
+app.post("/api/admin/description/fetch", requireAdmin, async (req, res) => {
+  try{
+    const body = req.body || {};
+    const id = String(body.productId || body.uaProductId || body.conceptId || '').trim();
+    if(!id) return res.status(400).json({ ok:false, error:'product_or_concept_id_required' });
+    const description = await fetchGameDescriptionFromPs(id);
+    res.json({ ok:true, description });
+  }catch(e){
+    res.status(500).json({ ok:false, error:String(e) });
+  }
+});
+
+// Admin: clean descriptions polluted by PS page/footer/cookie dumps.
+app.post("/api/admin/descriptions/clean", requireAdmin, (req, res) => {
+  try{
+    const files = [ALL_GAMES_PATH, PREORDERS_PATH, GAMES_PATH];
+    let cleaned = 0, total = 0;
+    for(const file of files){
+      const doc = readJson(file, { updatedAt:null, items:[] });
+      const items = Array.isArray(doc.items) ? doc.items : [];
+      for(const g of items){
+        total++;
+        if(g && g.description && !hasUsableDescription(g)){
+          g.description = '';
+          cleaned++;
+        }
+      }
+      writeJson(file, { updatedAt: new Date().toISOString(), items });
+    }
+    res.json({ ok:true, total, cleaned });
+  }catch(e){
+    res.status(500).json({ ok:false, error:String(e) });
+  }
+});
+
+// Admin: backfill missing Russian descriptions.
+// Resumable batch: each click processes the next 50 games and stores the cursor.
+app.post("/api/admin/descriptions/backfill", requireAdmin, async (req, res) => {
+  try{
+    const body = req.body || {};
+    const batchSize = Math.max(1, Math.min(100, Number(body.limit || body.batchSize || 50)));
+    const concurrency = Math.max(1, Math.min(50, Number(body.concurrency || 50)));
+    const force = !!body.force;
+    const reset = !!body.reset;
+    const files = [
+      { path: ALL_GAMES_PATH, name: 'all_games' },
+      { path: PREORDERS_PATH, name: 'preorders' },
+      { path: GAMES_PATH, name: 'games' },
+    ];
+
+    let state = reset ? null : readJson(DESCRIPTION_BACKFILL_STATE_PATH, null);
+    if(!state || typeof state !== 'object') state = { fileIndex: 0, itemIndex: 0, completedCycles: 0 };
+    state.fileIndex = Math.max(0, Math.min(files.length - 1, Number(state.fileIndex || 0)));
+    state.itemIndex = Math.max(0, Number(state.itemIndex || 0));
+
+    let total = 0, skipped = 0, checked = 0, updated = 0, failed = 0, cleaned = 0;
+    const errors = [];
+    const docs = files.map(f => {
+      const doc = readJson(f.path, { updatedAt:null, items:[] });
+      const items = Array.isArray(doc.items) ? doc.items : [];
+      total += items.length;
+      return { ...f, doc, items, changed:false };
+    });
+
+    const targets = [];
+    let scans = 0;
+    const maxScans = Math.max(1, total) + files.length;
+    let fileIndex = state.fileIndex;
+    let itemIndex = state.itemIndex;
+
+    while(targets.length < batchSize && scans < maxScans){
+      const d = docs[fileIndex];
+      if(!d || !d.items.length || itemIndex >= d.items.length){
+        fileIndex = (fileIndex + 1) % docs.length;
+        itemIndex = 0;
+        scans++;
+        continue;
+      }
+      const g = d.items[itemIndex];
+      const currentIndex = itemIndex;
+      itemIndex++;
+      scans++;
+      if(!g) continue;
+      if(g.description && !hasUsableDescription(g)){
+        g.description = '';
+        d.changed = true;
+        cleaned++;
+      }
+      if(!force && hasUsableDescription(g)){ skipped++; continue; }
+      const pid = pickUaProductId(g) || String(g.conceptId || '').trim();
+      if(!pid){ failed++; continue; }
+      targets.push({ d, g, pid, index: currentIndex });
+    }
+
+    let next = 0;
+    const worker = async ()=>{
+      while(true){
+        const cur = targets[next++];
+        if(!cur) return;
+        checked++;
+        try{
+          const desc = await fetchGameDescriptionFromPs(cur.pid);
+          if(desc && isGoodPsDescription(desc)){
+            cur.g.description = cleanPsDescriptionText(desc);
+            cur.d.changed = true;
+            updated++;
+          }else{
+            failed++;
+          }
+        }catch(e){
+          failed++;
+          if(errors.length < 20) errors.push(`${cur.pid}: ${String(e)}`);
+        }
+      }
+    };
+    await Promise.all(Array.from({length: Math.min(concurrency, targets.length || 1)}, worker));
+
+    for(const d of docs){
+      if(d.changed) writeJson(d.path, { updatedAt: new Date().toISOString(), items: d.items });
+    }
+
+    const remaining = docs.reduce((sum, d)=> sum + d.items.filter(g => {
+      if(!g) return false;
+      if(!force && hasUsableDescription(g)) return false;
+      return !!(pickUaProductId(g) || String(g.conceptId || '').trim());
+    }).length, 0);
+
+    if(targets.length === 0 || remaining === 0){
+      state = { fileIndex: 0, itemIndex: 0, completedCycles: Number(state.completedCycles || 0) + 1, updatedAt: new Date().toISOString() };
+    }else{
+      state = { fileIndex, itemIndex, completedCycles: Number(state.completedCycles || 0), updatedAt: new Date().toISOString() };
+    }
+    writeJson(DESCRIPTION_BACKFILL_STATE_PATH, state);
+
+    const currentFile = docs[state.fileIndex] ? docs[state.fileIndex].name : docs[0].name;
+    res.json({ ok:true, mode:'resumable_batch', batchSize, total, skipped, cleaned, checked, updated, failed, remaining, concurrency, nextFile: currentFile, nextIndex: state.itemIndex, completedCycles: state.completedCycles, errors });
+  }catch(e){
+    res.status(500).json({ ok:false, error:String(e) });
+  }
+});
 
 // Admin: backfill conceptId for already added items in "Всё игры" (uses stored productIds)
 app.post("/api/admin/allgames/backfill_conceptid", requireAdmin, async (req, res) => {
@@ -2990,6 +3632,8 @@ app.get("/api/allgames", async (req, res) => {
     // Overlay active discounts from discounts storage (data/games.json)
     // so the "Все игры" page can show the same discount badge/price without duplicating cards.
     const discountsIndex = readActiveDiscountsIndex();
+    const descIndex = buildDescriptionIndex();
+    const conceptIndex = buildConceptIndex();
 
     let computed = all.map(g => {
       const reg = (g.regions && g.regions[region]) ? g.regions[region] : null;
@@ -2998,10 +3642,8 @@ app.get("/api/allgames", async (req, res) => {
       // Hide game in selected region if price missing/invalid
       if (!Number.isFinite(baseStorePrice) || baseStorePrice <= 0) return null;
 
-      // Find matching discounted entry by conceptId (preferred) or id
-      const dg = (g.conceptId && discountsIndex.byConcept.get(String(g.conceptId)))
-        || (g.id && discountsIndex.byId.get(String(g.id)))
-        || null;
+      // Find matching discounted entry by exact product/version id only.
+      const dg = (g.id && discountsIndex.byId.get(String(g.id))) || null;
 
       // If discounted entry exists and is active for this region — override price + discount meta
       let discPerc = 0;
@@ -3035,10 +3677,13 @@ app.get("/api/allgames", async (req, res) => {
         sub: anySub,
         platform: g.platform || "PS4 / PS5",
         cover: g.cover || "",
+        description: descriptionForPublicGame(g, descIndex),
         discPerc,
         discountedUntil,
         storePrice: storePrice,
         finalPriceRub: rub,
+        oldPriceRub: (discPerc > 0 ? clampMinGamePriceRub(store, roundUp(baseStorePrice * pickRate(rules, baseStorePrice), step)) : 0),
+        conceptId: conceptForGame(g, conceptIndex),
         popRank: g.popRank || 999999,
         // Prefer PS browse rank by id; fallback to title match.
         // IMPORTANT: match by base title too, because PS Browse often shows a single tile
@@ -3129,6 +3774,8 @@ app.get("/api/allgames", async (req, res) => {
       });
     }
 
+    attachPublicEditions(computed);
+
     const total = computed.length;
     const startIdx = (page - 1) * perPage;
     const items = computed.slice(startIdx, startIdx + perPage);
@@ -3173,6 +3820,8 @@ app.get("/api/newreleases", async (req, res) => {
 
     const rules = store.rates[region] || [];
     const step = store.settings.roundStep || 50;
+    const descIndex = buildDescriptionIndex();
+    const conceptIndex = buildConceptIndex();
 
     const normKey = (s)=> normText(String(s||""));
     const editionPriority = (name)=>{
@@ -3213,10 +3862,13 @@ app.get("/api/newreleases", async (req, res) => {
         sub: anySub,
         platform: g.platform || "PS4 / PS5",
         cover: g.cover || "",
+        description: descriptionForPublicGame(g, descIndex),
         discPerc: 0,
         discountedUntil: null,
         storePrice: storePrice,
         finalPriceRub: rub,
+        oldPriceRub: 0,
+        conceptId: conceptForGame(g, conceptIndex),
         popRank: g.popRank || 999999,
         psRank,
         conceptId: cid
@@ -3266,6 +3918,8 @@ app.get("/api/newreleases", async (req, res) => {
         });
       });
     }
+
+    attachPublicEditions(computed);
 
     const total = computed.length;
     const startIdx = (page - 1) * perPage;
@@ -3329,16 +3983,16 @@ app.get("/api/subgames", async (req, res) => {
 
     // Overlay active discounts (same logic as "Все игры")
     const discountsIndex = readActiveDiscountsIndex();
+    const descIndex = buildDescriptionIndex();
+    const conceptIndex = buildConceptIndex();
 
     let computed = all.map(g => {
       const reg = (g.regions && g.regions[region]) ? g.regions[region] : null;
       const baseStorePrice = reg ? Number(reg.salePrice || 0) : 0;
       if (!Number.isFinite(baseStorePrice) || baseStorePrice <= 0) return null;
 
-      // Find matching discounted entry by conceptId (preferred) or id
-      const dg = (g.conceptId && discountsIndex.byConcept.get(String(g.conceptId)))
-        || (g.id && discountsIndex.byId.get(String(g.id)))
-        || null;
+      // Find matching discounted entry by exact product/version id only.
+      const dg = (g.id && discountsIndex.byId.get(String(g.id))) || null;
 
       // If discounted entry exists and is active for this region — override price + discount meta
       let discPerc = 0;
@@ -3447,6 +4101,8 @@ app.get("/api/preorders", async (req, res) => {
 
     const rules = store.rates[region] || [];
     const step = store.settings.roundStep || 50;
+    const descIndex = buildDescriptionIndex();
+    const conceptIndex = buildConceptIndex();
 
     let computed = all.map(g => {
       const reg = (g.regions && g.regions[region]) ? g.regions[region] : null;
@@ -3469,10 +4125,13 @@ app.get("/api/preorders", async (req, res) => {
         sub: anySub,
         platform: g.platform || "PS4 / PS5",
         cover: g.cover || "",
+        description: descriptionForPublicGame(g, descIndex),
         discPerc: 0,
         discountedUntil: null,
         storePrice: storePrice,
         finalPriceRub: rub,
+        oldPriceRub: 0,
+        conceptId: conceptForGame(g, conceptIndex),
         popRank: g.popRank || 999999,
         releaseDate: g.releaseDate || null,
         isPreorder: true,
@@ -3543,6 +4202,8 @@ app.get("/api/preorders", async (req, res) => {
       });
     }
 
+    attachPublicEditions(computed);
+
     const total = computed.length;
     const startIdx = (page - 1) * perPage;
     const items = computed.slice(startIdx, startIdx + perPage);
@@ -3586,6 +4247,7 @@ app.post("/api/admin/allgames/add", requireAdmin, (req, res) => {
       next.cover = g.cover ? String(g.cover) : null;
       next.platform = String(g.platform||"");
       next.edition = (g.edition===null || typeof g.edition==='undefined') ? "Standard Edition" : (String(g.edition||"").trim()||"Standard Edition");
+      next.description = cleanPsDescriptionText(g.description || "");
 
       // Concept ID groups multiple editions of the same game.
       // It's required for the "Новинки" page (matches PS category -> our library).
@@ -3646,6 +4308,7 @@ app.put("/api/admin/allgames/:id", requireAdmin, (req, res) => {
     if(typeof body.cover !== 'undefined') next.cover = body.cover ? String(body.cover) : null;
     if(typeof body.platform !== 'undefined') next.platform = String(body.platform||'');
     if(typeof body.edition !== 'undefined') next.edition = (body.edition===null) ? null : String(body.edition||'');
+    if(typeof body.description !== 'undefined') next.description = cleanPsDescriptionText(body.description || '');
     if(typeof body.conceptId !== 'undefined') next.conceptId = body.conceptId ? String(body.conceptId).trim() : null;
 
     if(typeof body.productIds !== 'undefined'){
@@ -3763,6 +4426,7 @@ app.post("/api/admin/preorders/add", requireAdmin, (req, res) => {
       next.cover = g.cover ? String(g.cover) : null;
       next.platform = String(g.platform||"");
       next.edition = (g.edition===null || typeof g.edition==='undefined') ? "Standard Edition" : (String(g.edition||"").trim()||"Standard Edition");
+      next.description = cleanPsDescriptionText(g.description || "");
       next.releaseDate = dateOrNull(g.releaseDate);
 
       next.productIds = (g.productIds && typeof g.productIds === 'object') ? g.productIds : {};
@@ -3822,6 +4486,7 @@ app.put("/api/admin/preorders/:id", requireAdmin, (req, res) => {
     if(typeof body.platform !== 'undefined') next.platform = String(body.platform||'');
     if(typeof body.edition !== 'undefined') next.edition = (body.edition===null) ? null : String(body.edition||'');
     if(typeof body.releaseDate !== 'undefined') next.releaseDate = dateOrNull(body.releaseDate);
+    if(typeof body.description !== 'undefined') next.description = cleanPsDescriptionText(body.description || '');
     if(typeof body.conceptId !== 'undefined'){
       const s = String(body.conceptId||'').trim();
       next.conceptId = s || null;
@@ -4300,12 +4965,31 @@ app.post("/api/admin/import", requireAdmin, async (req, res) => {
     }
     
 
-    // Discount percent: take from TR if available, otherwise from UA.
-    const bestDisc = (parsedTR && !parsedTR.blocked && Number.isFinite(parsedTR.discPerc) && parsedTR.discPerc > 0)
-      ? parsedTR.discPerc
-      : ((parsedUA && !parsedUA.blocked && Number.isFinite(parsedUA.discPerc) && parsedUA.discPerc > 0)
-          ? parsedUA.discPerc
-          : 0);
+    // Discount percent: prefer the percent computed from this exact product/version price.
+    // PS Store pages can contain several editions at once; taking the maximum textual percent
+    // makes bundles show Standard Edition's discount (for example 80% instead of 60%).
+    let exactDiscFromBase = 0;
+    try{
+      const allDocForImport = readJson(ALL_GAMES_PATH, { items:[] });
+      const allItemsForImport = Array.isArray(allDocForImport.items) ? allDocForImport.items : [];
+      const trPidForImport = String(trProductId || productId || "").toUpperCase();
+      const baseItemForImport = allItemsForImport.find(x => {
+        const id = String(x && x.id || "").toUpperCase();
+        const trPid = String(x && x.productIds && x.productIds.TR || "").toUpperCase();
+        return trPidForImport && (id === trPidForImport || trPid === trPidForImport);
+      });
+      const baseTR = baseItemForImport && baseItemForImport.regions && baseItemForImport.regions.TR ? Number(baseItemForImport.regions.TR.salePrice || 0) : 0;
+      const saleTR = parsedTR && Number.isFinite(Number(parsedTR.salePrice)) ? Number(parsedTR.salePrice) : 0;
+      exactDiscFromBase = computeDiscountPercentFromPrices(baseTR, saleTR);
+    }catch(_e){}
+
+    const bestDisc = exactDiscFromBase > 0
+      ? exactDiscFromBase
+      : ((parsedTR && !parsedTR.blocked && Number.isFinite(parsedTR.discPerc) && parsedTR.discPerc > 0)
+          ? parsedTR.discPerc
+          : ((parsedUA && !parsedUA.blocked && Number.isFinite(parsedUA.discPerc) && parsedUA.discPerc > 0)
+              ? parsedUA.discPerc
+              : 0));
     if(parsedTR) parsedTR.discPerc = bestDisc;
     if(parsedUA) parsedUA.discPerc = bestDisc;
 
@@ -4569,9 +5253,7 @@ app.get("/api/search", async (req, res) => {
       const baseStorePrice = reg ? Number(reg.salePrice || 0) : 0;
       if(!Number.isFinite(baseStorePrice) || baseStorePrice <= 0) return null;
 
-      const dg = (g.conceptId && discountsIndex.byConcept.get(String(g.conceptId)))
-        || (g.id && discountsIndex.byId.get(String(g.id)))
-        || null;
+      const dg = (g.id && discountsIndex.byId.get(String(g.id))) || null;
 
       let discPerc = 0;
       let discountedUntil = null;
