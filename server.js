@@ -369,6 +369,25 @@ function conceptForGame(g, conceptIndex){
   }
   return '';
 }
+function normalizeAdditionalConceptIds(value){
+  const raw = Array.isArray(value) ? value.join(',') : String(value || '');
+  const seen = new Set();
+  return raw
+    .split(',')
+    .map(x => String(x || '').trim())
+    .filter(Boolean)
+    .filter(x => { if(seen.has(x)) return false; seen.add(x); return true; });
+}
+function conceptIdsForGame(g, conceptIndex){
+  const ids = [];
+  const add = (v)=>{
+    const s = String(v || '').trim();
+    if(s && !ids.includes(s)) ids.push(s);
+  };
+  add(conceptForGame(g, conceptIndex));
+  for(const cid of normalizeAdditionalConceptIds(g && g.additionalConceptIds)) add(cid);
+  return ids;
+}
 function pickUaProductId(g){
   return String((g && g.productIds && (g.productIds.UA || g.productIds.TR)) || (g && g.id) || '').trim();
 }
@@ -2914,16 +2933,20 @@ app.get("/api/game-editions", (req, res) => {
     pushAll(GAMES_PATH, 'discount');
 
     let targetConcept = requestedConcept;
-    if(!targetConcept && requestedId){
+    let targetConceptIds = [];
+    if(requestedId){
       const found = collect.find(x=>{
         const g=x.raw||{};
         if(String(g.id||'').trim() === requestedId) return true;
         if(g.productIds && Object.values(g.productIds).some(v=>String(v||'').trim()===requestedId)) return true;
         return false;
       });
-      if(found) targetConcept = conceptForGame(found.raw, conceptIndex);
+      if(found) targetConceptIds = conceptIdsForGame(found.raw, conceptIndex);
     }
-    if(!targetConcept) return res.json({ok:true, items:[]});
+    if(targetConcept) targetConceptIds.push(targetConcept);
+    targetConceptIds = Array.from(new Set(targetConceptIds.map(x => String(x || '').trim()).filter(Boolean)));
+    if(!targetConceptIds.length) return res.json({ok:true, items:[]});
+    if(!targetConcept) targetConcept = targetConceptIds[0];
 
     // Discount entries may not store the players field themselves.
     // Use the same game metadata source as the regular catalog when possible.
@@ -2972,7 +2995,8 @@ app.get("/api/game-editions", (req, res) => {
     for(const entry of collect){
       const g = entry.raw || {};
       const cid = conceptForGame(g, conceptIndex);
-      if(String(cid||'') !== String(targetConcept)) continue;
+      const candidateConceptIds = conceptIdsForGame(g, conceptIndex);
+      if(!candidateConceptIds.some(x => targetConceptIds.includes(String(x || '').trim()))) continue;
       const reg = (g.regions && g.regions[region]) ? g.regions[region] : null;
       const storePrice = reg ? Number(reg.salePrice || 0) : 0;
       if(!Number.isFinite(storePrice) || storePrice <= 0) continue;
@@ -4503,6 +4527,7 @@ app.put("/api/admin/allgames/:id", requireAdmin, (req, res) => {
     if(typeof body.rating !== 'undefined') next.rating = normalizeRatingValue(body.rating);
     if(typeof body.description !== 'undefined') next.description = preserveAdminDescriptionText(body.description || '');
     if(typeof body.conceptId !== 'undefined') next.conceptId = body.conceptId ? String(body.conceptId).trim() : null;
+    if(typeof body.additionalConceptIds !== 'undefined') next.additionalConceptIds = normalizeAdditionalConceptIds(body.additionalConceptIds);
 
     if(typeof body.productIds !== 'undefined'){
       const p = (body.productIds && typeof body.productIds === 'object') ? body.productIds : {};
