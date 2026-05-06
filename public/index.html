@@ -1369,10 +1369,11 @@ function gmEditionShortText(g){
   return n || 'Standard Edition';
 }
 function gmEditionSubText(g){
-  const ed = gmEditionShortText(g).toLowerCase();
-  if(ed.includes('standard')) return 'Базовая версия игры';
-  if(ed.includes('gold') || ed.includes('deluxe')) return 'Включает бонусный контент';
-  return 'Включает расширенный набор контента';
+  return gmEditionShortText(g);
+}
+function gmEditionGameTitleText(g){
+  const n = String(g.name || '').trim();
+  return n || gmEditionShortText(g);
 }
 function gmRenderEditionItem(g, activeId){
   const active = String(g.id||'') === String(activeId||'');
@@ -1383,7 +1384,7 @@ function gmRenderEditionItem(g, activeId){
   return `<button class="gmv2Edition ${active?'isActive':''}" type="button" data-gmv2-edition="${escapeHtml(g.id||'')}" aria-pressed="${active?'true':'false'}">
     <div class="gmv2EditionCover">${img}</div>
     <div class="gmv2EditionInfo">
-      <div class="gmv2EditionName">${escapeHtml(gmEditionShortText(g))}</div>
+      <div class="gmv2EditionName">${escapeHtml(gmEditionGameTitleText(g))}</div>
       <div class="gmv2EditionPlatform">${escapeHtml(g.platform || '')}</div>
       <div class="gmv2EditionSub">${escapeHtml(gmEditionSubText(g))}</div>
     </div>
