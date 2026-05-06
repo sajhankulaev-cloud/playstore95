@@ -2746,6 +2746,7 @@ function attachPublicEditions(items){
       sub:e.sub || '',
       discPerc:Number(e.discPerc||0)||0,
       discountedUntil:e.discountedUntil || null,
+      players:e.players || null,
       finalPriceRub:Number(e.finalPriceRub||0)||0,
       oldPriceRub:Number(e.oldPriceRub||0)||0,
       description:e.description || '',
@@ -2782,6 +2783,37 @@ app.get("/api/games", (req, res) => {
     const discountsIndex = readActiveDiscountsIndex();
     const descIndex = buildDescriptionIndex();
     const conceptIndex = buildConceptIndex();
+    const allGamesDocForPlayers = readJson(ALL_GAMES_PATH, { updatedAt:null, items:[] });
+    const allGamesPlayersById = new Map();
+    for(const ag of (Array.isArray(allGamesDocForPlayers.items) ? allGamesDocForPlayers.items : [])){
+      const playersVal = normalizeGameMetaField(ag.players);
+      if(!playersVal) continue;
+      const keys = [ag.id, ag.conceptId];
+      if(ag.productIds && typeof ag.productIds === 'object') keys.push(ag.productIds.TR, ag.productIds.UA);
+      if(ag.regions && typeof ag.regions === 'object'){
+        for(const rg of Object.values(ag.regions)){
+          if(rg && typeof rg === 'object') keys.push(rg.id, rg.productId, rg.storeId);
+        }
+      }
+      for(const key of keys){
+        const k = String(key || '').trim();
+        if(k && !allGamesPlayersById.has(k)) allGamesPlayersById.set(k, playersVal);
+      }
+    }
+    const playersFromAllGames = (g) => {
+      const keys = [g.id, g.conceptId];
+      if(g.productIds && typeof g.productIds === 'object') keys.push(g.productIds.TR, g.productIds.UA);
+      if(g.regions && typeof g.regions === 'object'){
+        for(const rg of Object.values(g.regions)){
+          if(rg && typeof rg === 'object') keys.push(rg.id, rg.productId, rg.storeId);
+        }
+      }
+      for(const key of keys){
+        const k = String(key || '').trim();
+        if(k && allGamesPlayersById.has(k)) return allGamesPlayersById.get(k);
+      }
+      return normalizeGameMetaField(g.players);
+    };
 
     let computed = all.map(g => {
       const reg = (g.regions && g.regions[region]) ? g.regions[region] : null;
@@ -2807,7 +2839,7 @@ app.get("/api/games", (req, res) => {
         // Prefer TR value (admin currently sets it there), fallback to UA.
         sub: anySub,
         platform: g.platform || "PS4 / PS5",
-        players: g.players || null,
+        players: playersFromAllGames(g) || null,
         size: g.size || null,
         rating: (typeof g.rating !== "undefined" ? g.rating : null),
         cover: g.cover || "",
@@ -2893,6 +2925,49 @@ app.get("/api/game-editions", (req, res) => {
     }
     if(!targetConcept) return res.json({ok:true, items:[]});
 
+    // Discount entries may not store the players field themselves.
+    // Use the same game metadata source as the regular catalog when possible.
+    const allGamesPlayersByKey = new Map();
+    const addPlayerKey = (key, val)=>{
+      const k = String(key || '').trim();
+      if(k && val && !allGamesPlayersByKey.has(k)) allGamesPlayersByKey.set(k, val);
+    };
+    for(const entry of collect){
+      if(entry.source !== 'all') continue;
+      const ag = entry.raw || {};
+      const val = normalizeGameMetaField(ag.players);
+      if(!val) continue;
+      addPlayerKey(ag.id, val);
+      addPlayerKey(ag.conceptId, val);
+      if(ag.productIds && typeof ag.productIds === 'object'){
+        addPlayerKey(ag.productIds.TR, val);
+        addPlayerKey(ag.productIds.UA, val);
+      }
+      if(ag.regions && typeof ag.regions === 'object'){
+        for(const rg of Object.values(ag.regions)){
+          if(rg && typeof rg === 'object'){
+            addPlayerKey(rg.id, val);
+            addPlayerKey(rg.productId, val);
+            addPlayerKey(rg.storeId, val);
+          }
+        }
+      }
+    }
+    const playersForPublicEdition = (g)=>{
+      const keys = [g.id, g.conceptId];
+      if(g.productIds && typeof g.productIds === 'object') keys.push(g.productIds.TR, g.productIds.UA);
+      if(g.regions && typeof g.regions === 'object'){
+        for(const rg of Object.values(g.regions)){
+          if(rg && typeof rg === 'object') keys.push(rg.id, rg.productId, rg.storeId);
+        }
+      }
+      for(const key of keys){
+        const k = String(key || '').trim();
+        if(k && allGamesPlayersByKey.has(k)) return allGamesPlayersByKey.get(k);
+      }
+      return normalizeGameMetaField(g.players);
+    };
+
     const byId = new Map();
     for(const entry of collect){
       const g = entry.raw || {};
@@ -2916,7 +2991,7 @@ app.get("/api/game-editions", (req, res) => {
         ru: normalizeRuVal(reg && (reg.ru ?? reg.ruLang ?? reg.russian ?? reg.rus ?? reg.langRu ?? reg.languageRu)),
         sub: anySub,
         platform: g.platform || "PS4 / PS5",
-        players: g.players || null,
+        players: playersForPublicEdition(g) || null,
         size: g.size || null,
         rating: (typeof g.rating !== "undefined" ? g.rating : null),
         cover: g.cover || "",
