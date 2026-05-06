@@ -1267,10 +1267,6 @@ async function openDiscountEdit(id, anchorTr){
           <div class="small">Edition</div>
           <input class="input" data-f="edition" type="text" value="${(g.edition||'').replace(/"/g,'&quot;')}" />
         </div>
-        <div>
-          <div class="small">Игроки</div>
-          ${playersSelectHtml(g.players)}
-        </div>
         <div style="grid-column:1 / span 2;">
           <div class="small">Cover URL</div>
           <input class="input" data-f="cover" type="text" value="${(g.cover||'').replace(/"/g,'&quot;')}" placeholder="https://...png" />
@@ -1329,7 +1325,6 @@ async function openDiscountEdit(id, anchorTr){
       name: (row.querySelector('[data-f="name"]').value||'').trim(),
       platform: row.querySelector('select[data-f="platform"]').value,
       edition: (row.querySelector('[data-f="edition"]').value||'').trim(),
-      players: normalizePlayersChoice(row.querySelector('[data-f="players"]')?.value || ''),
       description: (row.querySelector('[data-f="description"]')?.value||'').trim(),
       cover: (row.querySelector('[data-f="cover"]').value||'').trim() || null,
       regions: {
@@ -2191,6 +2186,7 @@ async function addAllGame(){
     cover: (document.getElementById("allCover").style.display==="block") ? document.getElementById("allCover").src : null,
     platform: (document.getElementById("allPlatform").value||"").trim(),
     edition: (document.getElementById("allEdition").value||"").trim() || "Standard Edition",
+    ...readMetaFields("all"),
     conceptId: (document.getElementById("allConceptId").value||"").trim() || null,
     description: (document.getElementById("allDescription")?.value||"").trim(),
     regions:{
