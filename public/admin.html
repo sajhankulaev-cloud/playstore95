@@ -2403,6 +2403,10 @@ async function openAllGameEdit(id, anchorTr){
           <div class="small">Concept ID</div>
           <input class="input" data-f="conceptId" type="text" value="${String(g.conceptId||'').replace(/"/g,'&quot;')}" placeholder="например: 209441" />
         </div>
+        <div style="grid-column:1 / span 2;">
+          <div class="small">Дополнительные Concept ID</div>
+          <input class="input" data-f="additionalConceptIds" type="text" value="${(Array.isArray(g.additionalConceptIds) ? g.additionalConceptIds.join(',') : String(g.additionalConceptIds||'')).replace(/"/g,'&quot;')}" placeholder="например: 12345,67890" />
+        </div>
       </div>
 
       <div class="small" style="margin-top:10px;">Подписка</div>
@@ -2454,6 +2458,7 @@ async function openAllGameEdit(id, anchorTr){
       description: (row.querySelector('[data-f="description"]')?.value||'').trim(),
       cover: (row.querySelector('[data-f="cover"]').value||'').trim() || null,
       conceptId: (row.querySelector('[data-f="conceptId"]').value||'').trim() || null,
+      additionalConceptIds: (row.querySelector('[data-f="additionalConceptIds"]')?.value||'').trim(),
       productIds: {
         TR: newIdTR || null,
         UA: newIdUA || null,
