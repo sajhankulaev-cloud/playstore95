@@ -2933,7 +2933,8 @@ app.get("/api/game-editions", (req, res) => {
     pushAll(GAMES_PATH, 'discount');
 
     let targetConcept = requestedConcept;
-    let targetConceptIds = [];
+    let targetMainConcept = requestedConcept;
+    let targetAdditionalConceptIds = [];
     if(requestedId){
       const found = collect.find(x=>{
         const g=x.raw||{};
@@ -2941,12 +2942,24 @@ app.get("/api/game-editions", (req, res) => {
         if(g.productIds && Object.values(g.productIds).some(v=>String(v||'').trim()===requestedId)) return true;
         return false;
       });
-      if(found) targetConceptIds = conceptIdsForGame(found.raw, conceptIndex);
+      if(found){
+        targetMainConcept = conceptForGame(found.raw, conceptIndex);
+        targetAdditionalConceptIds = normalizeAdditionalConceptIds(found.raw && found.raw.additionalConceptIds);
+      }
     }
-    if(targetConcept) targetConceptIds.push(targetConcept);
-    targetConceptIds = Array.from(new Set(targetConceptIds.map(x => String(x || '').trim()).filter(Boolean)));
-    if(!targetConceptIds.length) return res.json({ok:true, items:[]});
-    if(!targetConcept) targetConcept = targetConceptIds[0];
+    if(!targetMainConcept && targetConcept) targetMainConcept = targetConcept;
+    targetMainConcept = String(targetMainConcept || '').trim();
+    targetAdditionalConceptIds = Array.from(new Set(targetAdditionalConceptIds.map(x => String(x || '').trim()).filter(Boolean)));
+    if(!targetMainConcept && !targetAdditionalConceptIds.length) return res.json({ok:true, items:[]});
+    if(!targetConcept) targetConcept = targetMainConcept || targetAdditionalConceptIds[0] || '';
+    const isDirectConceptMatch = (g)=>{
+      const candidateMainConcept = String(conceptForGame(g, conceptIndex) || '').trim();
+      const candidateAdditionalConceptIds = normalizeAdditionalConceptIds(g && g.additionalConceptIds);
+      if(targetMainConcept && candidateMainConcept && candidateMainConcept === targetMainConcept) return true;
+      if(candidateMainConcept && targetAdditionalConceptIds.includes(candidateMainConcept)) return true;
+      if(targetMainConcept && candidateAdditionalConceptIds.includes(targetMainConcept)) return true;
+      return false;
+    };
 
     // Discount entries may not store the players field themselves.
     // Use the same game metadata source as the regular catalog when possible.
@@ -2995,8 +3008,7 @@ app.get("/api/game-editions", (req, res) => {
     for(const entry of collect){
       const g = entry.raw || {};
       const cid = conceptForGame(g, conceptIndex);
-      const candidateConceptIds = conceptIdsForGame(g, conceptIndex);
-      if(!candidateConceptIds.some(x => targetConceptIds.includes(String(x || '').trim()))) continue;
+      if(!isDirectConceptMatch(g)) continue;
       const reg = (g.regions && g.regions[region]) ? g.regions[region] : null;
       const storePrice = reg ? Number(reg.salePrice || 0) : 0;
       if(!Number.isFinite(storePrice) || storePrice <= 0) continue;
