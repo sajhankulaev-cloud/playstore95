@@ -1059,15 +1059,6 @@ async function warmupPsBrowseCache(locale, pagesToFetch = 3){
   writePsBrowseCache(cache);
 }
 
-// background checker (runs every ~12 hours) - refreshes only if stale
-function startNewReleasesBackgroundRefresh(){
-  const run = async ()=>{
-    try{ await ensurePsNewReleasesCacheFresh('en-tr'); }catch(_e){}
-  };
-  run();
-  setInterval(run, 12 * 60 * 60 * 1000);
-}
-
 function bestTitleMatchIndex(titles, query){
   const nq = normText(query);
   if(!nq) return { idx:-1, score:0 };
@@ -1641,6 +1632,7 @@ const PUBLIC_DIR = path.join(__dirname, "public");
 const BANNERS_DIR = path.join(PUBLIC_DIR, "banners");
 // Admin-only list for upcoming releases (not shown on public site yet)
 const PREORDERS_PATH = path.join(DATA_DIR, "preorders.json");
+const NEW_RELEASES_PATH = path.join(DATA_DIR, "newreleases.json");
 
 // Ensure banner directory exists (for admin-uploaded discount banners)
 try{ fs.mkdirSync(BANNERS_DIR, { recursive: true }); }catch(_){ }
@@ -1767,15 +1759,70 @@ function isFutureReleaseDateYMD(dateStr){
   return d > todayYMDAmsterdam();
 }
 
+function addOneMonthYMD(dateStr){
+  const d = String(dateStr || '').slice(0,10);
+  if(!/^20\d{2}-\d{2}-\d{2}$/.test(d)) return '';
+  const [y,m,day] = d.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, day));
+  const originalDay = dt.getUTCDate();
+  dt.setUTCMonth(dt.getUTCMonth() + 1);
+  // JS overflows dates like Jan 31 -> Mar 03; clamp to last day of target month.
+  if(dt.getUTCDate() !== originalDay) dt.setUTCDate(0);
+  return dt.toISOString().slice(0,10);
+}
+
+function isActiveNewReleaseByReleaseDate(dateStr){
+  const d = String(dateStr || '').slice(0,10);
+  if(!/^20\d{2}-\d{2}-\d{2}$/.test(d)) return true;
+  const today = todayYMDAmsterdam();
+  return d <= today && today < addOneMonthYMD(d);
+}
+
+function readNewReleasesDoc(){
+  const doc = readJson(NEW_RELEASES_PATH, { updatedAt:null, items:[] });
+  if(!doc || typeof doc !== 'object') return { updatedAt:null, items:[] };
+  if(!Array.isArray(doc.items)) doc.items = [];
+  return doc;
+}
+
+function pruneExpiredNewReleases(){
+  const doc = readNewReleasesDoc();
+  const before = doc.items.length;
+  const items = doc.items.filter(g => isActiveNewReleaseByReleaseDate(g && g.releaseDate));
+  if(items.length !== before){
+    writeJson(NEW_RELEASES_PATH, { updatedAt: new Date().toISOString(), items });
+  }
+  return { pruned: before - items.length, items };
+}
+
+function addItemsToNewReleases(itemsToAdd){
+  const doc = readNewReleasesDoc();
+  const items = Array.isArray(doc.items) ? doc.items.filter(g => isActiveNewReleaseByReleaseDate(g && g.releaseDate)) : [];
+  const existingIds = new Set(items.map(x => String(x && x.id || '').trim()).filter(Boolean));
+  let added = 0;
+  for(const g of (Array.isArray(itemsToAdd) ? itemsToAdd : [])){
+    const id = String(g && g.id || '').trim();
+    if(!id || existingIds.has(id)) continue;
+    items.unshift(Object.assign({}, g, { addedToNewReleasesAt: new Date().toISOString() }));
+    existingIds.add(id);
+    added++;
+  }
+  if(added || items.length !== (doc.items || []).length){
+    writeJson(NEW_RELEASES_PATH, { updatedAt: new Date().toISOString(), items });
+  }
+  return { added, total: items.length };
+}
+
 function moveReleasedPreordersToAllGames(){
-  // If a preorder has releaseDate <= today, move it into all_games.json
+  // If a preorder has releaseDate <= today, move it into all_games.json and newreleases.json.
   const today = todayYMDAmsterdam();
   const preDoc = readJson(PREORDERS_PATH, { updatedAt:null, items:[] });
   const allDoc = readJson(ALL_GAMES_PATH, { updatedAt:null, items:[] });
   const preItems = Array.isArray(preDoc.items) ? preDoc.items : [];
   const allItems = Array.isArray(allDoc.items) ? allDoc.items : [];
 
-  if(!preItems.length) return { moved:0 };
+  pruneExpiredNewReleases();
+  if(!preItems.length) return { moved:0, addedToNewReleases:0 };
 
   const canMove = (g)=>{
     const d = g && g.releaseDate ? String(g.releaseDate).slice(0,10) : '';
@@ -1793,21 +1840,21 @@ function moveReleasedPreordersToAllGames(){
     if(canMove(g)) toMove.push(g);
     else keep.push(g);
   }
-  if(!toMove.length) return { moved:0 };
+  if(!toMove.length) return { moved:0, addedToNewReleases:0 };
 
-  // Move: keep stable fields; releaseDate may be kept (harmless) or removed.
-  // We keep it for now.
   for(const g of toMove){
     const id = String(g && g.id || '').trim();
     if(!id) continue;
-    if(existingIds.has(id)) continue;
-    allItems.unshift(g);
-    existingIds.add(id);
+    if(!existingIds.has(id)){
+      allItems.unshift(g);
+      existingIds.add(id);
+    }
   }
 
+  const nr = addItemsToNewReleases(toMove);
   writeJson(PREORDERS_PATH, { updatedAt: new Date().toISOString(), items: keep });
   writeJson(ALL_GAMES_PATH, { updatedAt: new Date().toISOString(), items: allItems });
-  return { moved: toMove.length };
+  return { moved: toMove.length, addedToNewReleases: nr.added };
 }
 
 function requireAdmin(req, res, next) {
@@ -3458,15 +3505,42 @@ app.get("/api/admin/allgames/list", requireAdmin, (req, res) => {
 
 });
 
-// Admin: refresh "Новинки" cache manually
+// Admin: refresh "Новинки" manually. This is the only PS Store request path for new releases.
 app.get("/api/admin/newreleases/status", requireAdmin, (req, res) => {
-  const c = readPsNewReleasesCache();
-  res.json({ ok:true, updatedAt: c.updatedAt || null, count: Array.isArray(c.order) ? c.order.length : 0, locale: c.locale || "" });
+  pruneExpiredNewReleases();
+  const c = readNewReleasesDoc();
+  res.json({ ok:true, updatedAt: c.updatedAt || null, count: Array.isArray(c.items) ? c.items.length : 0, locale: "local-json" });
 });
 app.post("/api/admin/newreleases/refresh", requireAdmin, async (req, res) => {
   try{
     const c = await refreshPsNewReleasesCache('en-tr', { pages: 12, timeoutMs: 8000 });
-    res.json({ ok:true, updatedAt: c.updatedAt || null, count: Array.isArray(c.order) ? c.order.length : 0 });
+    const order = Array.isArray(c.order) ? c.order : [];
+    const orderRank = new Map();
+    for(let i=0;i<order.length;i++) orderRank.set(String(order[i]), i+1);
+
+    const allDoc = readJson(ALL_GAMES_PATH, { updatedAt:null, items:[] });
+    const allItems = Array.isArray(allDoc.items) ? allDoc.items : [];
+    const psItems = allItems
+      .filter(g => {
+        const cid = String(g && g.conceptId || "").trim();
+        return cid && orderRank.has(cid);
+      })
+      .map(g => Object.assign({}, g, { _newReleaseRank: orderRank.get(String(g.conceptId).trim()) || 999999 }))
+      .sort((a,b)=> (Number(a._newReleaseRank||999999)-Number(b._newReleaseRank||999999)) || String(a.name||"").localeCompare(String(b.name||"")));
+
+    // Keep active released preorders too, so manual PS refresh does not remove them before their 1-month window ends.
+    const existing = readNewReleasesDoc().items.filter(g => g && g.releaseDate && isActiveNewReleaseByReleaseDate(g.releaseDate));
+    const seen = new Set();
+    const items = [];
+    for(const g of psItems.concat(existing)){
+      const id = String(g && g.id || '').trim();
+      if(!id || seen.has(id)) continue;
+      seen.add(id);
+      items.push(g);
+    }
+
+    writeJson(NEW_RELEASES_PATH, { updatedAt: new Date().toISOString(), items });
+    res.json({ ok:true, updatedAt: new Date().toISOString(), count: items.length });
   }catch(e){
     res.status(500).json({ ok:false, error: String(e) });
   }
@@ -4060,6 +4134,30 @@ app.get("/api/allgames", async (req, res) => {
 
     attachPublicEditions(computed);
 
+    // Only on the public "Все игры" page: show one base card per game.
+    // Search must keep returning all editions, so this is disabled when q is present.
+    if(!q){
+      const isStandardEdition = (it)=> /\bstandard\b/i.test(String((it && (it.edition || it.name)) || "")) && /\bedition\b/i.test(String((it && (it.edition || it.name)) || ""));
+      const groups = new Map();
+      for(let i=0;i<computed.length;i++){
+        const it = computed[i];
+        const key = normKey(baseTitleForRank(it.name||"")) || normKey(it.name||"") || String(it.conceptId||it.id||"");
+        const g = groups.get(key) || { firstIndex:i, items:[] };
+        g.items.push(it);
+        groups.set(key, g);
+      }
+      computed = Array.from(groups.values()).sort((a,b)=> a.firstIndex - b.firstIndex).map(g => {
+        const items = g.items || [];
+        if(items.length <= 1) return items[0];
+        const standards = items.filter(isStandardEdition);
+        if(standards.length) return standards[0];
+        return items.slice().sort((a,b)=>
+          (Number(a.finalPriceRub||999999999)-Number(b.finalPriceRub||999999999)) ||
+          String(a.name||"").localeCompare(String(b.name||""))
+        )[0];
+      }).filter(Boolean);
+    }
+
     const total = computed.length;
     const startIdx = (page - 1) * perPage;
     const items = computed.slice(startIdx, startIdx + perPage);
@@ -4075,30 +4173,17 @@ app.get("/api/allgames", async (req, res) => {
 // We only show games that exist in our "Всё игры" library and have conceptId.
 app.get("/api/newreleases", async (req, res) => {
   try{
+    pruneExpiredNewReleases();
     const store = readStore();
     const region = String(req.query.region || "TR").toUpperCase();
-    const locale = "en-tr"; // canonical ordering
     const sort = String(req.query.sort || "pop");
     const page = Math.max(1, parseInt(String(req.query.page || "1"), 10));
     const perPage = 24;
     const q = String(req.query.q || "").trim();
     const platform = String(req.query.platform || "").trim();
 
-    // Ensure we have a fresh PS category order (weekly)
-    let psOrderDoc;
-    try{ psOrderDoc = await withTimeout(ensurePsNewReleasesCacheFresh(locale), 6000); }catch(_e){ psOrderDoc = readPsNewReleasesCache(); }
-    const order = Array.isArray(psOrderDoc?.order) ? psOrderDoc.order : [];
-    const orderRank = new Map();
-    for(let i=0;i<order.length;i++) orderRank.set(String(order[i]), i+1);
-
-    const doc = readJson(ALL_GAMES_PATH, { updatedAt:null, items:[] });
-    let all = Array.isArray(doc.items) ? doc.items : [];
-
-    // Only items that have conceptId and are in PS category order
-    all = all.filter(g => {
-      const cid = String(g.conceptId || "").trim();
-      return cid && orderRank.has(cid);
-    });
+    const nrDoc = readNewReleasesDoc();
+    let all = Array.isArray(nrDoc.items) ? nrDoc.items : [];
     if(q) all = all.filter(x => smartMatch(x.name || "", q));
     if(platform) all = all.filter(x => platformPass(x.platform || "", platform));
 
@@ -4106,8 +4191,8 @@ app.get("/api/newreleases", async (req, res) => {
     const step = store.settings.roundStep || 50;
     const descIndex = buildDescriptionIndex();
     const conceptIndex = buildConceptIndex();
-
     const normKey = (s)=> normText(String(s||""));
+    const baseTitle = (name)=> baseTitleForRank(name);
     const editionPriority = (name)=>{
       const s = String(name||"");
       if(/\bstandard\b/i.test(s) && /\bedition\b/i.test(s)) return 0;
@@ -4121,12 +4206,10 @@ app.get("/api/newreleases", async (req, res) => {
       if(/\bbundle\b/i.test(s) || /\bpack\b/i.test(s)) return 8;
       return 9;
     };
-    const baseTitle = (name)=> baseTitleForRank(name);
 
-    let computed = all.map(g => {
+    let computed = all.map((g, idx) => {
       const reg = (g.regions && g.regions[region]) ? g.regions[region] : null;
       const storePrice = reg ? Number(reg.salePrice || 0) : 0;
-      // Hide game in selected region if price missing/invalid
       if(!Number.isFinite(storePrice) || storePrice <= 0) return null;
 
       const rate = pickRate(rules, storePrice);
@@ -4135,9 +4218,8 @@ app.get("/api/newreleases", async (req, res) => {
       const trSub = (g.regions && g.regions.TR && g.regions.TR.sub) ? String(g.regions.TR.sub) : "";
       const uaSub = (g.regions && g.regions.UA && g.regions.UA.sub) ? String(g.regions.UA.sub) : "";
       const anySub = trSub || uaSub;
-
       const cid = String(g.conceptId||"").trim();
-      const psRank = orderRank.get(cid) || 999999;
+      const psRank = Number(g._newReleaseRank || g.newReleaseRank || idx + 1) || (idx + 1);
       const base = {
         id: g.id,
         name: g.name,
@@ -4158,13 +4240,12 @@ app.get("/api/newreleases", async (req, res) => {
         conceptId: conceptForGame(g, conceptIndex),
         popRank: g.popRank || 999999,
         psRank,
-        conceptId: cid
+        releaseDate: g.releaseDate || null
       };
       if(q) base._score = relevanceScore(g.name || "", q);
       return base;
     }).filter(Boolean);
 
-    // Sort
     if(q){
       computed.sort((a,b)=> (b._score||0)-(a._score||0));
     }else if(sort === "name_asc"){
@@ -4176,11 +4257,9 @@ app.get("/api/newreleases", async (req, res) => {
     }else if(sort === "price_desc"){
       computed.sort((a,b)=> (b.finalPriceRub||0)-(a.finalPriceRub||0));
     }else{
-      // Default: PS category order
-      computed.sort((a,b)=> (a.psRank||999999)-(b.psRank||999999) || (a.popRank||999999)-(b.popRank||999999));
+      computed.sort((a,b)=> (a.psRank||999999)-(b.psRank||999999) || String(a.name||"").localeCompare(String(b.name||"")));
     }
 
-    // Keep editions together (by base title) but preserve group order
     if(!q){
       const groups = new Map();
       for(let i=0;i<computed.length;i++){
@@ -4198,9 +4277,6 @@ app.get("/api/newreleases", async (req, res) => {
           const pa = editionPriority(a.name);
           const pb = editionPriority(b.name);
           if(pa !== pb) return pa - pb;
-          const ra = Number(a.psRank||999999);
-          const rb = Number(b.psRank||999999);
-          if(ra !== rb) return ra - rb;
           return String(a.name||"").localeCompare(String(b.name||""));
         });
       });
@@ -4212,150 +4288,13 @@ app.get("/api/newreleases", async (req, res) => {
     const startIdx = (page - 1) * perPage;
     const items = computed.slice(startIdx, startIdx + perPage);
 
-    res.json({ region, page, perPage, total, updatedAt: psOrderDoc?.updatedAt || null, items });
+    res.json({ region, page, perPage, total, updatedAt: nrDoc.updatedAt || null, items });
   }catch(e){
     res.status(500).json({ error: String(e) });
   }
 });
 
-// Public: list ALL GAMES filtered by subscription tag (e.g. psplus_extra)
-// Used on subscription pages (Extra/Deluxe/EA Play) to show only relevant games.
-app.get("/api/subgames", async (req, res) => {
-  try{
-    const store = readStore();
-    const region = String(req.query.region || "TR").toUpperCase();
-    const sub = String(req.query.sub || "").trim();
-    if(!sub) return res.json({ region, sub, items: [] });
 
-    // Sorting for TR and UA must be identical: use TR as canonical.
-    const locale = "en-tr";
-
-    // Subscription pages must match the default ordering on PlayStation:
-    // - EA Play: match the PS Store "The Play List" category order
-    // - PS Plus Extra / Deluxe: match the PlayStation Plus A-Z list (default is alphabetical)
-    const isEaPlay = sub === "eaplay";
-    const isPlusAZ = (sub === "psplus_extra" || sub === "psplus_deluxe");
-
-    // Warm up the appropriate rank cache (fast, a few pages) when needed.
-    if(isEaPlay){
-      try{ await withTimeout(warmupPsEaPlayCache(locale, 6), 2500); }catch(_e){}
-    }else if(!isPlusAZ){
-      // fallback ordering for other subscription tags
-      try{ await withTimeout(warmupPsBrowseCache(locale, 6), 2500); }catch(_e){}
-    }
-
-    const psRankDoc = isEaPlay ? readPsEaPlayCache() : readPsBrowseCache();
-    const psRanksById = (psRankDoc && psRankDoc.locale === locale && psRankDoc.ranksById) ? psRankDoc.ranksById : {};
-    const psRanksByName = (psRankDoc && psRankDoc.locale === locale && psRankDoc.ranksByName) ? psRankDoc.ranksByName : {};
-    const normKey = (s) => normText(String(s || ""));
-    const firstFinite = (...vals) => {
-      for(const v of vals){
-        const n = Number(v);
-        if(Number.isFinite(n)) return n;
-      }
-      return 999999;
-    };
-
-    const doc = readJson(ALL_GAMES_PATH, { updatedAt:null, items:[] });
-    let all = Array.isArray(doc.items) ? doc.items : [];
-    // Filter by subscription tag stored in regions.TR.sub / regions.UA.sub
-    all = all.filter(g => {
-      const trSub = g?.regions?.TR?.sub ? String(g.regions.TR.sub) : "";
-      const uaSub = g?.regions?.UA?.sub ? String(g.regions.UA.sub) : "";
-      return trSub === sub || uaSub === sub;
-    });
-
-    const rules = store.rates[region] || [];
-    const step = store.settings.roundStep || 50;
-
-    // Overlay active discounts (same logic as "Все игры")
-    const discountsIndex = readActiveDiscountsIndex();
-    const descIndex = buildDescriptionIndex();
-    const conceptIndex = buildConceptIndex();
-
-    let computed = all.map(g => {
-      const reg = (g.regions && g.regions[region]) ? g.regions[region] : null;
-      const baseStorePrice = reg ? Number(reg.salePrice || 0) : 0;
-      if (!Number.isFinite(baseStorePrice) || baseStorePrice <= 0) return null;
-
-      // Find matching discounted entry by exact product/version id only.
-      const dg = (g.id && discountsIndex.byId.get(String(g.id))) || null;
-
-      // If discounted entry exists and is active for this region — override price + discount meta
-      let discPerc = 0;
-      let discountedUntil = null;
-      let storePrice = baseStorePrice;
-      if(dg && dg.regions && dg.regions[region] && isDiscountActiveForRegion(dg.regions[region])){
-        const dreg = dg.regions[region];
-        discPerc = Number(dreg.discPerc || 0) || 0;
-        discountedUntil = dreg.discountedUntil || null;
-        const dPrice = Number(dreg.salePrice || 0);
-        if(Number.isFinite(dPrice) && dPrice > 0){
-          storePrice = dPrice;
-        }else if(discPerc > 0){
-          storePrice = Math.max(0, baseStorePrice * (1 - (discPerc/100)));
-        }
-      }
-
-      const rate = pickRate(rules, storePrice);
-      let rub = roundUp(storePrice * rate, step);
-      rub = clampMinGamePriceRub(store, rub);
-      const trSub = (g.regions && g.regions.TR && g.regions.TR.sub) ? String(g.regions.TR.sub) : "";
-      const uaSub = (g.regions && g.regions.UA && g.regions.UA.sub) ? String(g.regions.UA.sub) : "";
-      const anySub = trSub || uaSub;
-
-      return {
-        id: g.id,
-        name: g.name,
-        edition: anySub ? "Standard Edition" : (g.edition || "Standard Edition"),
-        ru: normalizeRuVal(reg && (reg.ru ?? reg.ruLang ?? reg.russian ?? reg.rus ?? reg.langRu ?? reg.languageRu)),
-        sub: anySub,
-        platform: g.platform || "PS4 / PS5",
-        players: g.players || null,
-        size: g.size || null,
-        rating: (typeof g.rating !== "undefined" ? g.rating : null),
-        cover: g.cover || "",
-        discPerc,
-        discountedUntil,
-        storePrice: storePrice,
-        finalPriceRub: rub,
-        popRank: g.popRank || 999999,
-        psRank: firstFinite(
-          // 1) Prefer conceptId (stable across editions and matches PS browse tiles)
-          psRanksById[String(g.conceptId || "").trim()],
-          // 2) Fallback: legacy internal id (older saves)
-          psRanksById[String(g.id||"" ).trim()],
-          // 3) Fallback: region store ids (some imports keep PS ids here)
-          psRanksById[String(((g.regions&&g.regions.TR)&&(g.regions.TR.id||g.regions.TR.productId||g.regions.TR.storeId))||"").trim()],
-          psRanksById[String(((g.regions&&g.regions.UA)&&(g.regions.UA.id||g.regions.UA.productId||g.regions.UA.storeId))||"").trim()],
-          // 4) Title matching
-          psRanksByName[normKey(g.name)],
-          psRanksByName[normKey(baseTitleForRank(g.name))]
-        )
-      };
-    }).filter(Boolean);
-
-    if(isPlusAZ){
-      // Default PS Plus list is A-Z (as on playstation.com). Use TR collation.
-      computed.sort((a,b)=>{
-        const an = String(a.name||"");
-        const bn = String(b.name||"");
-        const c = an.localeCompare(bn, "tr", { sensitivity: "base" });
-        if(c !== 0) return c;
-        return (a.popRank||999999)-(b.popRank||999999);
-      });
-    }else{
-      // Default ordering: PS category/browse-like, with popRank fallback
-      computed.sort((a,b)=> (a.psRank||999999)-(b.psRank||999999) || (a.popRank||999999)-(b.popRank||999999));
-    }
-
-    res.json({ region, sub, items: computed });
-  }catch(e){
-    res.status(500).json({ error: String(e) });
-  }
-});
-
-// Public API: Preorders (shown in the "Предзаказы" tab)
 app.get("/api/preorders", async (req, res) => {
   try{
     const store = readStore();
@@ -5487,9 +5426,6 @@ try{ moveReleasedPreordersToAllGames(); }catch(_e){}
 setInterval(() => {
   try{ moveReleasedPreordersToAllGames(); }catch(_e){}
 }, 60 * 60 * 1000);
-
-// Auto-refresh "Новинки" cache in the background (checks every ~12h, refreshes only if stale)
-try{ startNewReleasesBackgroundRefresh(); }catch(_e){}
 
 app.listen(PORT, () => console.log("PlayStore95 running on http://localhost:" + PORT));
 console.log("PlayStore95 build: DATE_PERSIST_LOCALSTORAGE_RUFORMAT_CJS5 2025-12-22");
