@@ -4134,27 +4134,38 @@ app.get("/api/allgames", async (req, res) => {
 
     attachPublicEditions(computed);
 
-    // Only on the public "Все игры" page: show one base card per game.
+    // Only on the public "Все игры" page: show the base edition per game.
     // Search must keep returning all editions, so this is disabled when q is present.
+    // Versions of the same game are identified only by the main conceptId.
     if(!q){
-      const isStandardEdition = (it)=> /\bstandard\b/i.test(String((it && (it.edition || it.name)) || "")) && /\bedition\b/i.test(String((it && (it.edition || it.name)) || ""));
+      const isStandardEdition = (it)=> String((it && it.edition) || "").trim().toLowerCase() === "standard edition";
+      const priceForBasePick = (it)=> {
+        const n = Number(it && it.finalPriceRub);
+        return Number.isFinite(n) ? n : 999999999;
+      };
       const groups = new Map();
       for(let i=0;i<computed.length;i++){
         const it = computed[i];
-        const key = normKey(baseTitleForRank(it.name||"")) || normKey(it.name||"") || String(it.conceptId||it.id||"");
+        const key = String((it && it.conceptId) || "").trim();
         const g = groups.get(key) || { firstIndex:i, items:[] };
         g.items.push(it);
         groups.set(key, g);
       }
-      computed = Array.from(groups.values()).sort((a,b)=> a.firstIndex - b.firstIndex).map(g => {
+      computed = Array.from(groups.values()).sort((a,b)=> a.firstIndex - b.firstIndex).flatMap(g => {
         const items = g.items || [];
-        if(items.length <= 1) return items[0];
+        if(items.length <= 1) return items;
+
+        // If exact "Standard Edition" exists, show every exact Standard Edition entry.
+        // Do not treat titles like "Eclipse Standard Edition" as a Standard Edition.
         const standards = items.filter(isStandardEdition);
-        if(standards.length) return standards[0];
-        return items.slice().sort((a,b)=>
-          (Number(a.finalPriceRub||999999999)-Number(b.finalPriceRub||999999999)) ||
+        if(standards.length) return standards;
+
+        // If there is no exact Standard Edition, show the cheapest edition of this conceptId.
+        const cheapest = items.slice().sort((a,b)=>
+          (priceForBasePick(a)-priceForBasePick(b)) ||
           String(a.name||"").localeCompare(String(b.name||""))
         )[0];
+        return cheapest ? [cheapest] : [];
       }).filter(Boolean);
     }
 
