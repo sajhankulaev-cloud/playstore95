@@ -2618,6 +2618,50 @@ function readActiveDiscountsIndex(){
   }
   return { byId, updatedAt: doc.updatedAt || null };
 }
+function pruneExpiredDiscountItems(){
+  const doc = readJson(GAMES_PATH, { updatedAt:null, items:[] });
+  const items = Array.isArray(doc.items) ? doc.items : [];
+  const activeItems = [];
+  const activeProductIds = new Set();
+
+  for(const g of items){
+    if(!g || !g.regions) continue;
+    const trActive = isDiscountActiveForRegion(g.regions.TR);
+    const uaActive = isDiscountActiveForRegion(g.regions.UA);
+    if(!trActive && !uaActive) continue;
+
+    activeItems.push(g);
+    if(g.id) activeProductIds.add(String(g.id).toUpperCase().trim());
+  }
+
+  return {
+    activeItems,
+    activeProductIds,
+    removedExpired: Math.max(0, items.length - activeItems.length),
+    previousCount: items.length
+  };
+}
+
+function hasActiveDiscountForAnyTrProduct(g, activeProductIds){
+  if(!g || !activeProductIds || typeof activeProductIds.has !== 'function') return false;
+  if(g.id && activeProductIds.has(String(g.id).toUpperCase().trim())) return true;
+  for(const pid of collectTrProductIdsFromGame(g)){
+    if(activeProductIds.has(String(pid).toUpperCase().trim())) return true;
+  }
+  return false;
+}
+
+function mergeDiscountItemsById(existingItems, newItems){
+  const byId = new Map();
+  for(const g of (Array.isArray(existingItems) ? existingItems : [])){
+    if(g && g.id) byId.set(String(g.id), g);
+  }
+  for(const g of (Array.isArray(newItems) ? newItems : [])){
+    if(g && g.id) byId.set(String(g.id), g);
+  }
+  return Array.from(byId.values());
+}
+
 
 function smartMatch(name, q){
   const nq0 = normText(q);
@@ -3437,6 +3481,14 @@ app.post("/api/admin/discounts/refresh_from_ps", requireAdmin, async (req, res) 
 
     const baseDoc = readJson(ALL_GAMES_PATH, { updatedAt:null, items:[] });
     const baseItems = Array.isArray(baseDoc.items) ? baseDoc.items : [];
+
+    // First clean local expired discounts. This must happen before any PS Store requests:
+    // if Sony blocks scraping or returns 0 items, expired discounts still disappear locally.
+    const localDiscounts = pruneExpiredDiscountItems();
+    const activeExistingItems = localDiscounts.activeItems;
+    const activeProductIds = localDiscounts.activeProductIds;
+    const baseItemsToCheck = baseItems.filter(g => !hasActiveDiscountForAnyTrProduct(g, activeProductIds));
+
     const byTrPid = new Map();
     for(const g of baseItems){
       for(const pid of collectTrProductIdsFromGame(g)){
@@ -3445,7 +3497,7 @@ app.post("/api/admin/discounts/refresh_from_ps", requireAdmin, async (req, res) 
     }
 
     const discountsFromCategory = await scrapeTrDiscountCategory({ pages, timeoutMs });
-    const discountsFromKnownProducts = await scrapeKnownTrProductDiscounts(baseItems, {
+    const discountsFromKnownProducts = await scrapeKnownTrProductDiscounts(baseItemsToCheck, {
       timeoutMs: Math.min(Math.max(3000, timeoutMs), 8000),
       concurrency: Number(req.body && req.body.extraConcurrency) || 5,
       maxProducts: Number(req.body && req.body.extraMaxProducts) || 1200
@@ -3455,10 +3507,16 @@ app.post("/api/admin/discounts/refresh_from_ps", requireAdmin, async (req, res) 
     // Safety: never wipe existing скидки if scraping failed / returned nothing.
     // PS Store иногда блокирует requests (Cloudflare / captcha) и тогда "0" — это не "скидок нет".
     if(!Array.isArray(discounts) || discounts.length === 0){
+      if(localDiscounts.removedExpired > 0){
+        writeJson(GAMES_PATH, { updatedAt: new Date().toISOString(), items: activeExistingItems });
+      }
       return res.status(502).json({
         ok:false,
         error:"scrape_empty",
-        hint:"PS Store вернул 0 товаров (возможна блокировка). Файл скидок НЕ изменён. Попробуй ещё раз или увеличь timeout/pages."
+        cleanedExpired: localDiscounts.removedExpired,
+        keptActive: activeExistingItems.length,
+        skippedActiveKnownProducts: baseItems.length - baseItemsToCheck.length,
+        hint:"PS Store вернул 0 товаров (возможна блокировка). Истёкшие локальные скидки удалены, активные сохранены."
       });
     }
 
@@ -3515,28 +3573,40 @@ app.post("/api/admin/discounts/refresh_from_ps", requireAdmin, async (req, res) 
 
     matched.sort((a,b)=> (Number(a.popRank||0) - Number(b.popRank||0)));
 
-    // Safety: if nothing matched our local library, don't wipe existing скидки.
+    // Safety: if nothing matched our local library, keep active local discounts and only remove expired ones.
     if(matched.length === 0){
+      if(localDiscounts.removedExpired > 0){
+        writeJson(GAMES_PATH, { updatedAt: new Date().toISOString(), items: activeExistingItems });
+      }
       return res.status(502).json({
         ok:false,
         error:"no_matches",
         scraped: discounts.length,
         scrapedFromCategory: discountsFromCategory.length,
         scrapedFromKnownProducts: discountsFromKnownProducts.length,
+        cleanedExpired: localDiscounts.removedExpired,
+        keptActive: activeExistingItems.length,
+        skippedActiveKnownProducts: baseItems.length - baseItemsToCheck.length,
         missingInAllGames: missing.length,
         missingSample: missing.slice(0, 20),
-        hint:"Скидки нашли, но ни одна не совпала с твоей базой all_games.json (проверяй productIds.TR). Файл скидок НЕ изменён."
+        hint:"Скидки нашли, но ни одна не совпала с твоей базой all_games.json. Истёкшие локальные скидки удалены, активные сохранены."
       });
     }
 
-    writeJson(GAMES_PATH, { updatedAt: new Date().toISOString(), items: matched });
+    const finalItems = mergeDiscountItemsById(activeExistingItems, matched);
+    finalItems.sort((a,b)=> (Number(a.popRank||0) - Number(b.popRank||0)));
+    writeJson(GAMES_PATH, { updatedAt: new Date().toISOString(), items: finalItems });
 
     res.json({
       ok:true,
       scraped: discounts.length,
       scrapedFromCategory: discountsFromCategory.length,
       scrapedFromKnownProducts: discountsFromKnownProducts.length,
+      cleanedExpired: localDiscounts.removedExpired,
+      keptActive: activeExistingItems.length,
+      skippedActiveKnownProducts: baseItems.length - baseItemsToCheck.length,
       addedOrUpdated: matched.length,
+      totalDiscounts: finalItems.length,
       missingInAllGames: missing.length,
       missingSample: missing.slice(0, 20)
     });
