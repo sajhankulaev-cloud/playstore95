@@ -70,7 +70,7 @@ body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantare
   display:inline-flex;
   align-items:center;
   padding:4px 8px;
-  border-radius:0px 15px 0px 0px;
+  border-radius:0px 10px 0px 0px;
   background:rgb(255 2 2 / 82%);
   color:#fff;
   font-weight:700;
