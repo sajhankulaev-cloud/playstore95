@@ -3941,6 +3941,51 @@ app.post("/api/admin/preorders/backfill_conceptid", requireAdmin, async (req, re
 });
 
 // Public: list ALL GAMES (library without discounts)
+
+app.get("/api/subgames", async (req, res) => {
+  try {
+    const store = readStore();
+    const region = String(req.query.region || "TR").toUpperCase();
+    const sub = String(req.query.sub || "").trim().toLowerCase();
+
+    const doc = readJson(ALL_GAMES_PATH, { updatedAt:null, items:[] });
+    let all = Array.isArray(doc.items) ? doc.items : [];
+
+    if(sub){
+      all = all.filter(g => {
+        const reg = g.regions && g.regions[region];
+        return String((reg && reg.sub) || "").trim().toLowerCase() === sub;
+      });
+    }
+
+    const rules = store.rates[region] || [];
+    const step = store.settings.roundStep || 50;
+
+    const items = all.map(g => {
+      const reg = (g.regions && g.regions[region]) ? g.regions[region] : null;
+      const storePrice = reg ? Number(reg.salePrice || 0) : 0;
+      const rate = pickRate(rules, storePrice);
+      let rub = roundUp(storePrice * rate, step);
+      rub = clampMinGamePriceRub(store, rub);
+
+      return {
+        id: g.id,
+        name: g.name,
+        edition: g.edition || "Standard Edition",
+        platform: g.platform || "PS4 / PS5",
+        cover: g.cover || "",
+        finalPriceRub: rub,
+        sub: (reg && reg.sub) || "",
+        regions: g.regions || {},
+      };
+    });
+
+    res.json({ ok:true, items });
+  } catch (e) {
+    res.status(500).json({ ok:false, error:String(e && e.message || e) });
+  }
+});
+
 app.get("/api/allgames", async (req, res) => {
   try {
     const store = readStore();
