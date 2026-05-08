@@ -1317,7 +1317,11 @@ function buildCard(game, whatsapp, showUntil){
   const until = (showUntil && game.discountedUntil) ? formatDateDMY(game.discountedUntil) : "";
   const inCart = isInCart(game.id, state.region);
   const inWish = isInWishlist(game.id, state.region);
-  const preorderBadge = isPreorder ? `<div class="preorderBadge" aria-label="Предзаказ">ПРЕДЗАКАЗ</div>` : "";
+  const preorderBadge = isPreorder ? `<div class="preorderBadge" aria-label="Предзаказ">Предзаказ</div>` : "";
+  const showEdition = state.tab !== "allgames";
+  const editionHtml = showEdition && game.edition
+    ? `<div class="cardEdition">${escapeHtml(game.edition)}</div>`
+    : "";
 
   // For preorders we keep the same card structure as other pages,
   // but allow separate styling via .card--preorder.
@@ -1331,11 +1335,12 @@ function buildCard(game, whatsapp, showUntil){
   div.innerHTML=`
     <div class="coverWrap">
       <div class="platformStrip">${game.platform||"PS4 / PS5"}</div>
+      ${preorderBadge}
       ${game.cover?gameCoverImg(game.cover, `onerror="this.style.display='none'"`):"<div style='font-weight:900;font-size:12px;opacity:.9'>NO COVER</div>"}
     </div>
     <div class="body-bar1">
-      ${preorderBadge}
       <p class="title">${game.name||""}</p>
+      ${editionHtml}
       <div class="bottom">
       ${priceRowHtml}
       <div class="row cardActions"><button class="buyBtn buyBtn--card ${inCart?"isInCart":""}" data-cart-game="${game.id}" data-cart-label="В корзину" data-cart-label-in="В корзине" type="button" aria-pressed="${inCart?"true":"false"}">${cartButtonHtml(inCart?"В корзине":"В корзину")}</button><button class="wishBtn ${inWish?"isInWishlist":""}" data-wish-game="${game.id}" type="button" aria-label="В желаемое" aria-pressed="${inWish?"true":"false"}"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z"/></svg></button></div>
