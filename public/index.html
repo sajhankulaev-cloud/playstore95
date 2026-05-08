@@ -1318,7 +1318,7 @@ function buildCard(game, whatsapp, showUntil){
   const inCart = isInCart(game.id, state.region);
   const inWish = isInWishlist(game.id, state.region);
   const preorderBadge = isPreorder ? `<div class="preorderBadge" aria-label="Предзаказ">Предзаказ</div>` : "";
-  const showEdition = state.tab !== "allgames";
+  const showEdition = state.tab !== "allgames" || !!String(state.search||"").trim();
   const editionHtml = showEdition && game.edition
     ? `<div class="cardEdition">${escapeHtml(game.edition)}</div>`
     : "";
