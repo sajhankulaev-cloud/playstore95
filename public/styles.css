@@ -2785,7 +2785,7 @@ body[data-tab="home"] .grid{
     border-radius:24px;
     padding:18px;
   }
-  .homeHeroDots{bottom:8px;}
+  .homeHeroDots{bottom:-10px;}
 }
 
 .homeBlock,
