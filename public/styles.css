@@ -2922,8 +2922,8 @@ body[data-tab="home"] .grid{
   font-weight:900;
   font-size:15px;
 }
-.homeSocial--tg{background:#229ed9;}
-.homeSocial--wa{background:#25d366;}
+.homeSocial--tg{background-image:url(/img/telegram-ico.png) !important;}
+.homeSocial--wa{background-image:url(/img/whatsapp-ico.png) !important;}
 @media (max-width:640px){
   .homeBlock,.homeSubsBlock,.homeFooter{margin:20px -2px;padding:15px 10px;border-radius:15px;}
   .homeHeroNav{display:none;}
