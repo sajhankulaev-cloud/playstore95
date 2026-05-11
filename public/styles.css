@@ -3060,7 +3060,7 @@ body[data-tab="bestsellers"] .resultsBar{display:none;}
     gap:12px;
     margin:4px 0 0;
     padding:14px 14px 14px 32px;
-    border:2px solid rgba(74,232,118,.50);
+    /*border:2px solid rgba(74,232,118,.50);*/
     border-radius:2px;
     color:#7e8490;
     font-size:15px;
