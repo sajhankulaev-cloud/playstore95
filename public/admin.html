@@ -2412,6 +2412,7 @@ async function openAllGameEdit(id, anchorTr){
       <div class="small" style="margin-top:10px;">Подписка</div>
       <select class="select" data-f="sub" style="width:100%;">
         <option value="" ${(tr.sub||'')===''?'selected':''}>—</option>
+        <option value="psplus_essential" ${(tr.sub||'')==='psplus_essential'?'selected':''}>PS Plus Essential</option>
         <option value="psplus_extra" ${(tr.sub||'')==='psplus_extra'?'selected':''}>PS Plus Extra</option>
         <option value="psplus_deluxe" ${(tr.sub||'')==='psplus_deluxe'?'selected':''}>PS Plus Deluxe</option>
         <option value="eaplay" ${(tr.sub||'')==='eaplay'?'selected':''}>EA Play</option>
