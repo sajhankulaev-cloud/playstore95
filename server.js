@@ -42,6 +42,25 @@ const VISITORS_PATH = path.join(__dirname, "data", "visitors.json");
 const PS_EAPLAY_CATEGORY_ID = "74d4e266-5c64-4c61-a7e3-1b6e78f643e6";
 const PS_EAPLAY_PAGE_SIZE_GUESS = 24;
 
+// --- PlayStation Best Sellers category rank helpers ---
+// Category requested for the homepage "Лидеры продаж" block:
+// https://store.playstation.com/en-tr/category/132bb05e-89dc-4e66-966d-1297b045e21d/1
+const PS_BESTSELLERS_CACHE_PATH = path.join(__dirname, "data", "ps_bestsellers_rank_cache.json");
+const PS_BESTSELLERS_CATEGORY_ID = "132bb05e-89dc-4e66-966d-1297b045e21d";
+const PS_BESTSELLERS_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const PS_BESTSELLERS_FALLBACK_TITLES = [
+  "EA SPORTS FC™ 26",
+  "eFootball™",
+  "Diablo® IV",
+  "Fortnite",
+  "VALORANT",
+  "Grand Theft Auto V",
+  "NBA 2K26",
+  "Minecraft",
+  "ASTRO BOT",
+  "007 First Light"
+];
+
 // Normalize a title to the "base" game name (without edition/platform suffixes).
 // This is critical to match PS Browse titles like "EA SPORTS FC™ 26" with
 // internal items like "EA SPORTS FC™ 26 Standard Edition PS4 & PS5".
@@ -64,6 +83,77 @@ function baseTitleForRank(name){
   // trim separators
   s = s.replace(/[\s\-–—:]+$/g, "").trim();
   return s;
+}
+
+
+function editionKeyForRank(name, edition){
+  const raw = `${name || ""} ${edition || ""}`.toLowerCase();
+  // Keep special editions separate from Standard. Otherwise names like
+  // "Icons Edition" are treated as Standard and can replace the real
+  // PlayStation Store bestseller edition.
+  if(/\b(ultimate|vault)\b/.test(raw)) return "ultimate";
+  if(/\b(icons?|icon)\b/.test(raw)) return "icons";
+  if(/\b(premium)\b/.test(raw)) return "premium";
+  if(/\b(gold)\b/.test(raw)) return "gold";
+  if(/\b(digital\s+deluxe|deluxe|dijital\s+deluxe)\b/.test(raw)) return "deluxe";
+  if(/\b(collector'?s|collectors)\b/.test(raw)) return "collectors";
+  if(/\b(complete|definitive)\b/.test(raw)) return "complete";
+  if(/\b(cross[-\s]?gen)\b/.test(raw)) return "crossgen";
+  if(/\b(standard|standart)\b/.test(raw)) return "standard";
+  return "standard";
+}
+
+function hasExplicitNonStandardEdition(name){
+  return editionKeyForRank(name, "") !== "standard";
+}
+
+function fullTitleKeyForRank(name){
+  return normText(String(name || "")
+    .replace(/\s*\(?\s*ps\s*4\s*&\s*ps\s*5\s*\)?\s*$/i, "")
+    .replace(/\s*\(?\s*ps4\s*&\s*ps5\s*\)?\s*$/i, "")
+    .replace(/\s*\(?\s*ps4\s*\/\s*ps5\s*\)?\s*$/i, "")
+    .replace(/\s*(PS4™\s*&\s*PS5™)\s*$/i, "")
+  );
+}
+
+function bestsellerMatchScore(item, psEntry){
+  const psTitle = String((psEntry && psEntry.title) || "").trim();
+  const psId = String((psEntry && psEntry.id) || "").trim();
+  const itemId = String((item && item.conceptId) || "").trim();
+  const itemName = String((item && item.name) || "").trim();
+  if(!itemName && !itemId) return -1;
+
+  const psFull = fullTitleKeyForRank(psTitle);
+  const itemFull = fullTitleKeyForRank(itemName);
+  const psBase = normText(baseTitleForRank(psTitle));
+  const itemBase = normText(baseTitleForRank(itemName));
+  const psEdition = editionKeyForRank(psTitle, "");
+  const itemEdition = editionKeyForRank(itemName, item && item.edition);
+  const idMatch = !!(psId && itemId && psId === itemId);
+  const fullMatch = !!(psFull && itemFull && psFull === itemFull);
+  const baseMatch = !!(psBase && itemBase && psBase === itemBase);
+
+  if(!idMatch && !fullMatch && !baseMatch) return -1;
+
+  let score = 0;
+  if(fullMatch) score += 10000;
+  if(idMatch) score += 7000;
+  if(baseMatch) score += 4000;
+
+  // Edition correctness must dominate the choice. If the PS Store title says
+  // Standard, Icons/Ultimate/Deluxe must not win only because the base title
+  // or concept id is similar.
+  if(psEdition === itemEdition) score += 5000;
+  else score -= hasExplicitNonStandardEdition(psTitle) ? 9000 : 3500;
+
+  // If PS Store title is a plain/base title, prefer Standard over any named edition.
+  if(!hasExplicitNonStandardEdition(psTitle) && itemEdition === "standard") score += 2000;
+  if(!hasExplicitNonStandardEdition(psTitle) && itemEdition !== "standard") score -= 2500;
+
+  // Prefer the closest written title when several internal rows share the same conceptId.
+  const lenDiff = Math.abs(itemFull.length - psFull.length);
+  score -= Math.min(300, lenDiff * 4);
+  return score;
 }
 
 function readPsBrowseCache(){
@@ -315,7 +405,7 @@ function buildDescriptionIndex(){
       if(desc.length > prev.length) idx.set(k, desc);
     }
   };
-  for(const file of [ALL_GAMES_PATH, PREORDERS_PATH, GAMES_PATH]){
+  for(const file of [ALL_GAMES_PATH, PREORDERS_PATH, NEW_RELEASES_PATH, GAMES_PATH]){
     const doc = readJson(file, { items:[] });
     const arr = Array.isArray(doc) ? doc : (Array.isArray(doc.items) ? doc.items : []);
     arr.forEach(add);
@@ -349,7 +439,7 @@ function buildConceptIndex(){
       for(const v of Object.values(g.productIds)){ if(v) idx.set(String(v).trim(), cid); }
     }
   };
-  for(const file of [ALL_GAMES_PATH, PREORDERS_PATH, GAMES_PATH]){
+  for(const file of [ALL_GAMES_PATH, PREORDERS_PATH, NEW_RELEASES_PATH, GAMES_PATH]){
     const doc = readJson(file, { items:[] });
     const arr = Array.isArray(doc) ? doc : (Array.isArray(doc.items) ? doc.items : []);
     arr.forEach(add);
@@ -850,6 +940,90 @@ function psNewReleasesUrl(locale, page){
   const loc = String(locale || "en-tr").trim();
   const p = Math.max(1, Number(page) || 1);
   return `https://store.playstation.com/${loc}/category/${PS_NEW_RELEASES_CATEGORY_ID}/${p}`;
+}
+
+function psBestSellersUrl(locale, page){
+  const loc = String(locale || "en-tr").trim();
+  const p = Math.max(1, Number(page) || 1);
+  return `https://store.playstation.com/${loc}/category/${PS_BESTSELLERS_CATEGORY_ID}/${p}`;
+}
+
+function readPsBestSellersCache(){
+  return readJson(PS_BESTSELLERS_CACHE_PATH, { updatedAt:null, locale:"", order:[] });
+}
+
+function writePsBestSellersCache(doc){
+  writeJson(PS_BESTSELLERS_CACHE_PATH, doc || { updatedAt:null, locale:"", order:[] });
+}
+
+async function refreshPsBestSellersCache(locale, opts = {}){
+  const loc = String(locale || "en-tr").trim();
+  const maxPages = Math.max(1, Math.min(25, Number(opts.pages || 10)));
+  const timeoutMs = Number.isFinite(opts.timeoutMs) ? opts.timeoutMs : 4500;
+  const all = [];
+  const titles = [];
+  const entriesOrdered = [];
+  const seen = new Set();
+  const seenTitles = new Set();
+  const seenEntryKeys = new Set();
+
+  for(let p=1; p<=maxPages; p++){
+    let html;
+    try{
+      html = await fetchText(psBestSellersUrl(loc, p), { acceptLanguage: loc.replace('-', '_'), timeoutMs });
+    }catch(_e){
+      break;
+    }
+    const entries = extractBrowseEntries(html);
+    const ids = extractConceptOrderFromCategoryHtml(html);
+
+    for(const e of entries){
+      const title = String(e.title || "").trim();
+      const id = String(e.id || e.conceptId || "").trim();
+      const titleKey = fullTitleKeyForRank(title) || normText(baseTitleForRank(title));
+      const entryKey = id ? `${id}|${titleKey || ""}` : titleKey;
+      if(title && titleKey && !seenTitles.has(titleKey)){
+        seenTitles.add(titleKey);
+        titles.push(title);
+      }
+      if((id || titleKey) && !seenEntryKeys.has(entryKey)){
+        seenEntryKeys.add(entryKey);
+        entriesOrdered.push({ id, title });
+      }
+    }
+
+    if(!ids.length && !entries.length) break;
+    for(const id of ids){
+      if(!seen.has(id)){
+        seen.add(id);
+        all.push(id);
+      }
+    }
+    if((ids.length || entries.length) < 6) break;
+  }
+
+  if(all.length || titles.length || entriesOrdered.length){
+    const doc = { updatedAt:new Date().toISOString(), locale:loc, order:all, titles, entries:entriesOrdered };
+    writePsBestSellersCache(doc);
+    return doc;
+  }
+
+  return readPsBestSellersCache();
+}
+
+async function getPsBestSellersDoc(locale){
+  const loc = String(locale || "en-tr").trim();
+  let cache = readPsBestSellersCache();
+  const updated = cache.updatedAt ? Date.parse(cache.updatedAt) : 0;
+  const fresh = cache.locale === loc && ((Array.isArray(cache.order) && cache.order.length) || (Array.isArray(cache.titles) && cache.titles.length)) && Number.isFinite(updated) && (Date.now() - updated < PS_BESTSELLERS_TTL_MS);
+  if(fresh) return cache;
+  try{
+    cache = await withTimeout(refreshPsBestSellersCache(loc, { pages:10 }), 12000);
+  }catch(_e){
+    cache = readPsBestSellersCache();
+  }
+  if(cache && cache.locale === loc && ((Array.isArray(cache.order) && cache.order.length) || (Array.isArray(cache.titles) && cache.titles.length))) return cache;
+  return { updatedAt:null, locale:loc, order:[], titles:PS_BESTSELLERS_FALLBACK_TITLES };
 }
 
 function extractConceptOrderFromCategoryHtml(html){
@@ -3986,6 +4160,266 @@ app.get("/api/subgames", async (req, res) => {
   }
 });
 
+
+function buildPublicAllGamesItems(region){
+  const store = readStore();
+  const R = String(region || "TR").toUpperCase();
+  const doc = readJson(ALL_GAMES_PATH, { updatedAt:null, items:[] });
+  const all = Array.isArray(doc.items) ? doc.items : [];
+  const rules = store.rates[R] || [];
+  const step = store.settings.roundStep || 50;
+  const discountsIndex = readActiveDiscountsIndex();
+  const descIndex = buildDescriptionIndex();
+  const conceptIndex = buildConceptIndex();
+
+  let computed = all.map(g => {
+    const reg = (g.regions && g.regions[R]) ? g.regions[R] : null;
+    const baseStorePrice = reg ? Number(reg.salePrice || 0) : 0;
+    if(!Number.isFinite(baseStorePrice) || baseStorePrice <= 0) return null;
+
+    const dg = (g.id && discountsIndex.byId.get(String(g.id))) || null;
+    let discPerc = 0;
+    let discountedUntil = null;
+    let storePrice = baseStorePrice;
+    if(dg && dg.regions && dg.regions[R] && isDiscountActiveForRegion(dg.regions[R])){
+      const dreg = dg.regions[R];
+      discPerc = Number(dreg.discPerc || 0) || 0;
+      discountedUntil = dreg.discountedUntil || null;
+      const dPrice = Number(dreg.salePrice || 0);
+      if(Number.isFinite(dPrice) && dPrice > 0){
+        storePrice = dPrice;
+      }else if(discPerc > 0){
+        storePrice = Math.max(0, baseStorePrice * (1 - (discPerc/100)));
+      }
+    }
+
+    const rate = pickRate(rules, storePrice);
+    let rub = roundUp(storePrice * rate, step);
+    rub = clampMinGamePriceRub(store, rub);
+    const trSub = (g.regions && g.regions.TR && g.regions.TR.sub) ? String(g.regions.TR.sub) : "";
+    const uaSub = (g.regions && g.regions.UA && g.regions.UA.sub) ? String(g.regions.UA.sub) : "";
+    const anySub = trSub || uaSub;
+
+    return {
+      id: g.id,
+      name: g.name,
+      edition: anySub ? "Standard Edition" : (g.edition || "Standard Edition"),
+      ru: normalizeRuVal(reg && (reg.ru ?? reg.ruLang ?? reg.russian ?? reg.rus ?? reg.langRu ?? reg.languageRu)),
+      sub: anySub,
+      platform: g.platform || "PS4 / PS5",
+      players: g.players || null,
+      size: g.size || null,
+      rating: (typeof g.rating !== "undefined" ? g.rating : null),
+      cover: g.cover || "",
+      description: descriptionForPublicGame(g, descIndex),
+      discPerc,
+      discountedUntil,
+      storePrice,
+      finalPriceRub: rub,
+      oldPriceRub: (discPerc > 0 ? clampMinGamePriceRub(store, roundUp(baseStorePrice * pickRate(rules, baseStorePrice), step)) : 0),
+      conceptId: conceptForGame(g, conceptIndex),
+      popRank: g.popRank || 999999
+    };
+  }).filter(Boolean);
+
+  attachPublicEditions(computed);
+
+  const isStandardEdition = (it)=> String((it && it.edition) || "").trim().toLowerCase() === "standard edition";
+  const priceForBasePick = (it)=> {
+    const n = Number(it && it.finalPriceRub);
+    return Number.isFinite(n) ? n : 999999999;
+  };
+  const groups = new Map();
+  for(let i=0;i<computed.length;i++){
+    const it = computed[i];
+    const key = String((it && it.conceptId) || "").trim();
+    const g = groups.get(key) || { firstIndex:i, items:[] };
+    g.items.push(it);
+    groups.set(key, g);
+  }
+  return Array.from(groups.values()).sort((a,b)=> a.firstIndex - b.firstIndex).flatMap(g => {
+    const items = g.items || [];
+    if(items.length <= 1) return items;
+    const standards = items.filter(isStandardEdition);
+    if(standards.length) return standards;
+    const cheapest = items.slice().sort((a,b)=>
+      (priceForBasePick(a)-priceForBasePick(b)) ||
+      String(a.name||"").localeCompare(String(b.name||""))
+    )[0];
+    return cheapest ? [cheapest] : [];
+  }).filter(Boolean);
+}
+
+function buildPublicItemsFromDocForBestsellers(region, filePath, sourceTab){
+  const store = readStore();
+  const R = String(region || "TR").toUpperCase();
+  const doc = readJson(filePath, { updatedAt:null, items:[] });
+  const all = Array.isArray(doc) ? doc : (Array.isArray(doc.items) ? doc.items : []);
+  const rules = store.rates[R] || [];
+  const step = store.settings.roundStep || 50;
+  const discountsIndex = readActiveDiscountsIndex();
+  const descIndex = buildDescriptionIndex();
+  const conceptIndex = buildConceptIndex();
+
+  const computed = all.map(g => {
+    const reg = (g.regions && g.regions[R]) ? g.regions[R] : null;
+    const baseStorePrice = reg ? Number(reg.salePrice || 0) : 0;
+    if(!Number.isFinite(baseStorePrice) || baseStorePrice <= 0) return null;
+
+    let discPerc = 0;
+    let discountedUntil = null;
+    let storePrice = baseStorePrice;
+    if(sourceTab === "allgames"){
+      const dg = (g.id && discountsIndex.byId.get(String(g.id))) || null;
+      if(dg && dg.regions && dg.regions[R] && isDiscountActiveForRegion(dg.regions[R])){
+        const dreg = dg.regions[R];
+        discPerc = Number(dreg.discPerc || 0) || 0;
+        discountedUntil = dreg.discountedUntil || null;
+        const dPrice = Number(dreg.salePrice || 0);
+        if(Number.isFinite(dPrice) && dPrice > 0){
+          storePrice = dPrice;
+        }else if(discPerc > 0){
+          storePrice = Math.max(0, baseStorePrice * (1 - (discPerc/100)));
+        }
+      }
+    }
+
+    const rate = pickRate(rules, storePrice);
+    let rub = roundUp(storePrice * rate, step);
+    rub = clampMinGamePriceRub(store, rub);
+    const trSub = (g.regions && g.regions.TR && g.regions.TR.sub) ? String(g.regions.TR.sub) : "";
+    const uaSub = (g.regions && g.regions.UA && g.regions.UA.sub) ? String(g.regions.UA.sub) : "";
+    const anySub = trSub || uaSub;
+    const cid = conceptForGame(g, conceptIndex);
+
+    return {
+      id: g.id,
+      name: g.name,
+      edition: anySub ? "Standard Edition" : (g.edition || "Standard Edition"),
+      ru: normalizeRuVal(reg && (reg.ru ?? reg.ruLang ?? reg.russian ?? reg.rus ?? reg.langRu ?? reg.languageRu)),
+      sub: anySub,
+      platform: g.platform || "PS4 / PS5",
+      players: g.players || null,
+      size: g.size || null,
+      rating: (typeof g.rating !== "undefined" ? g.rating : null),
+      cover: g.cover || "",
+      description: descriptionForPublicGame(g, descIndex),
+      discPerc,
+      discountedUntil,
+      storePrice,
+      finalPriceRub: rub,
+      oldPriceRub: (discPerc > 0 ? clampMinGamePriceRub(store, roundUp(baseStorePrice * pickRate(rules, baseStorePrice), step)) : 0),
+      conceptId: cid,
+      popRank: g.popRank || 999999,
+      releaseDate: g.releaseDate || null,
+      isPreorder: sourceTab === "preorders" || isFutureReleaseDateYMD(g.releaseDate),
+      sourceTab
+    };
+  }).filter(Boolean);
+
+  attachPublicEditions(computed);
+  return computed;
+}
+
+app.get("/api/bestsellers", async (req, res) => {
+  try{
+    const region = String(req.query.region || "TR").toUpperCase();
+    const locale = "en-tr";
+    const perPage = Math.max(1, Math.min(100, Number(req.query.perPage || req.query.limit || 10)));
+    const page = Math.max(1, Number(req.query.page || 1));
+    const doc = await getPsBestSellersDoc(locale);
+
+    const sourceItems = [
+      ...buildPublicItemsFromDocForBestsellers(region, ALL_GAMES_PATH, "allgames"),
+      ...buildPublicItemsFromDocForBestsellers(region, PREORDERS_PATH, "preorders"),
+      ...buildPublicItemsFromDocForBestsellers(region, NEW_RELEASES_PATH, "new")
+    ];
+
+    const titleList = ((doc && Array.isArray(doc.titles) && doc.titles.length) ? doc.titles : PS_BESTSELLERS_FALLBACK_TITLES);
+    let psEntries = [];
+    if(doc && Array.isArray(doc.entries) && doc.entries.length){
+      psEntries = doc.entries.map(e => ({ id:String(e.id || "").trim(), title:String(e.title || "").trim() }));
+    }else{
+      const ids = (doc && Array.isArray(doc.order)) ? doc.order : [];
+      const max = Math.max(ids.length, titleList.length);
+      for(let i=0; i<max; i++){
+        psEntries.push({ id:String(ids[i] || "").trim(), title:String(titleList[i] || "").trim() });
+      }
+    }
+    psEntries = psEntries.filter(e => e.id || e.title);
+
+    const sourcePriority = { allgames:0, preorders:1, new:2 };
+    const used = new Set();
+    const items = [];
+
+    for(let rank=0; rank<psEntries.length; rank++){
+      const psEntry = psEntries[rank];
+      let best = null;
+      let bestScore = -1;
+      const psEdition = editionKeyForRank(psEntry.title || "", "");
+      const psBase = normText(baseTitleForRank(psEntry.title || ""));
+      const candidates = [];
+      for(const it of sourceItems){
+        const uniqueKey = String(it.id || "") || `${String(it.conceptId||"")}|${fullTitleKeyForRank(it.name||"")}|${it.sourceTab||""}`;
+        if(used.has(uniqueKey)) continue;
+        const score = bestsellerMatchScore(it, psEntry);
+        if(score < 0) continue;
+        candidates.push({ it, score });
+      }
+
+      // If there is at least one item with the same base title and the same
+      // edition as the official PS Store entry, only choose from those. This
+      // fixes cases like FC 26 Standard Edition being replaced by Icons Edition.
+      const exactEditionCandidates = candidates.filter(c => {
+        const itemBase = normText(baseTitleForRank(c.it && c.it.name || ""));
+        const itemEdition = editionKeyForRank(c.it && c.it.name, c.it && c.it.edition);
+        return itemBase && psBase && itemBase === psBase && itemEdition === psEdition;
+      });
+      const pool = exactEditionCandidates.length ? exactEditionCandidates : candidates;
+      for(const c of pool){
+        const it = c.it;
+        const score = c.score;
+        if(!best || score > bestScore || (score === bestScore && ((sourcePriority[it.sourceTab] ?? 9) < (sourcePriority[best.sourceTab] ?? 9)))){
+          best = it;
+          bestScore = score;
+        }
+      }
+      if(best){
+        const uniqueKey = String(best.id || "") || `${String(best.conceptId||"")}|${fullTitleKeyForRank(best.name||"")}|${best.sourceTab||""}`;
+        used.add(uniqueKey);
+        items.push(Object.assign({}, best));
+      }
+    }
+
+    // Safety fallback for old/partial caches: include any remaining base-title matches in PS rank order.
+    if(!items.length){
+      const titleRank = new Map();
+      titleList.forEach((title, i) => {
+        const key = normText(baseTitleForRank(title));
+        if(key && !titleRank.has(key)) titleRank.set(key, i + 1);
+      });
+      const seenConcepts = new Set();
+      for(const it of sourceItems
+        .map(it => Object.assign({}, it, { _bestRank:titleRank.get(normText(baseTitleForRank(it.name || ""))) || 999999 }))
+        .filter(it => Number(it._bestRank) < 999999)
+        .sort((a,b) => (a._bestRank||999999) - (b._bestRank||999999) || (sourcePriority[a.sourceTab] ?? 9) - (sourcePriority[b.sourceTab] ?? 9) || String(a.name||"").localeCompare(String(b.name||"")))){
+        const key = String(it.conceptId || "").trim() || normText(baseTitleForRank(it.name || "")) || String(it.id || "");
+        if(seenConcepts.has(key)) continue;
+        seenConcepts.add(key);
+        const { _bestRank, ...clean } = it;
+        items.push(clean);
+      }
+    }
+
+    const total = items.length;
+    const pageItems = items.slice((page - 1) * perPage, page * perPage);
+
+    res.json({ region, page, perPage, total, source:"ps_bestsellers", items:pageItems });
+  }catch(e){
+    res.status(500).json({ error:String(e) });
+  }
+});
+
 app.get("/api/allgames", async (req, res) => {
   try {
     const store = readStore();
@@ -4498,6 +4932,64 @@ app.get("/api/preorders", async (req, res) => {
     res.json({ region, page, perPage, total, items });
   }catch(e){
     res.status(500).json({ error: String(e) });
+  }
+});
+
+
+function isMoreThanOnePlayerValue(v){
+  const s = String(v || '').toLowerCase().replace(/[–—]/g,'-').replace(/ё/g,'е').trim();
+  if(!s) return false;
+  const nums = (s.match(/\d+/g) || []).map(n=>Number(n)).filter(Number.isFinite);
+  if(!nums.length) return false;
+  return Math.max(...nums) > 1;
+}
+
+app.get("/api/multiplayer", (req, res) => {
+  try{
+    const region = String(req.query.region || "TR").toUpperCase();
+    const page = Math.max(1, parseInt(String(req.query.page || "1"), 10));
+    let perPage = 24;
+    if(req.query.perPage){
+      const n = parseInt(String(req.query.perPage), 10);
+      if(Number.isFinite(n) && n > 0) perPage = Math.min(60, Math.max(1, n));
+    }
+    const platform = String(req.query.platform || "").trim();
+
+    const withSource = (arr, sourceTab)=> (arr || []).map(x => Object.assign({}, x, { sourceTab: x.sourceTab || sourceTab }));
+    let all = [];
+    all = all.concat(withSource(buildPublicItemsFromDocForBestsellers(region, PREORDERS_PATH, "preorders"), "preorders"));
+    all = all.concat(withSource(buildPublicItemsFromDocForBestsellers(region, NEW_RELEASES_PATH, "new"), "new"));
+    all = all.concat(withSource(buildPublicAllGamesItems(region), "allgames"));
+
+    if(platform) all = all.filter(x => platformPass(x.platform || "", platform));
+    all = all.filter(x => isMoreThanOnePlayerValue(x.players));
+
+    // Prevent duplicates across New/All Games while preserving the richer category card.
+    // Priority: Preorders > New > All games.
+    const priority = { preorders: 0, new: 1, allgames: 2 };
+    const seen = new Map();
+    const normKey = (x)=> {
+      const cid = String(x.conceptId || '').trim();
+      if(cid) return `c:${cid}`;
+      return `t:${normText(`${x.name || ''} ${x.edition || ''}`)}`;
+    };
+    for(const it of all){
+      const key = normKey(it);
+      const prev = seen.get(key);
+      if(!prev || (priority[it.sourceTab] ?? 9) < (priority[prev.sourceTab] ?? 9)) seen.set(key, it);
+    }
+    let items = Array.from(seen.values()).sort((a,b)=>
+      (priority[a.sourceTab] ?? 9) - (priority[b.sourceTab] ?? 9) ||
+      (a.popRank || 999999) - (b.popRank || 999999) ||
+      String(a.name||'').localeCompare(String(b.name||''), 'ru')
+    );
+
+    const total = items.length;
+    const startIdx = (page - 1) * perPage;
+    items = items.slice(startIdx, startIdx + perPage);
+    res.json({ ok:true, region, page, perPage, total, items });
+  }catch(e){
+    res.status(500).json({ ok:false, error:String(e && e.message || e) });
   }
 });
 
