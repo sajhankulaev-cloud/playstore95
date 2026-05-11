@@ -2778,8 +2778,8 @@ body[data-tab="home"] .grid{
   .homeHero{height:clamp(236px, 72vw, 270px);}
   .homeHeroNav{display:none !important;}
   .homeBanner{
-    --active-size:clamp(236px, 72vw, 270px);
-    --side-size:clamp(190px, 58vw, 218px);
+    --active-size:clamp(236px, 92vw, 290px);
+    --side-size:clamp(190px, 78vw, 238px);
     --slide-gap:14px;
     --side-offset:calc((var(--active-size) + var(--side-size)) / 2 + var(--slide-gap));
     border-radius:24px;
