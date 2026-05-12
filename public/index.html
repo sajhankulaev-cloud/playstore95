@@ -92,7 +92,7 @@ function scrollToSubsGamesIfRequested(){
   }, 80);
 }
 
-const TAB_LABELS={home:"Главная",preorders:"Предзаказы",new:"Новинки",discounts:"Скидки",allgames:"Все игры",subs:"Подписки",bestsellers:"Лидеры продаж",multiplayer:"Для нескольких игроков"};
+const TAB_LABELS={home:"Главная",preorders:"Предзаказы",new:"Новинки",discounts:"Скидки",allgames:"Все игры",subs:"Подписки",bestsellers:"Лидеры продаж"};
 
 
 function escapeHtml(s){
@@ -447,7 +447,7 @@ async function renderHome(){
   if(pager) pager.innerHTML="";
   if(emptyBox) emptyBox.style.display="none";
   if(!grid) return;
-  grid.classList.remove("gridSubs");
+  grid.classList.remove("gridSubs", "searchResults");
   grid.innerHTML = `<div class="homePage" id="homePage">
     <section class="homeHeroWrap" aria-label="Подборки подписок">
       <div class="homeHero" id="homeHero">
@@ -618,7 +618,7 @@ async function renderMultiplayerPage(){
   if(ad){ ad.innerHTML=""; ad.style.display="none"; }
   if(emptyBox) emptyBox.style.display="none";
   if(!grid) return;
-  grid.classList.remove("gridSubs");
+  grid.classList.remove("gridSubs", "searchResults");
   grid.innerHTML = `<section class="fullListPage multiplayerPage"><h1 class="multiplayerTitle">Игры для нескольких игроков</h1><div class="multiplayerToolbar"><button class="btnGhost" type="button" id="multiplayerBackBtn">← На главную</button><div class="fullListCount" id="multiplayerCount">Загрузка...</div></div><div class="grid fullListGrid" id="multiplayerGrid"></div></section>`;
   const back=document.getElementById("multiplayerBackBtn");
   if(back) back.onclick=()=>{ window.location.href="/"; };
@@ -1802,7 +1802,8 @@ function buySubscriptionWhatsApp(p){
 
 function buildCard(game, whatsapp, showUntil){
   const cardTab = game && game.__cardTab ? String(game.__cardTab) : state.tab;
-  const isPreorder = cardTab === "preorders" || !!game.isPreorder;
+  const isSearchMode = !!String(state.search || "").trim();
+  const isPreorder = (cardTab === "preorders" && !isSearchMode) || !!game.isPreorder;
   const div=document.createElement("div");
   div.className = isPreorder ? "card card--preorder" : "card";
   const until = (showUntil && game.discountedUntil) ? formatDateDMY(game.discountedUntil) : "";
@@ -2392,6 +2393,7 @@ async function load(){
   // Если есть несколько блоков дат скидок, игры показываем только после выбора даты
   const needPickDate = false; // больше не скрываем игры: по умолчанию показываем ближайшую дату скидки
   const grid=document.getElementById("grid");
+  if(grid) grid.classList.toggle("searchResults", !!(state.search||"").trim());
   const pager=document.getElementById("pager");
   const emptyBox=document.getElementById("emptyBox");
 
