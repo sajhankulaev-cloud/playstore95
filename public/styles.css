@@ -3140,6 +3140,25 @@ body[data-tab="bestsellers"] .resultsBar{display:none;}
 body[data-tab="multiplayer"] #discountTabs,
 body[data-tab="multiplayer"] #allDeals{display:none !important;}
 body[data-tab="multiplayer"] .grid{display:block;}
+
+/* Search results must keep the regular card grid even on pages that use block layout normally. */
+body[data-tab="home"] .grid.searchResults,
+body[data-tab="multiplayer"] .grid.searchResults{
+  display:grid !important;
+  grid-template-columns:repeat(6,minmax(0,1fr));
+}
+@media (max-width:1200px){
+  body[data-tab="home"] .grid.searchResults,
+  body[data-tab="multiplayer"] .grid.searchResults{grid-template-columns:repeat(4,1fr);}
+}
+@media (max-width:900px){
+  body[data-tab="home"] .grid.searchResults,
+  body[data-tab="multiplayer"] .grid.searchResults{grid-template-columns:repeat(3,1fr);}
+}
+@media (max-width:640px){
+  body[data-tab="home"] .grid.searchResults,
+  body[data-tab="multiplayer"] .grid.searchResults{grid-template-columns:repeat(2,1fr);}
+}
 .multiplayerPage{width:100%;}
 .fullListHead{
   display:flex;
