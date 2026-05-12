@@ -285,7 +285,9 @@ button{ color:#0f172a !important; }
               <option value="1 игрок" selected>1 игрок</option>
               <option value="1 - 2 игрока">1 - 2 игрока</option>
               <option value="1 - 4 игрока">1 - 4 игрока</option>
+              <option value="1 - 5 игроков">1 - 5 игроков</option>
               <option value="1 - 6 игроков">1 - 6 игроков</option>
+              <option value="1 - 8 игроков">1 - 8 игроков</option>
             </select>
           </div>
         </div>
@@ -410,7 +412,9 @@ button{ color:#0f172a !important; }
               <option value="1 игрок" selected>1 игрок</option>
               <option value="1 - 2 игрока">1 - 2 игрока</option>
               <option value="1 - 4 игрока">1 - 4 игрока</option>
+              <option value="1 - 5 игроков">1 - 5 игроков</option>
               <option value="1 - 6 игроков">1 - 6 игроков</option>
+              <option value="1 - 8 игроков">1 - 8 игроков</option>
             </select>
           </div>
         </div>
@@ -1520,13 +1524,15 @@ function normalizePlayersChoice(value){
     const max = Number(m[2]);
     if(max === 2) return '1 - 2 игрока';
     if(max === 4) return '1 - 4 игрока';
+    if(max === 5) return '1 - 5 игроков';
     if(max === 6) return '1 - 6 игроков';
+    if(max === 8) return '1 - 8 игроков';
   }
   return '1 игрок';
 }
 function playersSelectHtml(value){
   const v = normalizePlayersChoice(value);
-  const opts = ['1 игрок','1 - 2 игрока','1 - 4 игрока','1 - 6 игроков'];
+  const opts = ['1 игрок','1 - 2 игрока','1 - 4 игрока','1 - 5 игроков','1 - 6 игроков','1 - 8 игроков'];
   return `<select class="select" data-f="players" style="width:100%;">${opts.map(o=>`<option value="${o}" ${o===v?'selected':''}>${o}</option>`).join('')}</select>`;
 }
 function setMetaFields(prefix, tr, ua){
