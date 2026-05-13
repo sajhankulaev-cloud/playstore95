@@ -1,0 +1,310 @@
+{
+  "updatedAt": "2026-05-12T18:23:32.239Z",
+  "locale": "en-tr",
+  "order": [
+    "10011898",
+    "10002427",
+    "231761",
+    "228748",
+    "10010048",
+    "201930",
+    "212779",
+    "10002684",
+    "10014149",
+    "10006560",
+    "10002363",
+    "10010647",
+    "10002075",
+    "10001130",
+    "10005069",
+    "10003923",
+    "234689",
+    "10009568",
+    "205366",
+    "10015533",
+    "10014780",
+    "10000956",
+    "10011247",
+    "10011463",
+    "10012021",
+    "10005449",
+    "10010999",
+    "235227",
+    "10013987",
+    "10008537",
+    "10015300",
+    "10004473",
+    "10002788",
+    "209441",
+    "10000248",
+    "10004911",
+    "232796",
+    "228857",
+    "231756",
+    "10000333",
+    "232352",
+    "10008740",
+    "10003610",
+    "232583",
+    "212581",
+    "10009612",
+    "10008357",
+    "234959",
+    "10007460",
+    "10009763"
+  ],
+  "titles": [
+    "EA SPORTS FC™ 26",
+    "eFootball™",
+    "Diablo® IV",
+    "Fortnite",
+    "VALORANT",
+    "Grand Theft Auto V (PlayStation®5)",
+    "Minecraft",
+    "ASTRO BOT",
+    "NBA 2K26",
+    "007 First Light",
+    "Crimson Desert",
+    "Forza Horizon 5",
+    "PRAGMATA",
+    "Call of Duty®",
+    "SAROS",
+    "Ghost of Yōtei",
+    "It Takes Two PS4™ & PS5™",
+    "Battlefield™ 6",
+    "War Thunder",
+    "Resident Evil Requiem",
+    "Mixtape",
+    "Gran Turismo™ 7",
+    "UFC® 6",
+    "Microsoft Flight Simulator 2024",
+    "I Am Cat",
+    "Split Fiction",
+    "REANIMAL",
+    "Ghost of Tsushima",
+    "Assassin&#x27;s Creed Black Flag Resynced",
+    "LEGO® Batman™: Legacy of the Dark Knight",
+    "WWE 2K26",
+    "Resident Evil 4",
+    "UFC® 5",
+    "Red Dead Redemption 2",
+    "HITMAN World of Assassination",
+    "Mortal Kombat 1",
+    "World of Warships: Legends",
+    "The Sims™ 4",
+    "Mortal Kombat 11",
+    "ELDEN RING",
+    "Apex Legends™",
+    "Asphalt Legends",
+    "ARC Raiders",
+    "Little Nightmares II",
+    "World of Tanks Modern Armor",
+    "Farming Simulator 25",
+    "Directive 8020",
+    "SnowRunner",
+    "Baldur&#x27;s Gate 3",
+    "Zenless Zone Zero"
+  ],
+  "entries": [
+    {
+      "id": "10011898",
+      "title": "EA SPORTS FC™ 26"
+    },
+    {
+      "id": "10002427",
+      "title": "eFootball™"
+    },
+    {
+      "id": "231761",
+      "title": "Diablo® IV"
+    },
+    {
+      "id": "228748",
+      "title": "Fortnite"
+    },
+    {
+      "id": "10010048",
+      "title": "VALORANT"
+    },
+    {
+      "id": "201930",
+      "title": "Grand Theft Auto V (PlayStation®5)"
+    },
+    {
+      "id": "212779",
+      "title": "Minecraft"
+    },
+    {
+      "id": "10002684",
+      "title": "ASTRO BOT"
+    },
+    {
+      "id": "10014149",
+      "title": "NBA 2K26"
+    },
+    {
+      "id": "10006560",
+      "title": "007 First Light"
+    },
+    {
+      "id": "10002363",
+      "title": "Crimson Desert"
+    },
+    {
+      "id": "10010647",
+      "title": "Forza Horizon 5"
+    },
+    {
+      "id": "10002075",
+      "title": "PRAGMATA"
+    },
+    {
+      "id": "10001130",
+      "title": "Call of Duty®"
+    },
+    {
+      "id": "10005069",
+      "title": "SAROS"
+    },
+    {
+      "id": "10003923",
+      "title": "Ghost of Yōtei"
+    },
+    {
+      "id": "234689",
+      "title": "It Takes Two PS4™ & PS5™"
+    },
+    {
+      "id": "10009568",
+      "title": "Battlefield™ 6"
+    },
+    {
+      "id": "205366",
+      "title": "War Thunder"
+    },
+    {
+      "id": "10015533",
+      "title": "Resident Evil Requiem"
+    },
+    {
+      "id": "10014780",
+      "title": "Mixtape"
+    },
+    {
+      "id": "10000956",
+      "title": "Gran Turismo™ 7"
+    },
+    {
+      "id": "10011247",
+      "title": "UFC® 6"
+    },
+    {
+      "id": "10011463",
+      "title": "Microsoft Flight Simulator 2024"
+    },
+    {
+      "id": "10012021",
+      "title": "I Am Cat"
+    },
+    {
+      "id": "10005449",
+      "title": "Split Fiction"
+    },
+    {
+      "id": "10010999",
+      "title": "REANIMAL"
+    },
+    {
+      "id": "235227",
+      "title": "Ghost of Tsushima"
+    },
+    {
+      "id": "10013987",
+      "title": "Assassin&#x27;s Creed Black Flag Resynced"
+    },
+    {
+      "id": "10008537",
+      "title": "LEGO® Batman™: Legacy of the Dark Knight"
+    },
+    {
+      "id": "10015300",
+      "title": "WWE 2K26"
+    },
+    {
+      "id": "10004473",
+      "title": "Resident Evil 4"
+    },
+    {
+      "id": "10002788",
+      "title": "UFC® 5"
+    },
+    {
+      "id": "209441",
+      "title": "Red Dead Redemption 2"
+    },
+    {
+      "id": "10000248",
+      "title": "HITMAN World of Assassination"
+    },
+    {
+      "id": "10004911",
+      "title": "Mortal Kombat 1"
+    },
+    {
+      "id": "232796",
+      "title": "World of Warships: Legends"
+    },
+    {
+      "id": "228857",
+      "title": "The Sims™ 4"
+    },
+    {
+      "id": "231756",
+      "title": "Mortal Kombat 11"
+    },
+    {
+      "id": "10000333",
+      "title": "ELDEN RING"
+    },
+    {
+      "id": "232352",
+      "title": "Apex Legends™"
+    },
+    {
+      "id": "10008740",
+      "title": "Asphalt Legends"
+    },
+    {
+      "id": "10003610",
+      "title": "ARC Raiders"
+    },
+    {
+      "id": "232583",
+      "title": "Little Nightmares II"
+    },
+    {
+      "id": "212581",
+      "title": "World of Tanks Modern Armor"
+    },
+    {
+      "id": "10009612",
+      "title": "Farming Simulator 25"
+    },
+    {
+      "id": "10008357",
+      "title": "Directive 8020"
+    },
+    {
+      "id": "234959",
+      "title": "SnowRunner"
+    },
+    {
+      "id": "10007460",
+      "title": "Baldur&#x27;s Gate 3"
+    },
+    {
+      "id": "10009763",
+      "title": "Zenless Zone Zero"
+    }
+  ]
+}
