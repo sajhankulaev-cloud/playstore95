@@ -208,23 +208,6 @@ function writePsEaPlayCache(obj){
   try{ fs.writeFileSync(PS_EAPLAY_CACHE_PATH, JSON.stringify(obj, null, 2), "utf-8"); }catch(_e){}
 }
 
-function readPsDiscountsCache(){
-  try{
-    const raw = fs.readFileSync(PS_DISCOUNTS_CACHE_PATH, "utf-8");
-    const j = JSON.parse(raw);
-    if(!j || typeof j !== "object") return { updatedAt:null, locale:"", ranksByName:{}, ranksById:{} };
-    if(j.ranks && !j.ranksByName) j.ranksByName = j.ranks;
-    if(!j.ranksByName || typeof j.ranksByName !== "object") j.ranksByName = {};
-    if(!j.ranksById || typeof j.ranksById !== "object") j.ranksById = {};
-    return j;
-  }catch{
-    return { updatedAt:null, locale:"", ranksByName:{}, ranksById:{} };
-  }
-}
-function writePsDiscountsCache(obj){
-  try{ fs.writeFileSync(PS_DISCOUNTS_CACHE_PATH, JSON.stringify(obj, null, 2), "utf-8"); }catch(_e){}
-}
-
 function readPsNewReleasesCache(){
   try{
     const raw = fs.readFileSync(PS_NEW_RELEASES_CACHE_PATH, "utf-8");
@@ -526,8 +509,6 @@ async function fetchGameDescriptionFromPs(productIdOrConceptId){
 
 const PS_TR_DISCOUNTS_CATEGORY_ID = "3f772501-f6f8-49b7-abac-874a88ca4897";
 const PS_TR_DISCOUNTS_PAGE_SIZE_GUESS = 24;
-const PS_DISCOUNTS_CACHE_PATH = path.join(__dirname, "data", "ps_discounts_rank_cache.json");
-const PS_DISCOUNTS_TTL_MS = 24 * 60 * 60 * 1000; // 1 day
 
 function safeNum(v){
   const n = Number(v);
@@ -967,12 +948,6 @@ function psBestSellersUrl(locale, page){
   return `https://store.playstation.com/${loc}/category/${PS_BESTSELLERS_CATEGORY_ID}/${p}`;
 }
 
-function psDiscountsUrl(locale, page){
-  const loc = String(locale || "en-tr").trim();
-  const p = Math.max(1, Number(page) || 1);
-  return `https://store.playstation.com/${loc}/category/${PS_TR_DISCOUNTS_CATEGORY_ID}/${p}`;
-}
-
 function readPsBestSellersCache(){
   return readJson(PS_BESTSELLERS_CACHE_PATH, { updatedAt:null, locale:"", order:[] });
 }
@@ -1218,58 +1193,107 @@ async function warmupPsEaPlayCache(locale, pagesToFetch = 2){
   writePsEaPlayCache(cache);
 }
 
-async function warmupPsDiscountsCache(locale, pagesToFetch = 12){
-  // Keep the local discounts list in the same order as PS Store "All deals".
-  const loc = String(locale || "en-tr").trim();
-  const cache = readPsDiscountsCache();
-  const updated = cache && cache.updatedAt ? Date.parse(cache.updatedAt) : 0;
-  const fresh = cache.locale === loc && updated && (Date.now() - updated) < PS_DISCOUNTS_TTL_MS;
-  if(fresh && ((cache.ranksById && Object.keys(cache.ranksById).length) || (cache.ranksByName && Object.keys(cache.ranksByName).length))) return cache;
 
-  const next = { updatedAt: new Date().toISOString(), locale: loc, ranksByName:{}, ranksById:{} };
-  const n = Math.max(1, Math.min(80, Number(pagesToFetch) || 12));
-  for(let page=1; page<=n; page++){
-    let html;
+function candidateBrowseRankKeysForGame(g){
+  const keys = { ids: [], names: [] };
+  if(!g || typeof g !== "object") return keys;
+  const addId = (v)=>{
+    const x = String(v || "").trim();
+    if(x && !keys.ids.includes(x)) keys.ids.push(x);
+  };
+  const addName = (v)=>{
+    const x = normText(v || "");
+    if(x && !keys.names.includes(x)) keys.names.push(x);
+  };
+  addId(g.conceptId);
+  addId(g.id);
+  if(g.productIds && typeof g.productIds === "object"){
+    for(const v of Object.values(g.productIds)) addId(v);
+  }
+  addName(g.name);
+  addName(baseTitleForRank(g.name));
+  return keys;
+}
+
+function lookupBrowseRankForGame(g, cache){
+  if(!cache || typeof cache !== "object") return null;
+  const ids = cache.ranksById || {};
+  const names = cache.ranksByName || {};
+  const keys = candidateBrowseRankKeysForGame(g);
+  for(const k of keys.ids){
+    const r = Number(ids[k]);
+    if(Number.isFinite(r) && r > 0) return r;
+  }
+  for(const k of keys.names){
+    const r = Number(names[k]);
+    if(Number.isFinite(r) && r > 0) return r;
+  }
+  return null;
+}
+
+async function rebuildPsBrowseRankCacheForTargets(targetGames, locale, opts = {}){
+  const loc = String(locale || "en-tr").trim();
+  const maxPages = Math.max(1, Math.min(600, Number(opts.maxPages) || 420));
+  const timeoutMs = Math.max(1500, Math.min(15000, Number(opts.timeoutMs) || 5000));
+  const targetList = Array.isArray(targetGames) ? targetGames : [];
+  const remainingIds = new Set();
+  const remainingNames = new Set();
+  for(const g of targetList){
+    const keys = candidateBrowseRankKeysForGame(g);
+    for(const id of keys.ids) remainingIds.add(String(id));
+    for(const nm of keys.names) remainingNames.add(String(nm));
+  }
+
+  const cache = { updatedAt: new Date().toISOString(), locale: loc, ranksByName: {}, ranksById: {} };
+  let fetchedPages = 0;
+  let entriesTotal = 0;
+
+  for(let page=1; page<=maxPages; page++){
+    let html = "";
     try{
-      html = await fetchText(psDiscountsUrl(loc, page), { acceptLanguage: loc.replace("-", "_"), timeoutMs: 3500 });
+      html = await fetchText(psBrowseUrl(loc, page), { acceptLanguage: loc.replace("-", "_"), timeoutMs });
     }catch(_e){
       break;
     }
     const entries = extractBrowseEntries(html);
     if(!entries.length) break;
+    fetchedPages++;
+    entriesTotal += entries.length;
+
     for(let i=0;i<entries.length;i++){
       const e = entries[i];
-      const rank = (page-1) * PS_TR_DISCOUNTS_PAGE_SIZE_GUESS + (i+1);
-      if(e.id && !next.ranksById[e.id]) next.ranksById[e.id] = rank;
+      const rank = (page-1) * PS_BROWSE_PAGE_SIZE_GUESS + (i+1);
+      if(e.id && !cache.ranksById[e.id]) cache.ranksById[e.id] = rank;
       const tKey = normText(e.title);
-      if(tKey && !next.ranksByName[tKey]) next.ranksByName[tKey] = rank;
+      if(tKey && !cache.ranksByName[tKey]) cache.ranksByName[tKey] = rank;
       const bKey = normText(baseTitleForRank(e.title));
-      if(bKey && !next.ranksByName[bKey]) next.ranksByName[bKey] = rank;
+      if(bKey && !cache.ranksByName[bKey]) cache.ranksByName[bKey] = rank;
+
+      if(e.id) remainingIds.delete(String(e.id));
+      if(tKey) remainingNames.delete(tKey);
+      if(bKey) remainingNames.delete(bKey);
     }
-    if(entries.length < PS_TR_DISCOUNTS_PAGE_SIZE_GUESS) break;
+
+    if(targetList.length && remainingIds.size === 0 && remainingNames.size === 0) break;
   }
-  writePsDiscountsCache(next);
-  return next;
+
+  writePsBrowseCache(cache);
+  return { cache, fetchedPages, entriesTotal };
 }
 
-function psDiscountRankForGame(g, cache){
-  if(!g || !cache || cache.locale !== "en-tr") return 999999;
-  const byId = cache.ranksById || {};
-  const byName = cache.ranksByName || {};
-  const ids = [g.id, g.conceptId];
-  for(const id of ids){
-    const key = String(id || "").trim();
-    if(key && Number.isFinite(byId[key])) return byId[key];
+function applyBrowseRanksToItems(items, cache){
+  const arr = Array.isArray(items) ? items : [];
+  let ranked = 0;
+  for(const it of arr){
+    const r = lookupBrowseRankForGame(it, cache);
+    if(Number.isFinite(r) && r > 0){
+      it.popRank = r;
+      ranked++;
+    }else if(!Number.isFinite(Number(it.popRank)) || Number(it.popRank) <= 0){
+      it.popRank = 1000000000;
+    }
   }
-  const nameKeys = [
-    normText(g.name || ""),
-    normText(`${g.name || ""} ${g.edition || ""}`),
-    normText(baseTitleForRank(g.name || ""))
-  ];
-  for(const key of nameKeys){
-    if(key && Number.isFinite(byName[key])) return byName[key];
-  }
-  return 999999;
+  return ranked;
 }
 
 async function warmupPsBrowseCache(locale, pagesToFetch = 3){
@@ -3120,7 +3144,7 @@ function attachPublicEditions(items){
   return items;
 }
 
-app.get("/api/games", async (req, res) => {
+app.get("/api/games", (req, res) => {
   try {
     const store = readStore();
     const region = String(req.query.region || "TR").toUpperCase();
@@ -3134,18 +3158,6 @@ app.get("/api/games", async (req, res) => {
     const q = String(req.query.q || "").trim();
     const platform = String(req.query.platform || "").trim();
     const until = String(req.query.until || req.query.discountedUntil || "").trim();
-    const isDiscountsTab = String(req.query.tab || "discounts") === "discounts";
-
-    let psDiscountCache = readPsDiscountsCache();
-    if(isDiscountsTab && sort === "pop"){
-      try{
-        const updated = psDiscountCache && psDiscountCache.updatedAt ? Date.parse(psDiscountCache.updatedAt) : 0;
-        const fresh = psDiscountCache.locale === "en-tr" && updated && (Date.now() - updated) < PS_DISCOUNTS_TTL_MS;
-        if(!fresh || !((psDiscountCache.ranksById && Object.keys(psDiscountCache.ranksById).length) || (psDiscountCache.ranksByName && Object.keys(psDiscountCache.ranksByName).length))){
-          psDiscountCache = await warmupPsDiscountsCache("en-tr", 14);
-        }
-      }catch(_e){}
-    }
 
     const gamesDoc = readJson(GAMES_PATH, { updatedAt:null, items:[] });
     let all = Array.isArray(gamesDoc.items) ? gamesDoc.items : [];
@@ -3225,8 +3237,7 @@ app.get("/api/games", async (req, res) => {
         finalPriceRub: rub,
         oldPriceRub: (Number(reg && reg.discPerc || 0) > 0 ? clampMinGamePriceRub(store, roundUp((storePrice / Math.max(0.01, (1 - (Number(reg.discPerc||0)/100)))) * pickRate(rules, (storePrice / Math.max(0.01, (1 - (Number(reg.discPerc||0)/100))))), step)) : 0),
         conceptId: conceptForGame(g, conceptIndex),
-        popRank: g.popRank || 999999,
-        psDiscountRank: psDiscountRankForGame({ id: g.id, conceptId: conceptForGame(g, conceptIndex), name: g.name, edition: g.edition }, psDiscountCache)
+        popRank: g.popRank || 999999
       };
 
       if(q) base._score = relevanceScore(g.name || "", q);
@@ -3247,7 +3258,6 @@ app.get("/api/games", async (req, res) => {
     const tieBySort = (a,b)=>{
       if (sort === "price_desc") return (b.finalPriceRub-a.finalPriceRub) || ((a.popRank||0)-(b.popRank||0));
       if (sort === "price_asc") return (a.finalPriceRub-b.finalPriceRub) || ((a.popRank||0)-(b.popRank||0));
-      if (isDiscountsTab) return (a.psDiscountRank||999999)-(b.psDiscountRank||999999) || ((a.popRank||0)-(b.popRank||0));
       return (a.popRank||0)-(b.popRank||0);
     };
 
@@ -3261,7 +3271,7 @@ app.get("/api/games", async (req, res) => {
 
     const total = computed.length;
     const startIndex = (page - 1) * perPage;
-    const items = computed.slice(startIndex, startIndex + perPage).map(({ _score, psDiscountRank, ...rest }) => rest);
+    const items = computed.slice(startIndex, startIndex + perPage).map(({ _score, ...rest }) => rest);
     res.json({ region, page, perPage, total, items, updatedAt: gamesDoc.updatedAt || null });
   } catch (e) {
     res.status(500).json({ error: String(e) });
@@ -3892,6 +3902,8 @@ app.post("/api/admin/discounts/refresh_from_ps", requireAdmin, async (req, res) 
         cover: base.cover ? String(base.cover) : null,
         platform: base.platform ? String(base.platform) : "PS4 / PS5",
         edition: base.edition ? String(base.edition) : null,
+        conceptId: base.conceptId ? String(base.conceptId) : null,
+        productIds: base.productIds && typeof base.productIds === "object" ? base.productIds : null,
         popRank: Number.isFinite(base.popRank) ? base.popRank : 1000000000,
         regions: {
           TR: {
@@ -3912,7 +3924,13 @@ app.post("/api/admin/discounts/refresh_from_ps", requireAdmin, async (req, res) 
       });
     }
 
-    matched.sort((a,b)=> (Number(a.popRank||0) - Number(b.popRank||0)));
+    const browseRankInfo = await rebuildPsBrowseRankCacheForTargets(matched, "en-tr", {
+      maxPages: Number(req.body && (req.body.browsePages || req.body.rankPages)) || 420,
+      timeoutMs: Math.min(Math.max(3000, timeoutMs), 8000)
+    });
+    const browseRankedMatched = applyBrowseRanksToItems(matched, browseRankInfo.cache);
+
+    matched.sort((a,b)=> (Number(a.popRank||0) - Number(b.popRank||0)) || String(a.name||"").localeCompare(String(b.name||"")));
 
     // Safety: if nothing matched our local library, keep active local discounts and only remove expired ones.
     if(matched.length === 0){
@@ -3935,7 +3953,8 @@ app.post("/api/admin/discounts/refresh_from_ps", requireAdmin, async (req, res) 
     }
 
     const finalItems = mergeDiscountItemsById(activeExistingItems, matched);
-    finalItems.sort((a,b)=> (Number(a.popRank||0) - Number(b.popRank||0)));
+    applyBrowseRanksToItems(finalItems, browseRankInfo.cache);
+    finalItems.sort((a,b)=> (Number(a.popRank||0) - Number(b.popRank||0)) || String(a.name||"").localeCompare(String(b.name||"")));
     writeJson(GAMES_PATH, { updatedAt: new Date().toISOString(), items: finalItems });
 
     res.json({
@@ -3947,6 +3966,9 @@ app.post("/api/admin/discounts/refresh_from_ps", requireAdmin, async (req, res) 
       keptActive: activeExistingItems.length,
       skippedActiveKnownProducts: baseItems.length - baseItemsToCheck.length,
       addedOrUpdated: matched.length,
+      browseRanked: browseRankedMatched,
+      browseRankPagesFetched: browseRankInfo.fetchedPages,
+      browseRankEntriesFetched: browseRankInfo.entriesTotal,
       totalDiscounts: finalItems.length,
       missingInAllGames: missing.length,
       missingSample: missing.slice(0, 20)
