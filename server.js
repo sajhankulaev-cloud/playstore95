@@ -208,6 +208,23 @@ function writePsEaPlayCache(obj){
   try{ fs.writeFileSync(PS_EAPLAY_CACHE_PATH, JSON.stringify(obj, null, 2), "utf-8"); }catch(_e){}
 }
 
+function readPsDiscountsCache(){
+  try{
+    const raw = fs.readFileSync(PS_DISCOUNTS_CACHE_PATH, "utf-8");
+    const j = JSON.parse(raw);
+    if(!j || typeof j !== "object") return { updatedAt:null, locale:"", ranksByName:{}, ranksById:{} };
+    if(j.ranks && !j.ranksByName) j.ranksByName = j.ranks;
+    if(!j.ranksByName || typeof j.ranksByName !== "object") j.ranksByName = {};
+    if(!j.ranksById || typeof j.ranksById !== "object") j.ranksById = {};
+    return j;
+  }catch{
+    return { updatedAt:null, locale:"", ranksByName:{}, ranksById:{} };
+  }
+}
+function writePsDiscountsCache(obj){
+  try{ fs.writeFileSync(PS_DISCOUNTS_CACHE_PATH, JSON.stringify(obj, null, 2), "utf-8"); }catch(_e){}
+}
+
 function readPsNewReleasesCache(){
   try{
     const raw = fs.readFileSync(PS_NEW_RELEASES_CACHE_PATH, "utf-8");
@@ -509,6 +526,8 @@ async function fetchGameDescriptionFromPs(productIdOrConceptId){
 
 const PS_TR_DISCOUNTS_CATEGORY_ID = "3f772501-f6f8-49b7-abac-874a88ca4897";
 const PS_TR_DISCOUNTS_PAGE_SIZE_GUESS = 24;
+const PS_DISCOUNTS_CACHE_PATH = path.join(__dirname, "data", "ps_discounts_rank_cache.json");
+const PS_DISCOUNTS_TTL_MS = 24 * 60 * 60 * 1000; // 1 day
 
 function safeNum(v){
   const n = Number(v);
@@ -948,6 +967,12 @@ function psBestSellersUrl(locale, page){
   return `https://store.playstation.com/${loc}/category/${PS_BESTSELLERS_CATEGORY_ID}/${p}`;
 }
 
+function psDiscountsUrl(locale, page){
+  const loc = String(locale || "en-tr").trim();
+  const p = Math.max(1, Number(page) || 1);
+  return `https://store.playstation.com/${loc}/category/${PS_TR_DISCOUNTS_CATEGORY_ID}/${p}`;
+}
+
 function readPsBestSellersCache(){
   return readJson(PS_BESTSELLERS_CACHE_PATH, { updatedAt:null, locale:"", order:[] });
 }
@@ -1191,6 +1216,60 @@ async function warmupPsEaPlayCache(locale, pagesToFetch = 2){
   }
   cache.updatedAt = today;
   writePsEaPlayCache(cache);
+}
+
+async function warmupPsDiscountsCache(locale, pagesToFetch = 12){
+  // Keep the local discounts list in the same order as PS Store "All deals".
+  const loc = String(locale || "en-tr").trim();
+  const cache = readPsDiscountsCache();
+  const updated = cache && cache.updatedAt ? Date.parse(cache.updatedAt) : 0;
+  const fresh = cache.locale === loc && updated && (Date.now() - updated) < PS_DISCOUNTS_TTL_MS;
+  if(fresh && ((cache.ranksById && Object.keys(cache.ranksById).length) || (cache.ranksByName && Object.keys(cache.ranksByName).length))) return cache;
+
+  const next = { updatedAt: new Date().toISOString(), locale: loc, ranksByName:{}, ranksById:{} };
+  const n = Math.max(1, Math.min(80, Number(pagesToFetch) || 12));
+  for(let page=1; page<=n; page++){
+    let html;
+    try{
+      html = await fetchText(psDiscountsUrl(loc, page), { acceptLanguage: loc.replace("-", "_"), timeoutMs: 3500 });
+    }catch(_e){
+      break;
+    }
+    const entries = extractBrowseEntries(html);
+    if(!entries.length) break;
+    for(let i=0;i<entries.length;i++){
+      const e = entries[i];
+      const rank = (page-1) * PS_TR_DISCOUNTS_PAGE_SIZE_GUESS + (i+1);
+      if(e.id && !next.ranksById[e.id]) next.ranksById[e.id] = rank;
+      const tKey = normText(e.title);
+      if(tKey && !next.ranksByName[tKey]) next.ranksByName[tKey] = rank;
+      const bKey = normText(baseTitleForRank(e.title));
+      if(bKey && !next.ranksByName[bKey]) next.ranksByName[bKey] = rank;
+    }
+    if(entries.length < PS_TR_DISCOUNTS_PAGE_SIZE_GUESS) break;
+  }
+  writePsDiscountsCache(next);
+  return next;
+}
+
+function psDiscountRankForGame(g, cache){
+  if(!g || !cache || cache.locale !== "en-tr") return 999999;
+  const byId = cache.ranksById || {};
+  const byName = cache.ranksByName || {};
+  const ids = [g.id, g.conceptId];
+  for(const id of ids){
+    const key = String(id || "").trim();
+    if(key && Number.isFinite(byId[key])) return byId[key];
+  }
+  const nameKeys = [
+    normText(g.name || ""),
+    normText(`${g.name || ""} ${g.edition || ""}`),
+    normText(baseTitleForRank(g.name || ""))
+  ];
+  for(const key of nameKeys){
+    if(key && Number.isFinite(byName[key])) return byName[key];
+  }
+  return 999999;
 }
 
 async function warmupPsBrowseCache(locale, pagesToFetch = 3){
@@ -3041,7 +3120,7 @@ function attachPublicEditions(items){
   return items;
 }
 
-app.get("/api/games", (req, res) => {
+app.get("/api/games", async (req, res) => {
   try {
     const store = readStore();
     const region = String(req.query.region || "TR").toUpperCase();
@@ -3055,6 +3134,18 @@ app.get("/api/games", (req, res) => {
     const q = String(req.query.q || "").trim();
     const platform = String(req.query.platform || "").trim();
     const until = String(req.query.until || req.query.discountedUntil || "").trim();
+    const isDiscountsTab = String(req.query.tab || "discounts") === "discounts";
+
+    let psDiscountCache = readPsDiscountsCache();
+    if(isDiscountsTab && sort === "pop"){
+      try{
+        const updated = psDiscountCache && psDiscountCache.updatedAt ? Date.parse(psDiscountCache.updatedAt) : 0;
+        const fresh = psDiscountCache.locale === "en-tr" && updated && (Date.now() - updated) < PS_DISCOUNTS_TTL_MS;
+        if(!fresh || !((psDiscountCache.ranksById && Object.keys(psDiscountCache.ranksById).length) || (psDiscountCache.ranksByName && Object.keys(psDiscountCache.ranksByName).length))){
+          psDiscountCache = await warmupPsDiscountsCache("en-tr", 14);
+        }
+      }catch(_e){}
+    }
 
     const gamesDoc = readJson(GAMES_PATH, { updatedAt:null, items:[] });
     let all = Array.isArray(gamesDoc.items) ? gamesDoc.items : [];
@@ -3134,7 +3225,8 @@ app.get("/api/games", (req, res) => {
         finalPriceRub: rub,
         oldPriceRub: (Number(reg && reg.discPerc || 0) > 0 ? clampMinGamePriceRub(store, roundUp((storePrice / Math.max(0.01, (1 - (Number(reg.discPerc||0)/100)))) * pickRate(rules, (storePrice / Math.max(0.01, (1 - (Number(reg.discPerc||0)/100))))), step)) : 0),
         conceptId: conceptForGame(g, conceptIndex),
-        popRank: g.popRank || 999999
+        popRank: g.popRank || 999999,
+        psDiscountRank: psDiscountRankForGame({ id: g.id, conceptId: conceptForGame(g, conceptIndex), name: g.name, edition: g.edition }, psDiscountCache)
       };
 
       if(q) base._score = relevanceScore(g.name || "", q);
@@ -3155,6 +3247,7 @@ app.get("/api/games", (req, res) => {
     const tieBySort = (a,b)=>{
       if (sort === "price_desc") return (b.finalPriceRub-a.finalPriceRub) || ((a.popRank||0)-(b.popRank||0));
       if (sort === "price_asc") return (a.finalPriceRub-b.finalPriceRub) || ((a.popRank||0)-(b.popRank||0));
+      if (isDiscountsTab) return (a.psDiscountRank||999999)-(b.psDiscountRank||999999) || ((a.popRank||0)-(b.popRank||0));
       return (a.popRank||0)-(b.popRank||0);
     };
 
@@ -3168,7 +3261,7 @@ app.get("/api/games", (req, res) => {
 
     const total = computed.length;
     const startIndex = (page - 1) * perPage;
-    const items = computed.slice(startIndex, startIndex + perPage).map(({ _score, ...rest }) => rest);
+    const items = computed.slice(startIndex, startIndex + perPage).map(({ _score, psDiscountRank, ...rest }) => rest);
     res.json({ region, page, perPage, total, items, updatedAt: gamesDoc.updatedAt || null });
   } catch (e) {
     res.status(500).json({ error: String(e) });
