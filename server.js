@@ -3395,6 +3395,24 @@ function genrePass(gameGenres, filterGenres){
   return wanted.some(g=>own.has(g));
 }
 
+
+function playersPass(gamePlayers, filter){
+  const filters = String(filter || '')
+    .split(',')
+    .map(x => x.replace(/[–—]/g,'-').replace(/\s+/g,'').trim())
+    .filter(Boolean);
+  if(!filters.length) return true;
+  const s = String(gamePlayers || '').toLowerCase().replace(/[–—]/g,'-').replace(/ё/g,'е');
+  const nums = (s.match(/\d+/g) || []).map(n=>Number(n)).filter(Number.isFinite);
+  if(!nums.length) return false;
+  const maxPlayers = Math.max(...nums);
+  return filters.some(f => {
+    const m = f.match(/(\d+)\-(\d+)/);
+    if(!m) return true;
+    return maxPlayers === Number(m[2]);
+  });
+}
+
 function gameRuStatus(game, region){
   const regs = game && game.regions ? game.regions : {};
   const tryRegs = [];
@@ -3534,6 +3552,7 @@ app.get("/api/games", (req, res) => {
     }
     const q = String(req.query.q || "").trim();
     const platform = String(req.query.platform || "").trim();
+    const players = String(req.query.players || req.query.player || "").trim();
     const genres = String(req.query.genres || req.query.genre || "").split(",").map(x=>x.trim()).filter(Boolean);
     const language = String(req.query.language || req.query.lang || "").trim();
     const until = String(req.query.until || req.query.discountedUntil || "").trim();
@@ -3628,6 +3647,7 @@ app.get("/api/games", (req, res) => {
 
     // Remove games that were excluded for the selected region (e.g., region price is 0).
     computed = computed.filter(Boolean);
+    if (players) computed = computed.filter(x => playersPass(x.players, players));
 
     if (until) {
       const norm = (v) => String(v || "").split("T")[0];
@@ -5064,6 +5084,7 @@ app.get("/api/allgames", async (req, res) => {
     const perPage = 24;
     const q = String(req.query.q || "").trim();
     const platform = String(req.query.platform || "").trim();
+    const players = String(req.query.players || req.query.player || "").trim();
     const genres = String(req.query.genres || req.query.genre || "").split(",").map(x=>x.trim()).filter(Boolean);
     const language = String(req.query.language || req.query.lang || "").trim();
 
@@ -5095,6 +5116,7 @@ app.get("/api/allgames", async (req, res) => {
     if (platform) all = all.filter(x => platformPass(x, platform));
     if (genres.length) all = all.filter(x => genrePass(x.genres || "", genres));
     if (language) all = all.filter(x => languagePass(x, language, region));
+    if (players) all = all.filter(x => playersPass(x.players, players));
 
     const rules = store.rates[region] || [];
     const step = store.settings.roundStep || 50;
@@ -5182,6 +5204,7 @@ app.get("/api/allgames", async (req, res) => {
     });
 
     computed = computed.filter(Boolean);
+    if (players) computed = computed.filter(x => playersPass(x.players, players));
 
     // Sorting
     if (q) {
@@ -5312,6 +5335,7 @@ app.get("/api/newreleases", async (req, res) => {
     const perPage = 24;
     const q = String(req.query.q || "").trim();
     const platform = String(req.query.platform || "").trim();
+    const players = String(req.query.players || req.query.player || "").trim();
     const genres = String(req.query.genres || req.query.genre || "").split(",").map(x=>x.trim()).filter(Boolean);
     const language = String(req.query.language || req.query.lang || "").trim();
 
@@ -5442,6 +5466,7 @@ app.get("/api/preorders", async (req, res) => {
     const perPage = 24;
     const q = String(req.query.q || "").trim();
     const platform = String(req.query.platform || "").trim();
+    const players = String(req.query.players || req.query.player || "").trim();
     const genres = String(req.query.genres || req.query.genre || "").split(",").map(x=>x.trim()).filter(Boolean);
     const language = String(req.query.language || req.query.lang || "").trim();
 
@@ -5525,6 +5550,7 @@ app.get("/api/preorders", async (req, res) => {
       return base;
     });
     computed = computed.filter(Boolean);
+    if (players) computed = computed.filter(x => playersPass(x.players, players));
 
     if (q) {
       computed.sort((a,b)=> (b._score||0)-(a._score||0));
@@ -5609,6 +5635,7 @@ app.get("/api/multiplayer", (req, res) => {
       if(Number.isFinite(n) && n > 0) perPage = Math.min(60, Math.max(1, n));
     }
     const platform = String(req.query.platform || "").trim();
+    const players = String(req.query.players || req.query.player || "").trim();
     const genres = String(req.query.genres || req.query.genre || "").split(",").map(x=>x.trim()).filter(Boolean);
     const language = String(req.query.language || req.query.lang || "").trim();
 
@@ -5621,6 +5648,7 @@ app.get("/api/multiplayer", (req, res) => {
     if(platform) all = all.filter(x => platformPass(x, platform));
     if(genres.length) all = all.filter(x => genrePass(x.genres || "", genres));
     if(language) all = all.filter(x => languagePass(x, language, region));
+    if(players) all = all.filter(x => playersPass(x.players, players));
     all = all.filter(x => isMoreThanOnePlayerValue(x.players));
 
     // Prevent duplicates across New/All Games while preserving the richer category card.
@@ -6660,6 +6688,7 @@ app.get("/api/search", async (req, res) => {
     }
     const q = String(req.query.q || "").trim();
     const platform = String(req.query.platform || "").trim();
+    const players = String(req.query.players || req.query.player || "").trim();
     const genres = String(req.query.genres || req.query.genre || "").split(",").map(x=>x.trim()).filter(Boolean);
     const language = String(req.query.language || req.query.lang || "").trim();
     const sort = String(req.query.sort || "pop").trim();
@@ -6765,6 +6794,7 @@ app.get("/api/search", async (req, res) => {
       return base;
     });
     computed = computed.filter(Boolean);
+    if (players) computed = computed.filter(x => playersPass(x.players, players));
 
     // Sorting
     if(q){
