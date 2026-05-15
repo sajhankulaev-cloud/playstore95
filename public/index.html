@@ -100,6 +100,16 @@
       </div>
     </div>
     <div class="filterGroup">
+      <div class="filterGroupTitle">Игроки:</div>
+      <div class="filterChips filterChips--players" id="filterPlayers">
+        <label class="filterChip"><input type="checkbox" value="1-2"><span>1-2 игрока</span></label>
+        <label class="filterChip"><input type="checkbox" value="1-4"><span>1-4 игрока</span></label>
+        <label class="filterChip"><input type="checkbox" value="1-5"><span>1-5 игроков</span></label>
+        <label class="filterChip"><input type="checkbox" value="1-6"><span>1-6 игроков</span></label>
+        <label class="filterChip"><input type="checkbox" value="1-8"><span>1-8 игроков</span></label>
+      </div>
+    </div>
+    <div class="filterGroup">
       <div class="filterGroupTitle">Язык:</div>
       <div class="filterChips filterChips--language" id="filterLanguages">
         <label class="filterChip"><input type="checkbox" value="voice"><span>Полностью на русском</span></label>
@@ -120,7 +130,7 @@
 
 <script>
 
-const state={tab:"home",region:"TR",sort:"pop",platform:"",language:"",genres:[],search:"",page:1,until:"",subPage:"",allDeals:false,discountRates:{TR:[],UA:[]},roundStep:50};
+const state={tab:"home",region:"TR",sort:"pop",platform:"",players:"",language:"",genres:[],search:"",page:1,until:"",subPage:"",allDeals:false,discountRates:{TR:[],UA:[]},roundStep:50};
 
 function shouldScrollToSubsGames(){
   return !!(state.scrollToSubsGames || window.location.hash === "#subs-games");
@@ -265,6 +275,10 @@ function syncFilterDrawer(){
   document.querySelectorAll('#filterPlatforms input[type="checkbox"]').forEach(ch=>{
     ch.checked = String(state.platform||"").toUpperCase() === String(ch.value||"").toUpperCase();
   });
+  const selectedPlayers = new Set(String(state.players||"").split(",").map(x=>x.trim()).filter(Boolean));
+  document.querySelectorAll('#filterPlayers input[type="checkbox"]').forEach(ch=>{
+    ch.checked = selectedPlayers.has(String(ch.value||""));
+  });
   document.querySelectorAll('#filterLanguages input[type="checkbox"]').forEach(ch=>{
     ch.checked = String(state.language||"").toLowerCase() === String(ch.value||"").toLowerCase();
   });
@@ -322,6 +336,7 @@ function setActiveTab(tab, opts={}){
     qs.set("region", state.region);
     qs.set("sort", state.sort);
     if(state.platform) qs.set("platform", state.platform); else qs.delete("platform");
+    if(state.players) qs.set("players", state.players); else qs.delete("players");
     if(state.language) qs.set("language", state.language); else qs.delete("language");
     if((state.genres||[]).length) qs.set("genres", state.genres.join(",")); else qs.delete("genres");
     if(state.search) qs.set("q", state.search); else qs.delete("q");
@@ -709,6 +724,7 @@ async function renderHome(){
   const qsBase = (extra={}) => {
     const qs = new URLSearchParams({region:state.region, sort:"pop", page:"1"});
     if(state.platform) qs.set("platform", state.platform);
+    if(state.players) qs.set("players", state.players);
     if(state.language) qs.set("language", state.language);
     if((state.genres||[]).length) qs.set("genres", state.genres.join(","));
     Object.entries(extra).forEach(([k,v])=>qs.set(k,String(v)));
@@ -815,6 +831,7 @@ async function renderMultiplayerPage(){
     const perPage=24;
     const qs=new URLSearchParams({region:state.region, page:String(state.page||1), perPage:String(perPage)});
     if(state.platform) qs.set("platform", state.platform);
+    if(state.players) qs.set("players", state.players);
     if(state.language) qs.set("language", state.language);
     if((state.genres||[]).length) qs.set("genres", state.genres.join(","));
     const j=await fetch("/api/multiplayer?"+qs.toString(),{cache:"no-store"}).then(r=>r.json());
@@ -883,6 +900,7 @@ async function renderBestsellersPage(){
     const perPage=24;
     const qs = new URLSearchParams({region:state.region, sort:"pop", page:String(state.page||1), perPage:String(perPage)});
     if(state.platform) qs.set("platform", state.platform);
+    if(state.players) qs.set("players", state.players);
     if(state.language) qs.set("language", state.language);
     if((state.genres||[]).length) qs.set("genres", state.genres.join(","));
     const j=await fetch("/api/bestsellers?"+qs.toString(),{cache:"no-store"}).then(r=>r.json());
@@ -1558,6 +1576,7 @@ if(urlQS.get("region")) state.region=urlQS.get("region");
 if(urlQS.get("page")) state.page=Math.max(1, parseInt(urlQS.get("page"),10)||1);
 if(urlQS.get("sort")) state.sort=urlQS.get("sort");
 if(urlQS.get("platform")) state.platform=urlQS.get("platform");
+if(urlQS.get("players")) state.players=urlQS.get("players");
 if(urlQS.get("language")) state.language=urlQS.get("language");
 if(urlQS.get("genres")) state.genres=urlQS.get("genres").split(",").map(x=>x.trim()).filter(Boolean);
 if(urlQS.get("q")) state.search=urlQS.get("q");
@@ -2593,6 +2612,7 @@ async function load(){
   // keep current state in URL (so refresh keeps page/filters)
   
   if(state.platform) qs.set("platform", state.platform);
+  if(state.players) qs.set("players", state.players);
   if(state.language) qs.set("language", state.language);
   if((state.genres||[]).length) qs.set("genres", state.genres.join(","));
   if(state.search)qs.set("q",state.search);
@@ -2708,6 +2728,7 @@ document.getElementById("sort").onchange=()=>{state.sort=document.getElementById
 document.getElementById("reset").onclick=()=>{
   state.search="";
   state.platform="";
+  state.players="";
   state.language="";
   state.genres=[];
   state.sort="pop";
@@ -2747,8 +2768,10 @@ if(filterBackdrop) filterBackdrop.onclick=closeFilterDrawer;
 const filterApplyBtn=document.getElementById("filterApply");
 if(filterApplyBtn) filterApplyBtn.onclick=()=>{
   const checkedPlatform=Array.from(document.querySelectorAll('#filterPlatforms input:checked')).map(x=>x.value)[0] || "";
+  const checkedPlayers=Array.from(document.querySelectorAll('#filterPlayers input:checked')).map(x=>x.value).filter(Boolean).join(",");
   const checkedLanguage=Array.from(document.querySelectorAll('#filterLanguages input:checked')).map(x=>x.value)[0] || "";
   state.platform=checkedPlatform;
+  state.players=checkedPlayers;
   state.language=checkedLanguage;
   state.genres=Array.from(document.querySelectorAll('#filterGenres input:checked')).map(x=>x.value).filter(Boolean);
   const platformSelect=document.getElementById("platform");
@@ -2760,6 +2783,7 @@ if(filterApplyBtn) filterApplyBtn.onclick=()=>{
 const filterClearBtn=document.getElementById("filterClear");
 if(filterClearBtn) filterClearBtn.onclick=()=>{
   state.platform="";
+  state.players="";
   state.language="";
   state.genres=[];
   syncFilterDrawer();
@@ -2781,6 +2805,7 @@ document.querySelectorAll('#filterLanguages input[type="checkbox"]').forEach(ch=
 
 // Cart UI wiring
 document.addEventListener("DOMContentLoaded",()=>{
+  enableFilterHorizontalScroll(document.getElementById('filterPlayers'));
   enableFilterHorizontalScroll(document.getElementById('filterLanguages'));
   enableFilterHorizontalScroll(document.getElementById('filterGenres'));
 
