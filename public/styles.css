@@ -3246,13 +3246,13 @@ body[data-tab="multiplayer"] .siteTabsShell{display:flex !important;}
 .filterGroup{margin:0 0 15px;}
 .filterGroupTitle{font-weight:600;color:#64748b;margin:0 0 10px;font-size:14px;}
 .filterChips{display:flex;flex-wrap:wrap;gap:10px;}
-.filterChips--language{display:flex;flex-wrap:nowrap;align-items:center;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:4px;touch-action:pan-x;max-width:100%;cursor:grab;}
-.filterChips--language::-webkit-scrollbar{display:none;}
-.filterChips--language .filterChip{flex:0 0 auto;white-space:nowrap;min-width:max-content;}
+.filterChips--players,.filterChips--language{display:flex;flex-wrap:nowrap;align-items:center;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:4px;touch-action:pan-x;max-width:100%;cursor:grab;}
+.filterChips--players::-webkit-scrollbar,.filterChips--language::-webkit-scrollbar{display:none;}
+.filterChips--players .filterChip,.filterChips--language .filterChip{flex:0 0 auto;white-space:nowrap;min-width:max-content;}
 .filterChips--genres{display:grid;grid-auto-flow:column;grid-template-rows:repeat(2,auto);grid-auto-columns:max-content;justify-content:start;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:4px;touch-action:pan-x;max-width:100%;cursor:grab;}
 .filterChips--genres::-webkit-scrollbar{display:none;}
 .filterChips--genres .filterChip{white-space:nowrap;}
-.filterChips--language.is-dragging,.filterChips--genres.is-dragging{cursor:grabbing;}
+.filterChips--players.is-dragging,.filterChips--language.is-dragging,.filterChips--genres.is-dragging{cursor:grabbing;}
 .filterChip{font-size: 14px;position:relative;display:inline-flex;align-items:center;gap:10px;min-height:35px;padding:0 14px 0 12px;border-radius:5px;background:rgba(15,23,42,.06);font-weight:600;cursor:pointer;user-select:none;}
 .filterChip input{appearance:none;-webkit-appearance:none;width:16px;height:16px;border-radius:2px;background:rgba(15,23,42,.08);margin:0;display:inline-grid;place-items:center;}
 .filterChip input:checked{background:#1452e7;}
