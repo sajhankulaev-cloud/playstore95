@@ -169,6 +169,10 @@ button{ color:#0f172a !important; }
         <input id="impEdition" class="input" type="text" placeholder="Standard / Deluxe / Premium..." />
         <div class="small" style="margin-top:8px;">Жанры</div>
         <input id="impGenres" class="input" type="text" placeholder="Боевики, Приключения" />
+        <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-weight:700;cursor:pointer;">
+          <input id="impVr2" type="checkbox" />
+          <span>VR2</span>
+        </label>
 
         <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;">
           <div style="flex:1;min-width:150px;">
@@ -327,6 +331,10 @@ button{ color:#0f172a !important; }
           <div style="flex:1;min-width:180px;">
             <div class="small">Жанры</div>
             <input id="preGenres" class="input" type="text" placeholder="Боевики, Приключения" />
+            <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-weight:700;cursor:pointer;">
+              <input id="preVr2" type="checkbox" />
+              <span>VR2</span>
+            </label>
           </div>
         </div>
 
@@ -445,6 +453,10 @@ button{ color:#0f172a !important; }
               <input id="allConceptId" class="input" type="text" readonly />
               <div class="small" style="margin-top:8px;">Жанры</div>
               <input id="allGenres" class="input" type="text" placeholder="Боевики, Приключения" />
+              <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-weight:700;cursor:pointer;">
+                <input id="allVr2" type="checkbox" />
+                <span>VR2</span>
+              </label>
             </div>
           </div>
 
@@ -1836,6 +1848,8 @@ function beginPreorderEdit(id){
   document.getElementById("preIdUA").value = (g.productIds && g.productIds.UA) ? g.productIds.UA : '';
   document.getElementById("preConceptId").value = (g.conceptId || '');
   document.getElementById("preGenres").value = (g.genres || '');
+  const preVr2El = document.getElementById("preVr2");
+  if(preVr2El) preVr2El.checked = !!g.vr2;
 
   const rTR = (g.regions && g.regions.TR) ? g.regions.TR : {};
   const rUA = (g.regions && g.regions.UA) ? g.regions.UA : {};
