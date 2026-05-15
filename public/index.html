@@ -60,9 +60,19 @@
 
 <div class="container">
   <div class="resultsBar" aria-label="Результаты">
-    <div class="resultsSort">
-      <span class="resultsSortLabel">Сортировка: </span>
-      <select id="sort" class="sortSelect" aria-label="Сортировка">
+    <div class="catalogControls">
+      <button id="filterOpen" class="catalogControlBtn" type="button">
+        <span>Фильтры</span>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M16 5v4M4 17h2M10 17h10M8 15v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+      <div class="sortControl" id="sortControl">
+        <button id="sortOpen" class="catalogControlBtn catalogControlBtn--sort" type="button" aria-expanded="false">
+          <span id="sortCurrentLabel">Без сортировки</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div id="sortMenu" class="sortMenu" aria-hidden="true"></div>
+      </div>
+      <select id="sort" class="sortSelect sortSelectHidden" aria-label="Сортировка">
         <!-- options are injected dynamically based on active tab -->
       </select>
     </div>
@@ -74,9 +84,43 @@
   <div class="pager" id="pager"></div>
 </div>
 
+<div id="filterOverlay" class="filterOverlay" aria-hidden="true">
+  <div class="filterBackdrop" id="filterBackdrop"></div>
+  <aside class="filterDrawer" role="dialog" aria-modal="true" aria-label="Фильтры">
+    <div class="filterDrawerHead">
+      <h2>Фильтры</h2>
+      <button id="filterClose" class="filterClose" type="button" aria-label="Закрыть">×</button>
+    </div>
+    <div class="filterGroup">
+      <div class="filterGroupTitle">Платформа:</div>
+      <div class="filterChips" id="filterPlatforms">
+        <label class="filterChip"><input type="checkbox" value="PS4"><span>PS4</span></label>
+        <label class="filterChip"><input type="checkbox" value="PS5"><span>PS5</span></label>
+        <label class="filterChip"><input type="checkbox" value="VR2"><span>VR2</span></label>
+      </div>
+    </div>
+    <div class="filterGroup">
+      <div class="filterGroupTitle">Язык:</div>
+      <div class="filterChips filterChips--language" id="filterLanguages">
+        <label class="filterChip"><input type="checkbox" value="voice"><span>Полностью на русском</span></label>
+        <label class="filterChip"><input type="checkbox" value="text"><span>С русскими субтитрами</span></label>
+        <label class="filterChip"><input type="checkbox" value="none"><span>Без русского перевода</span></label>
+      </div>
+    </div>
+    <div class="filterGroup">
+      <div class="filterGroupTitle">Жанры:</div>
+      <div class="filterChips filterChips--genres" id="filterGenres"></div>
+    </div>
+    <div class="filterDrawerFooter">
+      <button id="filterClear" class="filterClearBtn" type="button">Сбросить</button>
+      <button id="filterApply" class="filterApplyBtn" type="button">Применить</button>
+    </div>
+  </aside>
+</div>
+
 <script>
 
-const state={tab:"home",region:"TR",sort:"pop",platform:"",search:"",page:1,until:"",subPage:"",allDeals:false,discountRates:{TR:[],UA:[]},roundStep:50};
+const state={tab:"home",region:"TR",sort:"pop",platform:"",language:"",genres:[],search:"",page:1,until:"",subPage:"",allDeals:false,discountRates:{TR:[],UA:[]},roundStep:50};
 
 function shouldScrollToSubsGames(){
   return !!(state.scrollToSubsGames || window.location.hash === "#subs-games");
@@ -164,28 +208,92 @@ function subsInfoList(items){
   return items.map(([icon, content])=>subsInfoItem(icon, content)).join('');
 }
 
+function getSortOptionsForTab(tab){
+  return [
+    {v:"pop", t:"Без сортировки"},
+    {v:"name_asc", t:"По алфавиту ↑"},
+    {v:"name_desc", t:"По алфавиту ↓"},
+    {v:"price_asc", t:"По цене ↑"},
+    {v:"price_desc", t:"По цене ↓"},
+  ];
+}
+
+function updateSortLabel(){
+  const label=document.getElementById("sortCurrentLabel");
+  const opts=getSortOptionsForTab(state.tab);
+  const found=opts.find(o=>o.v===state.sort) || opts[0];
+  if(label) label.textContent=found.t;
+}
+
+function closeSortMenu(){
+  const menu=document.getElementById("sortMenu");
+  const btn=document.getElementById("sortOpen");
+  if(menu) menu.classList.remove("open");
+  if(menu) menu.setAttribute("aria-hidden","true");
+  if(btn) btn.setAttribute("aria-expanded","false");
+}
+
 function setSortOptionsForTab(tab){
   const sel=document.getElementById("sort");
-  if(!sel) return;
-  const isAllGames = tab === "allgames";
-  const options = isAllGames ? [
-    {v:"pop", t:"по умолчанию"},
-    {v:"name_asc", t:"Название: А—Я"},
-    {v:"name_desc", t:"Название: Я—А"},
-    {v:"price_asc", t:"Цена: Низкая"},
-    {v:"price_desc", t:"Цена: Высокая"},
-  ] : [
-    {v:"pop", t:"по умолчанию"},
-    {v:"price_asc", t:"Цена: Низкая"},
-    {v:"price_desc", t:"Цена: Высокая"},
-  ];
+  const menu=document.getElementById("sortMenu");
+  const options=getSortOptionsForTab(tab);
 
-  // If current sort is not allowed for this tab — reset to default
   const allowed = new Set(options.map(o=>o.v));
   if(!allowed.has(state.sort)) state.sort = "pop";
 
-  sel.innerHTML = options.map(o=>`<option value="${o.v}" class="colValue">${o.t}</option>`).join("");
-  sel.value = state.sort;
+  if(sel){
+    sel.innerHTML = options.map(o=>`<option value="${o.v}" class="colValue">${o.t}</option>`).join("");
+    sel.value = state.sort;
+  }
+  if(menu){
+    menu.innerHTML = options.map(o=>`<button type="button" class="sortMenuItem${o.v===state.sort?' active':''}" data-sort="${o.v}">${o.t}</button>`).join("");
+    menu.querySelectorAll(".sortMenuItem").forEach(btn=>{
+      btn.onclick=()=>{
+        state.sort=btn.dataset.sort || "pop";
+        state.page=1;
+        if(sel) sel.value=state.sort;
+        updateSortLabel();
+        closeSortMenu();
+        load();
+      };
+    });
+  }
+  updateSortLabel();
+}
+
+function syncFilterDrawer(){
+  document.querySelectorAll('#filterPlatforms input[type="checkbox"]').forEach(ch=>{
+    ch.checked = String(state.platform||"").toUpperCase() === String(ch.value||"").toUpperCase();
+  });
+  document.querySelectorAll('#filterLanguages input[type="checkbox"]').forEach(ch=>{
+    ch.checked = String(state.language||"").toLowerCase() === String(ch.value||"").toLowerCase();
+  });
+  const selected=new Set((state.genres||[]).map(x=>String(x).trim()).filter(Boolean));
+  document.querySelectorAll('#filterGenres input[type="checkbox"]').forEach(ch=>{
+    ch.checked = selected.has(ch.value);
+  });
+}
+
+function openFilterDrawer(){
+  syncFilterDrawer();
+  const ov=document.getElementById("filterOverlay");
+  if(ov){ ov.classList.add("open"); ov.setAttribute("aria-hidden","false"); }
+}
+function closeFilterDrawer(){
+  const ov=document.getElementById("filterOverlay");
+  if(ov){ ov.classList.remove("open"); ov.setAttribute("aria-hidden","true"); }
+}
+
+function populateGenreFilters(genres){
+  const box=document.getElementById("filterGenres");
+  if(!box) return;
+  const current=Array.from(box.querySelectorAll('input')).map(x=>x.value).join('|');
+  const list=(Array.isArray(genres)?genres:[]).map(x=>String(x||'').trim()).filter(Boolean);
+  const next=list.join('|');
+  if(current===next) return;
+  box.innerHTML = list.map(g=>`<label class="filterChip"><input type="checkbox" value="${escapeHtml(g)}"><span>${escapeHtml(g)}</span></label>`).join("") || '<div class="filterEmpty">Жанры пока не заполнены</div>';
+  enableFilterHorizontalScroll(box);
+  syncFilterDrawer();
 }
 
 function setActiveTab(tab, opts={}){
@@ -214,6 +322,8 @@ function setActiveTab(tab, opts={}){
     qs.set("region", state.region);
     qs.set("sort", state.sort);
     if(state.platform) qs.set("platform", state.platform); else qs.delete("platform");
+    if(state.language) qs.set("language", state.language); else qs.delete("language");
+    if((state.genres||[]).length) qs.set("genres", state.genres.join(",")); else qs.delete("genres");
     if(state.search) qs.set("q", state.search); else qs.delete("q");
     if(state.until && tab==="discounts") qs.set("until", state.until); else qs.delete("until");
     if(state.allDeals && tab==="discounts") qs.set("all", "1"); else qs.delete("all");
@@ -333,6 +443,59 @@ function homeSubCardHtml(id, img, title, price, features=[]){
 }
 
 
+
+
+function enableFilterHorizontalScroll(scroller){
+  if(!scroller || scroller.dataset.filterScrollReady) return;
+  scroller.dataset.filterScrollReady = "1";
+  let startX = 0, startY = 0, startLeft = 0, dragging = false, moved = false;
+
+  scroller.addEventListener('wheel', (e)=>{
+    if(scroller.scrollWidth <= scroller.clientWidth) return;
+    const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+    if(!delta) return;
+    scroller.scrollLeft += delta;
+    e.preventDefault();
+  }, {passive:false});
+
+  scroller.addEventListener('pointerdown', (e)=>{
+    if(e.button !== undefined && e.button !== 0) return;
+    dragging = true; moved = false;
+    startX = e.clientX; startY = e.clientY; startLeft = scroller.scrollLeft;
+  });
+  scroller.addEventListener('pointermove', (e)=>{
+    if(!dragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    if(Math.abs(dx) > 3 && Math.abs(dx) >= Math.abs(dy)){
+      if(!moved){
+        moved = true;
+        scroller.classList.add('is-dragging');
+        try{ scroller.setPointerCapture(e.pointerId); }catch(_){ }
+      }
+      scroller.scrollLeft = startLeft - dx;
+      e.preventDefault();
+    }
+  }, {passive:false});
+  const stop = ()=>{
+    if(!dragging) return;
+    dragging = false;
+    scroller.classList.remove('is-dragging');
+    if(moved){
+      scroller.dataset.dragMoved = '1';
+      setTimeout(()=>{ delete scroller.dataset.dragMoved; }, 180);
+    }
+  };
+  scroller.addEventListener('pointerup', stop);
+  scroller.addEventListener('pointercancel', stop);
+  scroller.addEventListener('lostpointercapture', stop);
+  scroller.addEventListener('click', (e)=>{
+    if(scroller.dataset.dragMoved === '1'){
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, true);
+}
 function enableHomeDragScroll(scroller){
   if(!scroller || scroller.dataset.dragScrollReady) return;
   scroller.dataset.dragScrollReady="1";
@@ -362,7 +525,6 @@ function enableHomeDragScroll(scroller){
     startLeft=scroller.scrollLeft;
     lastT=performance.now(); velocity=0;
     scroller.classList.add("is-dragging");
-    try{ scroller.setPointerCapture(e.pointerId); }catch(_){ }
     if(e.pointerType === "mouse") e.preventDefault();
   });
 
@@ -547,6 +709,8 @@ async function renderHome(){
   const qsBase = (extra={}) => {
     const qs = new URLSearchParams({region:state.region, sort:"pop", page:"1"});
     if(state.platform) qs.set("platform", state.platform);
+    if(state.language) qs.set("language", state.language);
+    if((state.genres||[]).length) qs.set("genres", state.genres.join(","));
     Object.entries(extra).forEach(([k,v])=>qs.set(k,String(v)));
     return qs.toString();
   };
@@ -651,6 +815,8 @@ async function renderMultiplayerPage(){
     const perPage=24;
     const qs=new URLSearchParams({region:state.region, page:String(state.page||1), perPage:String(perPage)});
     if(state.platform) qs.set("platform", state.platform);
+    if(state.language) qs.set("language", state.language);
+    if((state.genres||[]).length) qs.set("genres", state.genres.join(","));
     const j=await fetch("/api/multiplayer?"+qs.toString(),{cache:"no-store"}).then(r=>r.json());
     if(j && (j.total||0)>0 && (j.items||[]).length===0 && state.page>1){
       state.page=Math.max(1, Math.ceil((j.total||0)/(j.perPage||perPage)));
@@ -717,6 +883,8 @@ async function renderBestsellersPage(){
     const perPage=24;
     const qs = new URLSearchParams({region:state.region, sort:"pop", page:String(state.page||1), perPage:String(perPage)});
     if(state.platform) qs.set("platform", state.platform);
+    if(state.language) qs.set("language", state.language);
+    if((state.genres||[]).length) qs.set("genres", state.genres.join(","));
     const j=await fetch("/api/bestsellers?"+qs.toString(),{cache:"no-store"}).then(r=>r.json());
     if(j && (j.total||0)>0 && (j.items||[]).length===0 && state.page>1){
       state.page=Math.max(1, Math.ceil((j.total||0)/(j.perPage||perPage)));
@@ -1390,6 +1558,8 @@ if(urlQS.get("region")) state.region=urlQS.get("region");
 if(urlQS.get("page")) state.page=Math.max(1, parseInt(urlQS.get("page"),10)||1);
 if(urlQS.get("sort")) state.sort=urlQS.get("sort");
 if(urlQS.get("platform")) state.platform=urlQS.get("platform");
+if(urlQS.get("language")) state.language=urlQS.get("language");
+if(urlQS.get("genres")) state.genres=urlQS.get("genres").split(",").map(x=>x.trim()).filter(Boolean);
 if(urlQS.get("q")) state.search=urlQS.get("q");
 if(urlQS.get("sub")) state.subPage=String(urlQS.get("sub"));
 if(urlQS.get("until")) state.until=String(urlQS.get("until"));
@@ -2326,6 +2496,7 @@ async function load(){
   // если поиск задан из URL/сохранённого состояния — покажем поле раскрытым
   if(state.search) setSearchOpen(true);
   const meta=await fetch("/api/meta").then(r=>r.json());
+  populateGenreFilters(meta && meta.genres);
   // Apply active tab UI (do not reset page when loading)
   const knownTabs = new Set(["home","preorders","new","discounts","allgames","subs","bestsellers","multiplayer"]);
   if(!knownTabs.has(state.tab)) state.tab="home";
@@ -2422,6 +2593,8 @@ async function load(){
   // keep current state in URL (so refresh keeps page/filters)
   
   if(state.platform) qs.set("platform", state.platform);
+  if(state.language) qs.set("language", state.language);
+  if((state.genres||[]).length) qs.set("genres", state.genres.join(","));
   if(state.search)qs.set("q",state.search);
   // During search, don't restrict by discount date. Search must run across all dates.
   if(!state.search && state.until)qs.set("until",state.until);
@@ -2535,6 +2708,8 @@ document.getElementById("sort").onchange=()=>{state.sort=document.getElementById
 document.getElementById("reset").onclick=()=>{
   state.search="";
   state.platform="";
+  state.language="";
+  state.genres=[];
   state.sort="pop";
   state.until="";
   state.allDeals=false;
@@ -2547,8 +2722,68 @@ document.getElementById("reset").onclick=()=>{
 };
 
 
+
+const sortOpenBtn=document.getElementById("sortOpen");
+if(sortOpenBtn){
+  sortOpenBtn.onclick=(e)=>{
+    e.stopPropagation();
+    const menu=document.getElementById("sortMenu");
+    if(!menu) return;
+    const isOpen=menu.classList.toggle("open");
+    menu.setAttribute("aria-hidden", isOpen?"false":"true");
+    sortOpenBtn.setAttribute("aria-expanded", isOpen?"true":"false");
+  };
+}
+document.addEventListener("click",(e)=>{
+  const sc=document.getElementById("sortControl");
+  if(sc && !sc.contains(e.target)) closeSortMenu();
+});
+const filterOpenBtn=document.getElementById("filterOpen");
+if(filterOpenBtn) filterOpenBtn.onclick=openFilterDrawer;
+const filterCloseBtn=document.getElementById("filterClose");
+if(filterCloseBtn) filterCloseBtn.onclick=closeFilterDrawer;
+const filterBackdrop=document.getElementById("filterBackdrop");
+if(filterBackdrop) filterBackdrop.onclick=closeFilterDrawer;
+const filterApplyBtn=document.getElementById("filterApply");
+if(filterApplyBtn) filterApplyBtn.onclick=()=>{
+  const checkedPlatform=Array.from(document.querySelectorAll('#filterPlatforms input:checked')).map(x=>x.value)[0] || "";
+  const checkedLanguage=Array.from(document.querySelectorAll('#filterLanguages input:checked')).map(x=>x.value)[0] || "";
+  state.platform=checkedPlatform;
+  state.language=checkedLanguage;
+  state.genres=Array.from(document.querySelectorAll('#filterGenres input:checked')).map(x=>x.value).filter(Boolean);
+  const platformSelect=document.getElementById("platform");
+  if(platformSelect) platformSelect.value=state.platform;
+  state.page=1;
+  closeFilterDrawer();
+  load();
+};
+const filterClearBtn=document.getElementById("filterClear");
+if(filterClearBtn) filterClearBtn.onclick=()=>{
+  state.platform="";
+  state.language="";
+  state.genres=[];
+  syncFilterDrawer();
+};
+document.querySelectorAll('#filterPlatforms input[type="checkbox"]').forEach(ch=>{
+  ch.addEventListener('change',()=>{
+    if(ch.checked){
+      document.querySelectorAll('#filterPlatforms input[type="checkbox"]').forEach(other=>{ if(other!==ch) other.checked=false; });
+    }
+  });
+});
+document.querySelectorAll('#filterLanguages input[type="checkbox"]').forEach(ch=>{
+  ch.addEventListener('change',()=>{
+    if(ch.checked){
+      document.querySelectorAll('#filterLanguages input[type="checkbox"]').forEach(other=>{ if(other!==ch) other.checked=false; });
+    }
+  });
+});
+
 // Cart UI wiring
 document.addEventListener("DOMContentLoaded",()=>{
+  enableFilterHorizontalScroll(document.getElementById('filterLanguages'));
+  enableFilterHorizontalScroll(document.getElementById('filterGenres'));
+
   const cartToggle=document.getElementById("cartToggle");
   const cartClose=document.getElementById("cartCloseBtn");
   const cartOverlay=document.getElementById("cartOverlay");
@@ -2677,3 +2912,4 @@ load();
 
   <script src="/snow.js"></script>
 </body></html>
+
