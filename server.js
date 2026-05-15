@@ -5719,6 +5719,7 @@ app.post("/api/admin/allgames/add", requireAdmin, (req, res) => {
       next.rating = normalizeRatingValue(g.rating);
       next.description = cleanPsDescriptionText(g.description || "");
       next.genres = normalizeGenres(g.genres || "");
+      next.vr2 = !!g.vr2;
 
       // Concept ID groups multiple editions of the same game.
       // It's required for the "Новинки" page (matches PS category -> our library).
@@ -5784,6 +5785,7 @@ app.put("/api/admin/allgames/:id", requireAdmin, (req, res) => {
     if(typeof body.rating !== 'undefined') next.rating = normalizeRatingValue(body.rating);
     if(typeof body.description !== 'undefined') next.description = preserveAdminDescriptionText(body.description || '');
     if(typeof body.genres !== 'undefined') next.genres = normalizeGenres(body.genres || '');
+    if(typeof body.vr2 !== 'undefined') next.vr2 = !!body.vr2;
     if(typeof body.conceptId !== 'undefined') next.conceptId = body.conceptId ? String(body.conceptId).trim() : null;
     if(typeof body.additionalConceptIds !== 'undefined') next.additionalConceptIds = normalizeAdditionalConceptIds(body.additionalConceptIds);
 
@@ -5907,6 +5909,7 @@ app.post("/api/admin/preorders/add", requireAdmin, (req, res) => {
       next.rating = normalizeRatingValue(g.rating);
       next.description = cleanPsDescriptionText(g.description || "");
       next.genres = normalizeGenres(g.genres || "");
+      next.vr2 = !!g.vr2;
       next.releaseDate = dateOrNull(g.releaseDate);
 
       next.productIds = (g.productIds && typeof g.productIds === 'object') ? g.productIds : {};
@@ -5971,6 +5974,7 @@ app.put("/api/admin/preorders/:id", requireAdmin, (req, res) => {
     if(typeof body.releaseDate !== 'undefined') next.releaseDate = dateOrNull(body.releaseDate);
     if(typeof body.description !== 'undefined') next.description = preserveAdminDescriptionText(body.description || '');
     if(typeof body.genres !== 'undefined') next.genres = normalizeGenres(body.genres || '');
+    if(typeof body.vr2 !== 'undefined') next.vr2 = !!body.vr2;
     if(typeof body.conceptId !== 'undefined'){
       const s = String(body.conceptId||'').trim();
       next.conceptId = s || null;
