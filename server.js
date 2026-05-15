@@ -233,20 +233,42 @@ async function fetchText(url, opts = {}){
   const headers = Object.assign({
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    "Accept-Language": opts.acceptLanguage || "ru-UA,ru;q=0.9,en;q=0.8",
+    "Accept-Language": opts.acceptLanguage || "ru-UA,ru;q=0.9,uk-UA;q=0.8,uk;q=0.7,en;q=0.4",
   }, opts.headers || {});
-  // Prevent hanging requests (e.g. slow/blocked networks) from freezing "Add" in admin.
-  const timeoutMs = Number.isFinite(opts.timeoutMs) ? opts.timeoutMs : 8000;
-  const ac = new AbortController();
-  const t = setTimeout(() => ac.abort(new Error("fetch_timeout")), timeoutMs);
-  let r;
-  try{
-    r = await fetch(url, { method:"GET", headers, signal: ac.signal });
-  }finally{
-    clearTimeout(t);
-  }
-  if(!r.ok) throw new Error("HTTP " + r.status);
-  return await r.text();
+  const timeoutMs = Number.isFinite(opts.timeoutMs) ? opts.timeoutMs : 12000;
+
+  // Не используем только global fetch: на некоторых серверах Node.js он отсутствует
+  // или падает с generic "fetch failed". Старый https.request стабильнее для PS Store.
+  return await new Promise((resolve, reject) => {
+    let u;
+    try{ u = new URL(url); }catch(e){ return reject(e); }
+    const req = https.request({
+      protocol: u.protocol,
+      hostname: u.hostname,
+      port: u.port || (u.protocol === "https:" ? 443 : 80),
+      path: u.pathname + u.search,
+      method: "GET",
+      headers
+    }, (res) => {
+      // Follow simple redirects from PS Store.
+      if(res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location){
+        const nextUrl = new URL(res.headers.location, url).toString();
+        res.resume();
+        fetchText(nextUrl, opts).then(resolve, reject);
+        return;
+      }
+      let data = "";
+      res.setEncoding("utf8");
+      res.on("data", c => data += c);
+      res.on("end", () => {
+        if(res.statusCode && res.statusCode >= 400) return reject(new Error("HTTP " + res.statusCode));
+        resolve(data);
+      });
+    });
+    req.setTimeout(timeoutMs, () => req.destroy(new Error("fetch_timeout")));
+    req.on("error", reject);
+    req.end();
+  });
 }
 
 function withTimeout(promise, ms){
@@ -459,6 +481,309 @@ function conceptForGame(g, conceptIndex){
   }
   return '';
 }
+
+const GENRE_LABEL_WORDS = new Set([
+  'genre','genres','subgenre','subgenres','game genre','game genres',
+  'primary genre','secondary genre','жанр','жанры','поджанр','поджанры','жанри','піджанр','піджанри'
+]);
+const NON_GENRE_VALUES = new Set([
+  'playstation store','ps4','ps5','ps vr','ps vr2','dualshock','dualsense',
+  'offline play enabled','online play optional','vibration function required',
+  'trigger effect required','1 player','2 players','network players',
+  'in-game purchases','users interact','online play required',
+  'full game','premium game','downloadable game','add-on','add ons','add-ons','bundle','demo','avatar','theme',
+  ...GENRE_LABEL_WORDS
+]);
+
+// Не ограничиваем жанры старым списком. Это только словарь перевода частых
+// англ./укр. значений PS Store в русские названия, чтобы в базе не было каши языков.
+const PS_GENRE_RU_TRANSLATIONS = new Map(Object.entries({
+  'action':'Боевики', 'action and adventure':'Боевики', 'action/adventure':'Боевики', 'action-adventure':'Боевики', 'боевик':'Боевики', 'боевики':'Боевики', 'экшен':'Боевики', 'екшен':'Боевики',
+  'adventure':'Приключения', 'adventures':'Приключения', 'приключение':'Приключения', 'приключения':'Приключения', 'пригода':'Приключения', 'пригоди':'Приключения',
+  'arcade':'Аркада', 'аркада':'Аркада', 'аркады':'Аркада', 'аркади':'Аркада',
+  'brain training':'Тренировка мозга', 'brain-training':'Тренировка мозга', 'тренировка мозга':'Тренировка мозга', 'тренування мозку':'Тренировка мозга',
+  'casual':'Казуальные', 'casual games':'Казуальные', 'казуальные':'Казуальные', 'казуальная':'Казуальные', 'казуальні':'Казуальные',
+  'driving/racing':'Вождение и гонки', 'driving and racing':'Вождение и гонки', 'driving & racing':'Вождение и гонки', 'driving':'Вождение и гонки', 'racing':'Вождение и гонки', 'гонки':'Вождение и гонки', 'вождение':'Вождение и гонки', 'перегони':'Вождение и гонки',
+  'educational':'Обучающие', 'education':'Обучающие', 'обучающие':'Обучающие', 'образовательные':'Обучающие', 'освітні':'Обучающие',
+  'family':'Семейные', 'family games':'Семейные', 'семейные':'Семейные', 'семейная':'Семейные', 'семейные игры':'Семейные', 'сімейні':'Семейные', 'для семьи':'Семейные',
+  'fighting':'Единоборства', 'fighting games':'Единоборства', 'fighter':'Единоборства', 'fighters':'Единоборства', 'единоборства':'Единоборства', 'файтинг':'Единоборства', 'файтинги':'Единоборства', 'бойові ігри':'Единоборства',
+  'fitness':'Фитнес', 'фитнес':'Фитнес', 'фітнес':'Фитнес',
+  'horror':'Ужасы', 'horrors':'Ужасы', 'ужасы':'Ужасы', 'ужас':'Ужасы', 'хоррор':'Ужасы', 'жахи':'Ужасы', 'жах':'Ужасы',
+  'music/rhythm':'Музыка и ритм', 'music and rhythm':'Музыка и ритм', 'music & rhythm':'Музыка и ритм', 'music':'Музыка и ритм', 'rhythm':'Музыка и ритм', 'музыка':'Музыка и ритм', 'ритм':'Музыка и ритм', 'музика':'Музыка и ритм',
+  'party':'Для вечеринок', 'party games':'Для вечеринок', 'вечеринка':'Для вечеринок', 'для вечеринок':'Для вечеринок', 'для вечірок':'Для вечеринок',
+  'puzzle':'Головоломки', 'puzzles':'Головоломки', 'головоломка':'Головоломки', 'головоломки':'Головоломки', 'логические':'Головоломки', 'логічні':'Головоломки',
+  'quiz':'Викторины', 'quizzes':'Викторины', 'trivia':'Викторины', 'викторина':'Викторины', 'викторины':'Викторины', 'вікторини':'Викторины',
+  'role playing games':'Ролевые игры', 'role-playing games':'Ролевые игры', 'role playing':'Ролевые игры', 'role-playing':'Ролевые игры', 'rpg':'Ролевые игры', 'ролевые игры':'Ролевые игры', 'ролевая игра':'Ролевые игры', 'рольові ігри':'Ролевые игры',
+  'shooter':'Шутеры', 'shooters':'Шутеры', 'шутер':'Шутеры', 'шутеры':'Шутеры', 'стрелялки':'Шутеры', 'стрілялки':'Шутеры',
+  'simulation':'Имитация', 'simulations':'Имитация', 'имитация':'Имитация', 'имитации':'Имитация', 'симуляция':'Имитация', 'симуляции':'Имитация', 'симуляція':'Имитация',
+  'simulator':'Симуляторы', 'simulators':'Симуляторы', 'симулятор':'Симуляторы', 'симуляторы':'Симуляторы', 'симулятори':'Симуляторы',
+  'sport':'Спорт', 'sports':'Спорт', 'спорт':'Спорт', 'спортивные':'Спорт', 'спортивні':'Спорт',
+  'strategy':'Стратегии', 'strategies':'Стратегии', 'стратегия':'Стратегии', 'стратегии':'Стратегии', 'стратегії':'Стратегии', 'стратегія':'Стратегии',
+  'unique':'Уникальные', 'unique games':'Уникальные', 'уникальные':'Уникальные', 'уникальная':'Уникальные', 'унікальні':'Уникальные',
+  'visual novel':'Визуальные новеллы', 'visual novels':'Визуальные новеллы', 'визуальная новелла':'Визуальные новеллы', 'визуальные новеллы':'Визуальные новеллы',
+  'adult':'Для взрослых', 'mature':'Для взрослых', 'для взрослых':'Для взрослых', 'для дорослих':'Для взрослых'
+}));
+
+function genreKey(value){
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[ё]/g, 'е')
+    .replace(/[’'`´]/g, '')
+    .replace(/[®™©]/g, '')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s*&\s*/g, ' and ')
+    .replace(/\s*[|/]\s*/g, '/')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+function cleanGenreCandidate(value){
+  let s = String(value || '')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\\u002F/g, '/')
+    .replace(/\\u0026/g, '&')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if(!s) return '';
+  s = s.replace(/^[\[\(]+|[\]\)]+$/g, '').trim();
+  s = s.replace(/^(?:genres?|subgenres?|жанры?|жанри|поджанры?|піджанри?)\s*[:：-]\s*/i, '').trim();
+  s = s.replace(/\s*[|/]\s*/g, ', ');
+  if(/^[A-Z0-9_ -]+$/.test(s) && s.includes('_')){
+    s = s.toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, ch => ch.toUpperCase());
+  }
+  if(!s || s.length > 100) return '';
+  const low = genreKey(s);
+  if(NON_GENRE_VALUES.has(low)) return '';
+  if(/^\d+$/.test(s)) return '';
+  if(/^(genre|genres|subgenre|subgenres)$/i.test(s)) return '';
+  if(/^(жанр|жанры|жанри|поджанр|поджанры|піджанр|піджанри)$/i.test(s)) return '';
+  return s;
+}
+function normalizeGenreName(value){
+  const s = cleanGenreCandidate(value);
+  if(!s) return '';
+  const key = genreKey(s);
+  if(PS_GENRE_RU_TRANSLATIONS.has(key)) return PS_GENRE_RU_TRANSLATIONS.get(key);
+  if(/[А-Яа-яЁёІіЇїЄєҐґ]/.test(s)) return s.charAt(0).toUpperCase() + s.slice(1);
+  return '';
+}
+function normalizeGenres(value){
+  const raw = Array.isArray(value) ? value.join(',') : String(value || '');
+  const seen = new Set();
+  const parts = [];
+  raw
+    .split(',')
+    .map(normalizeGenreName)
+    .filter(Boolean)
+    .forEach(x => {
+      const k = genreKey(x);
+      if(seen.has(k)) return;
+      seen.add(k);
+      parts.push(x);
+    });
+  return parts.join(', ');
+}
+function isGenreLabel(value){
+  const s = String(value || '').replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
+  return GENRE_LABEL_WORDS.has(s) || /^(game )?genres?$/.test(s) || /^subgenres?$/.test(s);
+}
+function extractPsGenresFromJson(obj){
+  const out = [];
+  const add = (v)=>{
+    if(v == null) return;
+    if(Array.isArray(v)){ for(const x of v) add(x); return; }
+    if(typeof v === 'object'){
+      if(Array.isArray(v.values)) add(v.values);
+      if(Array.isArray(v.items)) add(v.items);
+      if(typeof v.value === 'string') add(v.value);
+      if(typeof v.name === 'string') add(v.name);
+      if(typeof v.label === 'string') add(v.label);
+      if(typeof v.displayName === 'string') add(v.displayName);
+      if(typeof v.localizedName === 'string') add(v.localizedName);
+      if(typeof v.text === 'string') add(v.text);
+      return;
+    }
+    const s = cleanGenreCandidate(v);
+    if(s) out.push(s);
+  };
+  const scan = (node, path='')=>{
+    if(node == null) return;
+    if(Array.isArray(node)){ for(const x of node) scan(x, path); return; }
+    if(typeof node !== 'object') return;
+
+    const label = node.name || node.label || node.displayName || node.localizedName || node.title;
+    if(isGenreLabel(label)) add(node.values || node.value || node.items);
+
+    for(const [k,v] of Object.entries(node)){
+      const key = String(k || '').toLowerCase().replace(/[_-]/g, '');
+      const nextPath = path ? `${path}.${key}` : key;
+      const keyLooksGenre = key.includes('genre') || key.includes('жанр') || key.includes('жанри');
+      const pathLooksGenre = /genre|жанр|жанри/i.test(path);
+      if(keyLooksGenre) add(v);
+      else if(pathLooksGenre && ['name','value','label','displayname','localizedname','text','title'].includes(key)) add(v);
+      scan(v, nextPath);
+    }
+  };
+  scan(obj);
+  return normalizeGenres(out);
+}
+function extractPsGenresFromText(text){
+  const src = String(text || '').replace(/\s+/g, ' ').trim();
+  if(!src) return '';
+
+  // Самый надёжный вариант для ru-ua страницы PS Store:
+  // "Жанры: Аркада, Приключения, Боевики Языки отображения: ..."
+  const blocks = [
+    { start: /(?:^|\s)Жанры\s*:\s*/i, stop: /\s(?:Языки отображения|Язык|Платформа|Выпуск|Издатель|Голос|Экранные языки|Субтитры|Чтобы играть|Загрузка|Перед использованием|PlayStation|Страна\s*\/\s*регион)\s*:/i },
+    { start: /(?:^|\s)Жанр\s*:\s*/i, stop: /\s(?:Языки отображения|Язык|Платформа|Выпуск|Издатель|Голос|Экранные языки|Субтитры|Чтобы играть|Загрузка|Перед использованием|PlayStation|Страна\s*\/\s*регион)\s*:/i },
+    { start: /(?:^|\s)Жанри\s*:\s*/i, stop: /\s(?:Мови відображення|Мова|Платформа|Випуск|Видавець|Голос|Екранні мови|Субтитри|Щоб грати|Завантаження|Перед використанням|PlayStation|Країна\s*\/\s*регіон)\s*:/i },
+    { start: /(?:^|\s)Genres\s*:\s*/i, stop: /\s(?:Screen Languages|Voice|Platform|Release|Publisher|Offline play|Online play|To play this game|Download|Before using|PlayStation|Country\s*\/\s*Region)\s*:/i },
+    { start: /(?:^|\s)Genre\s*:\s*/i, stop: /\s(?:Screen Languages|Voice|Platform|Release|Publisher|Offline play|Online play|To play this game|Download|Before using|PlayStation|Country\s*\/\s*Region)\s*:/i }
+  ];
+
+  for(const b of blocks){
+    const m = b.start.exec(src);
+    if(!m) continue;
+    let tail = src.slice(m.index + m[0].length);
+    const stop = b.stop.exec(tail);
+    if(stop) tail = tail.slice(0, stop.index);
+    tail = tail
+      .replace(/\s+(?:Чтобы играть|Щоб грати|To play this game|Загрузка осуществляется|Завантаження|Download is subject).*$/i, '')
+      .replace(/[.;]\s*$/, '')
+      .trim();
+    const genres = normalizeGenres(tail);
+    if(genres) return genres;
+  }
+
+  return '';
+}
+function decodeHtmlEntities(s){
+  return String(s || '')
+    .replace(/&quot;/g, '"')
+    .replace(/&#34;/g, '"')
+    .replace(/&#x22;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#x27;/g, "'")
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ');
+}
+function extractPsGenresFromHtml(html){
+  const found = [];
+  const src = String(html || '');
+  const tryJson = (txt)=>{
+    try{
+      const g = extractPsGenresFromJson(JSON.parse(decodeHtmlEntities(String(txt || '')).trim()));
+      if(g) found.push(g);
+    }catch(_e){}
+  };
+  const next = src.match(/<script[^>]+id=["']__NEXT_DATA__["'][^>]*>([\s\S]*?)<\/script>/i);
+  if(next) tryJson(next[1]);
+  const re = /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  let m;
+  while((m = re.exec(src))) tryJson(m[1]);
+
+  // Часто PS Store кладёт нужное поле в большой inline JSON, не обязательно в __NEXT_DATA__.
+  const propRe = /"([^"]*genres?[^"]*|[^"]*subgenres?[^"]*)"\s*:\s*(\[[\s\S]{0,1500}?\]|"(?:\\.|[^"])*"|\{[\s\S]{0,1500}?\})/gi;
+  while((m = propRe.exec(src))){
+    tryJson(m[2]);
+  }
+
+  const fromJson = normalizeGenres(found.join(', '));
+  if(fromJson) return fromJson;
+
+  const plain = decodeHtmlEntities(src)
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return extractPsGenresFromText(plain);
+}
+function productIdsForGenreLookup(game){
+  const ids = [];
+  const add = (v)=>{
+    const s = String(v || '').trim();
+    if(s && !ids.includes(s)) ids.push(s);
+  };
+  if(game && game.productIds && typeof game.productIds === 'object'){
+    add(game.productIds.UA); add(game.productIds.TR);
+    for(const v of Object.values(game.productIds)) add(v);
+  }
+  add(game && game.id);
+  add(game && game.productId);
+  add(game && game.uaProductId);
+  add(game && game.trProductId);
+  return ids;
+}
+async function fetchGameGenresFromProductApis(productId){
+  const pid = String(productId || '').trim();
+  if(!pid) return '';
+  const viewfinderLocales = ['ru-ua', 'uk-ua', 'en-tr', 'en-us'];
+  for(const locale of viewfinderLocales){
+    try{
+      const obj = await fetchChihiro(locale, pid);
+      const genres = extractPsGenresFromJson(obj);
+      if(genres) return genres;
+    }catch(_e){}
+  }
+  const containers = [
+    ['UA','ru','999'], ['UA','ru','19'], ['UA','uk','999'], ['UA','uk','19'],
+    ['TR','en','999'], ['TR','en','19'], ['US','en','999']
+  ];
+  for(const [country, lang, age] of containers){
+    const url = `https://store.playstation.com/store/api/chihiro/00_09_000/container/${country}/${lang}/${age}/${encodeURIComponent(pid)}`;
+    try{
+      const obj = await fetchJson(url, { acceptLanguage: `${lang}-${country},${lang};q=0.9,en;q=0.8` });
+      const genres = extractPsGenresFromJson(obj);
+      if(genres) return genres;
+    }catch(_e){}
+  }
+  return '';
+}
+async function fetchGameGenresFromPsConcept(conceptId, game){
+  const cid = String(conceptId || '').trim();
+  if(!cid) return '';
+
+  // Сначала JSON API: именно он давал результат в рабочей v3. Теперь он очищается
+  // нормально и не сохраняет label-поля вроде Genre/Жанр/subgenre.
+  for(const pid of productIdsForGenreLookup(game)){
+    const genres = await fetchGameGenresFromProductApis(pid);
+    if(genres) return genres;
+  }
+
+  const urls = [];
+  for(const pid of productIdsForGenreLookup(game)){
+    urls.push(`https://store.playstation.com/ru-ua/product/${encodeURIComponent(pid)}`);
+    urls.push(`https://store.playstation.com/uk-ua/product/${encodeURIComponent(pid)}`);
+  }
+  urls.push(`https://store.playstation.com/ru-ua/concept/${encodeURIComponent(cid)}`);
+  urls.push(`https://store.playstation.com/uk-ua/concept/${encodeURIComponent(cid)}`);
+  urls.push(`https://store.playstation.com/en-us/concept/${encodeURIComponent(cid)}`);
+
+  for(const url of urls){
+    try{
+      const html = await fetchText(url, {
+        acceptLanguage: 'ru-UA,ru;q=0.95,uk-UA;q=0.8,uk;q=0.7,en;q=0.3',
+        timeoutMs: 20000,
+        headers: {
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      if(!html || looksBlocked(html)) continue;
+      const genres = extractPsGenresFromHtml(html);
+      if(genres) return genres;
+    }catch(_e){}
+  }
+  return '';
+}
+
 function normalizeAdditionalConceptIds(value){
   const raw = Array.isArray(value) ? value.join(',') : String(value || '');
   const seen = new Set();
@@ -1904,6 +2229,7 @@ const GAMES_PATH = path.join(DATA_DIR, "games.json");
 const ALL_GAMES_PATH = path.join(DATA_DIR, "all_games.json");
 const DISCOUNT_BANNERS_PATH = path.join(DATA_DIR, "discount_banners.json");
 const DESCRIPTION_BACKFILL_STATE_PATH = path.join(DATA_DIR, "description_backfill_state.json");
+const GENRE_BACKFILL_CACHE_PATH = path.join(DATA_DIR, "genres_backfill_cache.json");
 
 const PUBLIC_DIR = path.join(__dirname, "public");
 const BANNERS_DIR = path.join(PUBLIC_DIR, "banners");
@@ -2863,6 +3189,7 @@ app.get("/api/meta", (req, res) => {
     total: Array.isArray(games.items) ? games.items.length : 0,
     allGamesTotal: Array.isArray(allGames.items) ? allGames.items.length : 0,
     preordersTotal: Array.isArray(preorders.items) ? preorders.items.length : 0,
+    genres: collectPublicGenres(),
   });
 });
 
@@ -3048,13 +3375,63 @@ function relevanceScore(name, q){
 
   return score;
 }
-function platformPass(gamePlatform, filter){
+function platformPass(game, filter){
   const f = String(filter||"").trim().toUpperCase();
-  if(!f) return true; // PS4/PS5 -> no filter
-  const gp = String(gamePlatform||"").toUpperCase();
+  if(!f) return true;
+  const gp = String((game && game.platform)||"").toUpperCase();
+  if(f==="VR2") return !!(game && game.vr2);
   if(f==="PS4") return gp.includes("PS4");
   if(f==="PS5") return gp.includes("PS5");
   return true;
+}
+function splitPublicGenres(value){
+  return String(value||"").split(/[,;|/]+/).map(x=>x.trim()).filter(Boolean);
+}
+function genrePass(gameGenres, filterGenres){
+  const selected = Array.isArray(filterGenres) ? filterGenres : String(filterGenres||"").split(",");
+  const wanted = selected.map(x=>normText(String(x||""))).filter(Boolean);
+  if(!wanted.length) return true;
+  const own = new Set(splitPublicGenres(gameGenres).map(x=>normText(x)).filter(Boolean));
+  return wanted.some(g=>own.has(g));
+}
+
+function gameRuStatus(game, region){
+  const regs = game && game.regions ? game.regions : {};
+  const tryRegs = [];
+  const r = String(region||'').toUpperCase();
+  if(r) tryRegs.push(r);
+  tryRegs.push('TR','UA');
+  for(const key of tryRegs){
+    const reg = regs && regs[key];
+    if(!reg) continue;
+    const ru = normalizeRuVal(reg.ru ?? reg.ruLang ?? reg.russian ?? reg.rus ?? reg.langRu ?? reg.languageRu);
+    if(ru && ru !== 'unknown') return ru;
+  }
+  const own = normalizeRuVal(game && (game.ru ?? game.ruLang ?? game.russian ?? game.rus ?? game.langRu ?? game.languageRu));
+  return own || 'none';
+}
+function languagePass(game, filter, region){
+  const f = normText(String(filter||''));
+  if(!f) return true;
+  const ru = gameRuStatus(game, region);
+  if(f === 'voice' || f.includes('polnost') || f.includes('полност') || f.includes('озвуч')) return ru === 'voice';
+  if(f === 'text' || f.includes('subtitle') || f.includes('sub') || f.includes('субтит') || f.includes('текст')) return ru === 'text';
+  if(f === 'none' || f.includes('bez') || f.includes('без') || f.includes('no')) return ru === 'none';
+  return true;
+}
+function collectPublicGenres(){
+  const paths=[GAMES_PATH, ALL_GAMES_PATH, PREORDERS_PATH, NEW_RELEASES_PATH];
+  const map=new Map();
+  for(const file of paths){
+    const doc=readJson(file,{items:[]});
+    for(const g of (Array.isArray(doc.items)?doc.items:[])){
+      for(const genre of splitPublicGenres(g && g.genres)){
+        const key=normText(genre);
+        if(key && !map.has(key)) map.set(key, genre);
+      }
+    }
+  }
+  return Array.from(map.values()).sort((a,b)=>String(a).localeCompare(String(b),"ru"));
 }
 // --- end helpers ---
 app.get("/api/discount-dates", (req, res) => {
@@ -3157,12 +3534,16 @@ app.get("/api/games", (req, res) => {
     }
     const q = String(req.query.q || "").trim();
     const platform = String(req.query.platform || "").trim();
+    const genres = String(req.query.genres || req.query.genre || "").split(",").map(x=>x.trim()).filter(Boolean);
+    const language = String(req.query.language || req.query.lang || "").trim();
     const until = String(req.query.until || req.query.discountedUntil || "").trim();
 
     const gamesDoc = readJson(GAMES_PATH, { updatedAt:null, items:[] });
     let all = Array.isArray(gamesDoc.items) ? gamesDoc.items : [];
     if (q) all = all.filter(x => smartMatch(x.name || "", q));
-    if (platform) all = all.filter(x => platformPass(x.platform || "", platform));
+    if (platform) all = all.filter(x => platformPass(x, platform));
+    if (genres.length) all = all.filter(x => genrePass(x.genres || "", genres));
+    if (language) all = all.filter(x => languagePass(x, language, region));
 
     const rules = store.rates[region] || [];
     const step = store.settings.roundStep || 50;
@@ -3226,6 +3607,7 @@ app.get("/api/games", (req, res) => {
         // Prefer TR value (admin currently sets it there), fallback to UA.
         sub: anySub,
         platform: g.platform || "PS4 / PS5",
+        genres: g.genres || "",
         players: playersFromAllGames(g) || null,
         size: g.size || null,
         rating: (typeof g.rating !== "undefined" ? g.rating : null),
@@ -3256,6 +3638,8 @@ app.get("/api/games", (req, res) => {
 
     // When searching, show the closest matches first, then apply the selected sort as a tiebreaker.
     const tieBySort = (a,b)=>{
+      if (sort === "name_asc") return String(a.name||"").localeCompare(String(b.name||""), "ru") || ((a.popRank||0)-(b.popRank||0));
+      if (sort === "name_desc") return String(b.name||"").localeCompare(String(a.name||""), "ru") || ((a.popRank||0)-(b.popRank||0));
       if (sort === "price_desc") return (b.finalPriceRub-a.finalPriceRub) || ((a.popRank||0)-(b.popRank||0));
       if (sort === "price_asc") return (a.finalPriceRub-b.finalPriceRub) || ((a.popRank||0)-(b.popRank||0));
       return (a.popRank||0)-(b.popRank||0);
@@ -3395,6 +3779,7 @@ app.get("/api/game-editions", (req, res) => {
         ru: normalizeRuVal(reg && (reg.ru ?? reg.ruLang ?? reg.russian ?? reg.rus ?? reg.langRu ?? reg.languageRu)),
         sub: anySub,
         platform: g.platform || "PS4 / PS5",
+        genres: g.genres || "",
         players: playersForPublicEdition(g) || null,
         size: g.size || null,
         rating: (typeof g.rating !== "undefined" ? g.rating : null),
@@ -3669,6 +4054,8 @@ app.put("/api/admin/games/:id", requireAdmin, (req, res) => {
     if(typeof body.players !== "undefined") next.players = normalizeGameMetaField(body.players);
     if(typeof body.size !== "undefined") next.size = normalizeGameMetaField(body.size);
     if(typeof body.rating !== "undefined") next.rating = normalizeRatingValue(body.rating);
+    if(typeof body.genres !== "undefined") next.genres = normalizeGenres(body.genres || "");
+    if(typeof body.vr2 !== "undefined") next.vr2 = !!body.vr2;
 
     next.regions = next.regions && typeof next.regions === "object" ? next.regions : {};
     const updRegion = (code)=>{
@@ -4229,6 +4616,136 @@ app.post("/api/admin/preorders/backfill_conceptid", requireAdmin, async (req, re
   }
 });
 
+
+// Admin: backfill missing genres by conceptId. Reuses one PS Store request per conceptId.
+app.post("/api/admin/genres/backfill", requireAdmin, async (req, res) => {
+  try{
+    const files = [
+      { path: ALL_GAMES_PATH, name: 'all_games' },
+      { path: PREORDERS_PATH, name: 'preorders' },
+      { path: GAMES_PATH, name: 'games' },
+    ];
+    const concurrency = Math.max(1, Math.min(4, Number(req.body && req.body.concurrency || 2)));
+    const maxConcepts = Math.max(1, Math.min(9999, Number(req.body && req.body.limit || 9999)));
+    const cacheVersion = 'all-psstore-real-genres-v12';
+    let cacheDoc = readJson(GENRE_BACKFILL_CACHE_PATH, { version: cacheVersion, items: {} });
+    if(!cacheDoc || cacheDoc.version !== cacheVersion || !cacheDoc.items || typeof cacheDoc.items !== 'object'){
+      cacheDoc = { version: cacheVersion, updatedAt: null, items: {} };
+    }
+    const docs = files.map(f => {
+      const doc = readJson(f.path, { updatedAt:null, items:[] });
+      return { ...f, doc, items: Array.isArray(doc.items) ? doc.items : [], changed:false };
+    });
+
+    // Сначала чистим мусорные/не русскоязычные значения жанров.
+    let cleaned = 0;
+    for(const d of docs){
+      for(const g of d.items){
+        if(!g || typeof g.genres === 'undefined') continue;
+        const before = String(g.genres || '');
+        const after = normalizeGenres(before);
+        if(before !== after){
+          g.genres = after;
+          d.changed = true;
+          cleaned++;
+        }
+      }
+    }
+
+    const genresByConcept = new Map();
+    for(const [cid, genres] of Object.entries(cacheDoc.items || {})){
+      const normalized = normalizeGenres(genres || '');
+      if(cid && normalized) genresByConcept.set(String(cid), normalized);
+    }
+
+    // Новый кэш v11 считается источником истины. Он нужен, чтобы перезаписать старые
+    // ошибочные жанры один раз, а при следующих нажатиях не грузить PS Store заново.
+    let propagated = 0;
+    const applyGenres = (cid, genres, overwrite=false)=>{
+      for(const d of docs){
+        for(const g of d.items){
+          if(String(g && g.conceptId || '').trim() !== cid) continue;
+          const current = normalizeGenres(g.genres || '');
+          if(!overwrite && current) continue;
+          if(current === genres) continue;
+          g.genres = genres;
+          d.changed = true;
+          propagated++;
+        }
+      }
+    };
+    for(const [cid, genres] of genresByConcept.entries()) applyGenres(cid, genres, true);
+
+    const concepts = [];
+    const seen = new Set();
+    for(const d of docs){
+      for(const g of d.items){
+        const cid = String(g && g.conceptId || '').trim();
+        if(!cid || seen.has(cid)) continue;
+        seen.add(cid);
+        // Если conceptId уже есть в кэше v11 — повторно PS Store не трогаем.
+        if(genresByConcept.has(cid)) continue;
+        concepts.push({ cid, game: g });
+        if(concepts.length >= maxConcepts) break;
+      }
+      if(concepts.length >= maxConcepts) break;
+    }
+
+    let fetched = 0, updated = 0, failed = 0;
+    const errors = [];
+    let cacheChanged = false;
+    let idx = 0;
+    const writeFetchedGenres = (cid, genres)=>{
+      cacheDoc.items[cid] = genres;
+      cacheChanged = true;
+      for(const d of docs){
+        for(const g of d.items){
+          if(String(g && g.conceptId || '').trim() !== cid) continue;
+          const current = normalizeGenres(g.genres || '');
+          if(current === genres) continue;
+          g.genres = genres;
+          d.changed = true;
+          updated++;
+        }
+      }
+    };
+    const worker = async ()=>{
+      while(true){
+        const entry = concepts[idx++];
+        if(!entry) return;
+        const cid = entry.cid;
+        fetched++;
+        try{
+          const genres = await fetchGameGenresFromPsConcept(cid, entry.game);
+          if(genres){
+            genresByConcept.set(cid, genres);
+            writeFetchedGenres(cid, genres);
+          }else{
+            failed++;
+            if(errors.length < 10) errors.push(`${cid}: genres_not_found (${(entry.game && (entry.game.id || (entry.game.productIds && (entry.game.productIds.UA || entry.game.productIds.TR)))) || 'no_product_id'})`);
+          }
+        }catch(e){
+          failed++;
+          if(errors.length < 10) errors.push(`${cid}: ${String(e && e.message || e)}`);
+        }
+      }
+    };
+    await Promise.all(Array.from({length: Math.min(concurrency, concepts.length || 1)}, worker));
+    for(const d of docs){
+      if(d.changed) writeJson(d.path, { updatedAt: new Date().toISOString(), items: d.items });
+    }
+    if(cacheChanged){
+      cacheDoc.version = cacheVersion;
+      cacheDoc.updatedAt = new Date().toISOString();
+      writeJson(GENRE_BACKFILL_CACHE_PATH, cacheDoc);
+    }
+    const remaining = docs.reduce((sum, d)=> sum + d.items.filter(g => String(g && g.conceptId || '').trim() && !normalizeGenres(g && g.genres || '')).length, 0);
+    res.json({ ok:true, fetched, updated, propagated, cleaned, failed, remaining, cachedConcepts: Object.keys(cacheDoc.items || {}).length, errors });
+  }catch(e){
+    res.status(500).json({ ok:false, error:String(e) });
+  }
+});
+
 // Public: list ALL GAMES (library without discounts)
 
 app.get("/api/subgames", async (req, res) => {
@@ -4547,6 +5064,8 @@ app.get("/api/allgames", async (req, res) => {
     const perPage = 24;
     const q = String(req.query.q || "").trim();
     const platform = String(req.query.platform || "").trim();
+    const genres = String(req.query.genres || req.query.genre || "").split(",").map(x=>x.trim()).filter(Boolean);
+    const language = String(req.query.language || req.query.lang || "").trim();
 
     // For TR browse-like ordering, prefill ranks for the first pages so the order matches
     // https://store.playstation.com/en-tr/pages/browse immediately.
@@ -4573,7 +5092,9 @@ app.get("/api/allgames", async (req, res) => {
     const doc = readJson(ALL_GAMES_PATH, { updatedAt:null, items:[] });
     let all = Array.isArray(doc.items) ? doc.items : [];
     if (q) all = all.filter(x => smartMatch(x.name || "", q));
-    if (platform) all = all.filter(x => platformPass(x.platform || "", platform));
+    if (platform) all = all.filter(x => platformPass(x, platform));
+    if (genres.length) all = all.filter(x => genrePass(x.genres || "", genres));
+    if (language) all = all.filter(x => languagePass(x, language, region));
 
     const rules = store.rates[region] || [];
     const step = store.settings.roundStep || 50;
@@ -4625,6 +5146,7 @@ app.get("/api/allgames", async (req, res) => {
         ru: normalizeRuVal(reg && (reg.ru ?? reg.ruLang ?? reg.russian ?? reg.rus ?? reg.langRu ?? reg.languageRu)),
         sub: anySub,
         platform: g.platform || "PS4 / PS5",
+        genres: g.genres || "",
         players: g.players || null,
         size: g.size || null,
         rating: (typeof g.rating !== "undefined" ? g.rating : null),
@@ -4664,6 +5186,10 @@ app.get("/api/allgames", async (req, res) => {
     // Sorting
     if (q) {
       computed.sort((a,b)=> (b._score||0)-(a._score||0));
+    } else if (sort === "name_asc") {
+      computed.sort((a,b)=> String(a.name||"").localeCompare(String(b.name||""), "ru"));
+    } else if (sort === "name_desc") {
+      computed.sort((a,b)=> String(b.name||"").localeCompare(String(a.name||""), "ru"));
     } else if (sort === "name_asc") {
       computed.sort((a,b)=> String(a.name||"").localeCompare(String(b.name||""), "ru"));
     } else if (sort === "name_desc") {
@@ -4786,11 +5312,15 @@ app.get("/api/newreleases", async (req, res) => {
     const perPage = 24;
     const q = String(req.query.q || "").trim();
     const platform = String(req.query.platform || "").trim();
+    const genres = String(req.query.genres || req.query.genre || "").split(",").map(x=>x.trim()).filter(Boolean);
+    const language = String(req.query.language || req.query.lang || "").trim();
 
     const nrDoc = readNewReleasesDoc();
     let all = Array.isArray(nrDoc.items) ? nrDoc.items : [];
     if(q) all = all.filter(x => smartMatch(x.name || "", q));
-    if(platform) all = all.filter(x => platformPass(x.platform || "", platform));
+    if(platform) all = all.filter(x => platformPass(x, platform));
+    if(genres.length) all = all.filter(x => genrePass(x.genres || "", genres));
+    if(language) all = all.filter(x => languagePass(x, language, region));
 
     const rules = store.rates[region] || [];
     const step = store.settings.roundStep || 50;
@@ -4832,6 +5362,7 @@ app.get("/api/newreleases", async (req, res) => {
         ru: normalizeRuVal(reg && (reg.ru ?? reg.ruLang ?? reg.russian ?? reg.rus ?? reg.langRu ?? reg.languageRu)),
         sub: anySub,
         platform: g.platform || "PS4 / PS5",
+        genres: g.genres || "",
         players: g.players || null,
         size: g.size || null,
         rating: (typeof g.rating !== "undefined" ? g.rating : null),
@@ -4911,6 +5442,8 @@ app.get("/api/preorders", async (req, res) => {
     const perPage = 24;
     const q = String(req.query.q || "").trim();
     const platform = String(req.query.platform || "").trim();
+    const genres = String(req.query.genres || req.query.genre || "").split(",").map(x=>x.trim()).filter(Boolean);
+    const language = String(req.query.language || req.query.lang || "").trim();
 
     if(!q && (sort === "pop" || !sort)){
       try{ await withTimeout(warmupPsPreordersCache(locale, 6), 2500); }catch(_e){}
@@ -4931,7 +5464,9 @@ app.get("/api/preorders", async (req, res) => {
     const doc = readJson(PREORDERS_PATH, { updatedAt:null, items:[] });
     let all = Array.isArray(doc.items) ? doc.items : [];
     if (q) all = all.filter(x => smartMatch(x.name || "", q));
-    if (platform) all = all.filter(x => platformPass(x.platform || "", platform));
+    if (platform) all = all.filter(x => platformPass(x, platform));
+    if (genres.length) all = all.filter(x => genrePass(x.genres || "", genres));
+    if (language) all = all.filter(x => languagePass(x, language, region));
 
     const rules = store.rates[region] || [];
     const step = store.settings.roundStep || 50;
@@ -4958,6 +5493,7 @@ app.get("/api/preorders", async (req, res) => {
         ru: normalizeRuVal(reg && (reg.ru ?? reg.ruLang ?? reg.russian ?? reg.rus ?? reg.langRu ?? reg.languageRu)),
         sub: anySub,
         platform: g.platform || "PS4 / PS5",
+        genres: g.genres || "",
         players: g.players || null,
         size: g.size || null,
         rating: (typeof g.rating !== "undefined" ? g.rating : null),
@@ -4992,6 +5528,10 @@ app.get("/api/preorders", async (req, res) => {
 
     if (q) {
       computed.sort((a,b)=> (b._score||0)-(a._score||0));
+    } else if (sort === "name_asc") {
+      computed.sort((a,b)=> String(a.name||"").localeCompare(String(b.name||""), "ru"));
+    } else if (sort === "name_desc") {
+      computed.sort((a,b)=> String(b.name||"").localeCompare(String(a.name||""), "ru"));
     } else if (sort === "price_asc") {
       computed.sort((a,b)=> (a.finalPriceRub||0)-(b.finalPriceRub||0));
     } else if (sort === "price_desc") {
@@ -5069,6 +5609,8 @@ app.get("/api/multiplayer", (req, res) => {
       if(Number.isFinite(n) && n > 0) perPage = Math.min(60, Math.max(1, n));
     }
     const platform = String(req.query.platform || "").trim();
+    const genres = String(req.query.genres || req.query.genre || "").split(",").map(x=>x.trim()).filter(Boolean);
+    const language = String(req.query.language || req.query.lang || "").trim();
 
     const withSource = (arr, sourceTab)=> (arr || []).map(x => Object.assign({}, x, { sourceTab: x.sourceTab || sourceTab }));
     let all = [];
@@ -5076,7 +5618,9 @@ app.get("/api/multiplayer", (req, res) => {
     all = all.concat(withSource(buildPublicItemsFromDocForBestsellers(region, NEW_RELEASES_PATH, "new"), "new"));
     all = all.concat(withSource(buildPublicAllGamesItems(region), "allgames"));
 
-    if(platform) all = all.filter(x => platformPass(x.platform || "", platform));
+    if(platform) all = all.filter(x => platformPass(x, platform));
+    if(genres.length) all = all.filter(x => genrePass(x.genres || "", genres));
+    if(language) all = all.filter(x => languagePass(x, language, region));
     all = all.filter(x => isMoreThanOnePlayerValue(x.players));
 
     // Prevent duplicates across New/All Games while preserving the richer category card.
@@ -5146,6 +5690,7 @@ app.post("/api/admin/allgames/add", requireAdmin, (req, res) => {
       next.size = normalizeGameMetaField(g.size);
       next.rating = normalizeRatingValue(g.rating);
       next.description = cleanPsDescriptionText(g.description || "");
+      next.genres = normalizeGenres(g.genres || "");
 
       // Concept ID groups multiple editions of the same game.
       // It's required for the "Новинки" page (matches PS category -> our library).
@@ -5210,6 +5755,7 @@ app.put("/api/admin/allgames/:id", requireAdmin, (req, res) => {
     if(typeof body.size !== 'undefined') next.size = normalizeGameMetaField(body.size);
     if(typeof body.rating !== 'undefined') next.rating = normalizeRatingValue(body.rating);
     if(typeof body.description !== 'undefined') next.description = preserveAdminDescriptionText(body.description || '');
+    if(typeof body.genres !== 'undefined') next.genres = normalizeGenres(body.genres || '');
     if(typeof body.conceptId !== 'undefined') next.conceptId = body.conceptId ? String(body.conceptId).trim() : null;
     if(typeof body.additionalConceptIds !== 'undefined') next.additionalConceptIds = normalizeAdditionalConceptIds(body.additionalConceptIds);
 
@@ -5332,6 +5878,7 @@ app.post("/api/admin/preorders/add", requireAdmin, (req, res) => {
       next.size = normalizeGameMetaField(g.size);
       next.rating = normalizeRatingValue(g.rating);
       next.description = cleanPsDescriptionText(g.description || "");
+      next.genres = normalizeGenres(g.genres || "");
       next.releaseDate = dateOrNull(g.releaseDate);
 
       next.productIds = (g.productIds && typeof g.productIds === 'object') ? g.productIds : {};
@@ -5395,6 +5942,7 @@ app.put("/api/admin/preorders/:id", requireAdmin, (req, res) => {
     if(typeof body.rating !== 'undefined') next.rating = normalizeRatingValue(body.rating);
     if(typeof body.releaseDate !== 'undefined') next.releaseDate = dateOrNull(body.releaseDate);
     if(typeof body.description !== 'undefined') next.description = preserveAdminDescriptionText(body.description || '');
+    if(typeof body.genres !== 'undefined') next.genres = normalizeGenres(body.genres || '');
     if(typeof body.conceptId !== 'undefined'){
       const s = String(body.conceptId||'').trim();
       next.conceptId = s || null;
@@ -5722,9 +6270,10 @@ app.post("/api/admin/import", requireAdmin, async (req, res) => {
       const conceptId = extractConceptIdFromProductHtml(html, expectedSku || productId);
       const releaseDate = extractReleaseDate(html, jsonLd);
       const meta = extractGameMeta(html, jsonLd);
+      const genres = extractPsGenresFromHtml(html);
       // Discount end date: pull from Store (one region is enough; we later copy TR->UA)
       const until = (discPerc && discPerc > 0) ? (extractDiscountedUntil(html, jsonLd) || extractUntilDate(html)) : null;
-      return { blocked:false, name, edition, cover, platform, conceptId: conceptId || null, salePrice: (offer && Number.isFinite(offer.price) ? offer.price : null), currency: offer ? offer.currency : null, discPerc: discPerc || 0, discountedUntil: until || null, releaseDate: releaseDate || null, players: meta.players || null, size: meta.size || null, rating: meta.rating };
+      return { blocked:false, name, edition, cover, platform, conceptId: conceptId || null, salePrice: (offer && Number.isFinite(offer.price) ? offer.price : null), currency: offer ? offer.currency : null, discPerc: discPerc || 0, discountedUntil: until || null, releaseDate: releaseDate || null, players: meta.players || null, size: meta.size || null, rating: meta.rating, genres: genres || "" };
     }
 
 	    let parsedTR = parse(tr.html, productId);
@@ -6039,6 +6588,8 @@ app.post("/api/admin/games/add", requireAdmin, async (req, res) => {
       players: normalizeGameMetaField(g.players),
       size: normalizeGameMetaField(g.size),
       rating: normalizeRatingValue(g.rating),
+      genres: normalizeGenres(g.genres || ""),
+      vr2: !!g.vr2,
 
       // If we found a PS browse rank, use it. Otherwise keep unknown titles at the end.
       popRank: Number.isFinite(psRank) ? psRank : 1000000000,
@@ -6109,6 +6660,8 @@ app.get("/api/search", async (req, res) => {
     }
     const q = String(req.query.q || "").trim();
     const platform = String(req.query.platform || "").trim();
+    const genres = String(req.query.genres || req.query.genre || "").split(",").map(x=>x.trim()).filter(Boolean);
+    const language = String(req.query.language || req.query.lang || "").trim();
     const sort = String(req.query.sort || "pop").trim();
 
     // Base sources: all games + preorders (search must be global).
@@ -6148,7 +6701,9 @@ app.get("/api/search", async (req, res) => {
     // Apply search + platform filters
     // Match by name + edition to make sure queries like "gta premium" work.
     if(q) items = items.filter(x => smartMatch([x.name, x.edition].filter(Boolean).join(" "), q));
-    if(platform) items = items.filter(x => platformPass(x.platform || "", platform));
+    if(platform) items = items.filter(x => platformPass(x, platform));
+    if(genres.length) items = items.filter(x => genrePass(x.genres || "", genres));
+    if(language) items = items.filter(x => languagePass(x, language, region));
 
     // Build a computed list identical to other catalog endpoints.
     // This guarantees correct language badge, discount price, and preorder badge.
@@ -6193,6 +6748,7 @@ app.get("/api/search", async (req, res) => {
         ru: normalizeRuVal(reg && (reg.ru ?? reg.ruLang ?? reg.russian ?? reg.rus ?? reg.langRu ?? reg.languageRu)),
         sub: anySub,
         platform: g.platform || "PS4 / PS5",
+        genres: g.genres || "",
         players: g.players || null,
         size: g.size || null,
         rating: (typeof g.rating !== "undefined" ? g.rating : null),
