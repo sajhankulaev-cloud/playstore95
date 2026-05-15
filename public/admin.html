@@ -167,6 +167,8 @@ button{ color:#0f172a !important; }
         <input id="impName" class="input" type="text" />
         <div class="small" style="margin-top:8px;">Edition</div>
         <input id="impEdition" class="input" type="text" placeholder="Standard / Deluxe / Premium..." />
+        <div class="small" style="margin-top:8px;">Жанры</div>
+        <input id="impGenres" class="input" type="text" placeholder="Боевики, Приключения" />
 
         <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;">
           <div style="flex:1;min-width:150px;">
@@ -322,6 +324,10 @@ button{ color:#0f172a !important; }
             <div class="small">Concept ID</div>
             <input id="preConceptId" class="input" type="text" />
           </div>
+          <div style="flex:1;min-width:180px;">
+            <div class="small">Жанры</div>
+            <input id="preGenres" class="input" type="text" placeholder="Боевики, Приключения" />
+          </div>
         </div>
 
         <div class="small" style="margin-top:10px;">Русский язык</div>
@@ -437,6 +443,8 @@ button{ color:#0f172a !important; }
               <input id="allIdUA" class="input" type="text" />
               <div class="small" style="margin-top:8px;">Concept ID</div>
               <input id="allConceptId" class="input" type="text" readonly />
+              <div class="small" style="margin-top:8px;">Жанры</div>
+              <input id="allGenres" class="input" type="text" placeholder="Боевики, Приключения" />
             </div>
           </div>
 
@@ -502,7 +510,7 @@ button{ color:#0f172a !important; }
     <button class="btnGhost" id="refreshGames">Обновить</button>
     <button class="btnGhost" id="refreshDiscountsFromPS">Обновить скидки (PS Store)</button>
     <button class="btnGhost" id="refreshNewReleases">Обновить «Новинки»</button>
-    <button class="btnGhost" id="backfillConceptId">Заполнить Concept ID</button>
+    <button class="btnGhost" id="backfillGenres">Заполнить жанры</button>
     <button class="btnGhost" id="backfillDescriptions">Обновить описание</button>
     <button class="btnGhost" id="cleanDescriptions">Очистить мусор описаний</button>
     <span class="small" id="newReleasesStatus"></span>
@@ -1275,6 +1283,16 @@ async function openDiscountEdit(id, anchorTr){
           <div class="small">Cover URL</div>
           <input class="input" data-f="cover" type="text" value="${(g.cover||'').replace(/"/g,'&quot;')}" placeholder="https://...png" />
         </div>
+        <div style="grid-column:1 / span 2;">
+          <div class="small">Жанры</div>
+          <input class="input" data-f="genres" type="text" value="${String(g.genres||'').replace(/"/g,'&quot;')}" placeholder="Боевики, Приключения" />
+        </div>
+        <div style="grid-column:1 / span 2;display:flex;align-items:center;gap:10px;">
+          <label style="display:flex;align-items:center;gap:8px;font-weight:700;cursor:pointer;">
+            <input type="checkbox" data-f="vr2" ${g.vr2 ? 'checked' : ''} />
+            <span>VR2</span>
+          </label>
+        </div>
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
@@ -1330,6 +1348,8 @@ async function openDiscountEdit(id, anchorTr){
       platform: row.querySelector('select[data-f="platform"]').value,
       edition: (row.querySelector('[data-f="edition"]').value||'').trim(),
       description: (row.querySelector('[data-f="description"]')?.value||'').trim(),
+      genres: (row.querySelector('[data-f="genres"]')?.value||'').trim(),
+      vr2: !!row.querySelector('[data-f="vr2"]')?.checked,
       cover: (row.querySelector('[data-f="cover"]').value||'').trim() || null,
       regions: {
         TR: {
@@ -1485,33 +1505,30 @@ if(backfillDescriptionsBtn){
   };
 }
 
-document.getElementById('backfillConceptId').onclick = async ()=>{
-  const el = document.getElementById('newReleasesStatus');
-  if(el) el.textContent = 'Concept ID: заполнение...';
-  try{
-    const payload = { concurrency:2 };
-
-    const r1 = await fetch('/api/admin/allgames/backfill_conceptid', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-    const j1 = await r1.json().catch(()=>({ok:false,error:'bad_json'}));
-
-    const r2 = await fetch('/api/admin/preorders/backfill_conceptid', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-    const j2 = await r2.json().catch(()=>({ok:false,error:'bad_json'}));
-
-    if(!r1.ok || !j1.ok || !r2.ok || !j2.ok){
-      if(el) el.textContent = 'Concept ID: не удалось';
-      return;
+const backfillGenresBtn = document.getElementById('backfillGenres');
+if(backfillGenresBtn){
+  backfillGenresBtn.onclick = async ()=>{
+    const el = document.getElementById('newReleasesStatus');
+    if(el) el.textContent = 'Жанры: заполнение...';
+    try{
+      const r = await fetch('/api/admin/genres/backfill', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ concurrency: 2 })
+      });
+      const j = await r.json().catch(()=>({ok:false,error:'bad_json'}));
+      if(!r.ok || !j.ok){
+        if(el) el.textContent = 'Жанры: не удалось';
+        return;
+      }
+      if(el) el.textContent = `Жанры: обновлено ${Number(j.updated||0)}, из кэша ${Number(j.propagated||0)}, очищено мусора ${Number(j.cleaned||0)}, ошибок ${Number(j.failed||0)}, осталось ${Number(j.remaining||0)}${Array.isArray(j.errors) && j.errors.length ? '. Примеры: ' + j.errors.join('; ') : ''}`;
+      await loadAllGamesList();
+      await loadPreordersList();
+    }catch(_e){
+      if(el) el.textContent = 'Жанры: не удалось';
     }
-
-    const upd = (Number(j1.updated||0) + Number(j2.updated||0));
-    const fail = (Number(j1.failed||0) + Number(j2.failed||0));
-    if(el) el.textContent = `Concept ID: обновлено ${upd} (ошибок ${fail})`;
-
-    await loadAllGamesList();
-    await loadPreordersList();
-  }catch(_e){
-    if(el) el.textContent = 'Concept ID: не удалось';
-  }
-};
+  };
+}
 
 
 function pickMeta(tr, ua, field){
@@ -1577,6 +1594,8 @@ async function doImport(){
     const ed = (tr.edition || ua.edition || "Standard Edition");
     const edEl = document.getElementById("impEdition");
     if(edEl) edEl.value = ed;
+    const genresEl = document.getElementById("impGenres");
+    if(genresEl) genresEl.value = (tr.genres || ua.genres || "");
     setMetaFields("imp", tr, ua);
     const ruTR = (tr.ru || "none");
   const ruUA = (ua.ru || "none");
@@ -1622,6 +1641,8 @@ async function addGame(){
     cover: document.getElementById("impCover").style.display==="block" ? document.getElementById("impCover").src : null,
     platform: document.getElementById("impPlatform").value,
     edition: (document.getElementById("impEdition")?.value || "").trim() || "Standard Edition",
+    genres: (document.getElementById("impGenres")?.value || "").trim(),
+    vr2: !!document.getElementById("impVr2")?.checked,
     ...readMetaFields("imp"),
     regions:{
       TR:{
@@ -1676,6 +1697,8 @@ async function doImportPreorder(){
   document.getElementById("preIdTR").value=pidTR||"";
   document.getElementById("preIdUA").value=pidUA||"";
   document.getElementById("preConceptId").value = (tr.conceptId || ua.conceptId || "");
+  document.getElementById("preGenres").value = (tr.genres || ua.genres || "");
+  document.getElementById("preVr2").checked = false;
   document.getElementById("preName").value=name||"";
   await fillDescriptionTextarea("preDescription", pidUA || pidTR, (tr.conceptId || ua.conceptId || ""), "preImportStatus");
 
@@ -1734,6 +1757,8 @@ async function addPreorder(){
     id: itemId,
     productIds: { TR: idTR || null, UA: idUA || null },
     conceptId: (document.getElementById("preConceptId").value||"").trim() || null,
+    genres: (document.getElementById("preGenres").value||"").trim(),
+    vr2: !!document.getElementById("preVr2")?.checked,
     name: (document.getElementById("preName").value||"").trim(),
     cover: (document.getElementById("preCover").style.display==="block") ? document.getElementById("preCover").src : null,
     platform: (document.getElementById("prePlatform").value||"").trim(),
@@ -1810,6 +1835,7 @@ function beginPreorderEdit(id){
   document.getElementById("preIdTR").value = (g.productIds && g.productIds.TR) ? g.productIds.TR : '';
   document.getElementById("preIdUA").value = (g.productIds && g.productIds.UA) ? g.productIds.UA : '';
   document.getElementById("preConceptId").value = (g.conceptId || '');
+  document.getElementById("preGenres").value = (g.genres || '');
 
   const rTR = (g.regions && g.regions.TR) ? g.regions.TR : {};
   const rUA = (g.regions && g.regions.UA) ? g.regions.UA : {};
@@ -2032,6 +2058,16 @@ async function openPreorderEdit(id, anchorTr){
           <div class="small">Concept ID</div>
           <input class="input" data-f="conceptId" type="text" value="${String(g.conceptId||'').replace(/"/g,'&quot;')}" placeholder="например: 209441" />
         </div>
+        <div style="grid-column:1 / span 2;">
+          <div class="small">Жанры</div>
+          <input class="input" data-f="genres" type="text" value="${String(g.genres||'').replace(/"/g,'&quot;')}" placeholder="Боевики, Приключения" />
+        </div>
+        <div style="grid-column:1 / span 2;display:flex;align-items:center;gap:10px;">
+          <label style="display:flex;align-items:center;gap:8px;font-weight:700;cursor:pointer;">
+            <input type="checkbox" data-f="vr2" ${g.vr2 ? 'checked' : ''} />
+            <span>VR2</span>
+          </label>
+        </div>
       </div>
 
       <div class="small" style="margin-top:10px;">Подписка</div>
@@ -2083,6 +2119,8 @@ async function openPreorderEdit(id, anchorTr){
       edition: (row.querySelector('[data-f="edition"]').value||'').trim(),
       players: normalizePlayersChoice(row.querySelector('[data-f="players"]')?.value || ''),
       description: (row.querySelector('[data-f="description"]')?.value||'').trim(),
+      genres: (row.querySelector('[data-f="genres"]')?.value||'').trim(),
+      vr2: !!row.querySelector('[data-f="vr2"]')?.checked,
       cover: (row.querySelector('[data-f="cover"]').value||'').trim() || null,
       releaseDate: rd || null,
       productIds: { TR: newIdTR || null, UA: newIdUA || null },
@@ -2130,6 +2168,8 @@ async function doImportAllGames(){
   document.getElementById("allIdTR").value=pidTR||"";
   document.getElementById("allIdUA").value=pidUA||"";
   document.getElementById("allConceptId").value = (j.parsed?.TR?.conceptId || j.parsed?.UA?.conceptId || "");
+  document.getElementById("allGenres").value = (j.parsed?.TR?.genres || j.parsed?.UA?.genres || "");
+  document.getElementById("allVr2").checked = false;
   document.getElementById("allName").value=name||"";
   await fillDescriptionTextarea("allDescription", pidUA || pidTR, (j.parsed?.TR?.conceptId || j.parsed?.UA?.conceptId || ""), "allImportStatus");
 
@@ -2194,6 +2234,8 @@ async function addAllGame(){
     edition: (document.getElementById("allEdition").value||"").trim() || "Standard Edition",
     ...readMetaFields("all"),
     conceptId: (document.getElementById("allConceptId").value||"").trim() || null,
+    genres: (document.getElementById("allGenres").value||"").trim(),
+    vr2: !!document.getElementById("allVr2")?.checked,
     description: (document.getElementById("allDescription")?.value||"").trim(),
     regions:{
       TR:{
@@ -2413,6 +2455,16 @@ async function openAllGameEdit(id, anchorTr){
           <div class="small">Дополнительные Concept ID</div>
           <input class="input" data-f="additionalConceptIds" type="text" value="${(Array.isArray(g.additionalConceptIds) ? g.additionalConceptIds.join(',') : String(g.additionalConceptIds||'')).replace(/"/g,'&quot;')}" placeholder="например: 12345,67890" />
         </div>
+        <div style="grid-column:1 / span 2;">
+          <div class="small">Жанры</div>
+          <input class="input" data-f="genres" type="text" value="${String(g.genres||'').replace(/"/g,'&quot;')}" placeholder="Боевики, Приключения" />
+        </div>
+        <div style="grid-column:1 / span 2;display:flex;align-items:center;gap:10px;">
+          <label style="display:flex;align-items:center;gap:8px;font-weight:700;cursor:pointer;">
+            <input type="checkbox" data-f="vr2" ${g.vr2 ? 'checked' : ''} />
+            <span>VR2</span>
+          </label>
+        </div>
       </div>
 
       <div class="small" style="margin-top:10px;">Подписка</div>
@@ -2463,6 +2515,8 @@ async function openAllGameEdit(id, anchorTr){
       edition: (row.querySelector('[data-f="edition"]').value||'').trim(),
       players: normalizePlayersChoice(row.querySelector('[data-f="players"]')?.value || ''),
       description: (row.querySelector('[data-f="description"]')?.value||'').trim(),
+      genres: (row.querySelector('[data-f="genres"]')?.value||'').trim(),
+      vr2: !!row.querySelector('[data-f="vr2"]')?.checked,
       cover: (row.querySelector('[data-f="cover"]').value||'').trim() || null,
       conceptId: (row.querySelector('[data-f="conceptId"]').value||'').trim() || null,
       additionalConceptIds: (row.querySelector('[data-f="additionalConceptIds"]')?.value||'').trim(),
