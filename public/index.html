@@ -21,42 +21,53 @@
           </svg>
         </button>
         <div class="searchPanel" id="searchPanel" aria-hidden="true">
-          <input id="search" class="input searchInput" placeholder="Поиск по названию" autocomplete="off"/>
+          <div class="searchInputRow">
+            <input id="search" class="input searchInput" placeholder="Поиск по названию" autocomplete="off"/>
+            <button class="searchClose" id="searchClose" type="button" aria-label="Закрыть поиск">×</button>
+          </div>
+          <div class="quickSearchBox" id="quickSearchBox" aria-hidden="true">
+            <div class="quickSearchHead">
+              <div class="quickSearchTitle">Быстрые результаты</div>
+              <button class="quickSearchGo" id="quickSearchGo" type="button" aria-label="Открыть страницу поиска">→</button>
+            </div>
+            <div class="quickSearchScroller" id="quickSearchResults"></div>
+          </div>
         </div>
-      
+      </div>
       <button class="cartToggle" id="cartToggle" type="button" aria-label="Корзина">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
           <path d="M7 4H5L4 6v2h2l2.6 8.6c.2.8.9 1.4 1.8 1.4h7.8c.9 0 1.6-.6 1.8-1.4L23 8H7.4L7 6h15V4H7zm3.1 15a1.9 1.9 0 110 3.8 1.9 1.9 0 010-3.8zm9 0a1.9 1.9 0 110 3.8 1.9 1.9 0 010-3.8z"></path>
         </svg>
         <span class="cartCount" id="cartCount" aria-hidden="true">0</span>
       </button>
-</div>
     </div>
   </div>
   <div class="filters">
     <div class="colorA">Регион:</div>
     <select id="region" class="selecColor1"><option value="TR" class="colValue">TR</option><option value="UA" class="colValue">UA</option></select>
-	<select id="platform" class="selecColor1"><option value="" class="colValue">PS4/PS5</option><option value="PS4" class="colValue">PS4</option><option value="PS5" class="colValue">PS5</option></select>
-    <button id="reset" class="btnGhost1" type="button">Сброс</button>
     <button class="wishToggle wishToggle--filters" id="wishToggle" type="button" aria-label="Список желаемого">
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z"></path></svg>
       <span class="wishCount" id="wishCount" aria-hidden="true">0</span>
     </button>
   </div>
-  <div class="siteTabsShell" aria-label="Навигация по разделам">
-  <button class="tabsArrow tabsArrowLeft" type="button" aria-label="Прокрутить влево">‹</button>
-  <div class="siteTabs" id="siteTabs" role="tablist">
-    <button class="siteTab" type="button" role="tab" data-tab="home">Главная</button>
-    <button class="siteTab" type="button" role="tab" data-tab="preorders">Предзаказы</button>
-    <button class="siteTab" type="button" role="tab" data-tab="new">Новинки</button>
-    <button class="siteTab" type="button" role="tab" data-tab="discounts">Скидки</button>
-    <button class="siteTab" type="button" role="tab" data-tab="allgames">Все игры</button>
-    <button class="siteTab" type="button" role="tab" data-tab="subs">Подписки</button>
-  </div>
-  <button class="tabsArrow tabsArrowRight" type="button" aria-label="Прокрутить вправо">›</button>
-</div>
 </div></div>
 
+<div class="container navContainer">
+  <div class="siteTabsShell" aria-label="Навигация по разделам">
+    <button class="tabsArrow tabsArrowLeft" type="button" aria-label="Прокрутить влево">‹</button>
+    <div class="siteTabs" id="siteTabs" role="tablist">
+      <button class="siteTab" type="button" role="tab" data-tab="home">Главная</button>
+      <button class="siteTab" type="button" role="tab" data-tab="preorders">Предзаказы</button>
+      <button class="siteTab" type="button" role="tab" data-tab="new">Новинки</button>
+      <button class="siteTab" type="button" role="tab" data-tab="discounts">Скидки</button>
+      <button class="siteTab" type="button" role="tab" data-tab="allgames">Все игры</button>
+      <button class="siteTab" type="button" role="tab" data-tab="subs">Подписки</button>
+    </div>
+    <button class="tabsArrow tabsArrowRight" type="button" aria-label="Прокрутить вправо">›</button>
+  </div>
+</div>
+
+<button class="backToTop" id="backToTop" type="button" aria-label="Наверх">↑</button>
 
 <div class="container">
   <div class="resultsBar" aria-label="Результаты">
@@ -310,7 +321,32 @@ function populateGenreFilters(genres){
   syncFilterDrawer();
 }
 
+function resetSectionFilters(opts={}){
+  state.platform="";
+  state.players="";
+  state.language="";
+  state.genres=[];
+  state.sort="pop";
+  state.until="";
+  state.allDeals=false;
+  state.page=1;
+  if(!opts.keepSearch){
+    state.search="";
+    const si=document.getElementById("search");
+    if(si) si.value="";
+  }
+  const platformSelect=document.getElementById("platform");
+  if(platformSelect) platformSelect.value="";
+  const sortSelect=document.getElementById("sort");
+  if(sortSelect) sortSelect.value="pop";
+  document.querySelectorAll('#filterOverlay input[type="checkbox"]').forEach(x=>{ x.checked=false; });
+}
+
 function setActiveTab(tab, opts={}){
+  const prevTab = state.tab;
+  if(prevTab && prevTab !== tab && !opts.keepFilters){
+    resetSectionFilters({keepSearch: tab === "search"});
+  }
   state.tab = tab;
   if(tab!=="subs") state.subPage="";
   if(tab==="subs" && typeof opts.subPage!=="undefined") state.subPage=opts.subPage || "";
@@ -371,8 +407,15 @@ function setActiveTab(tab, opts={}){
     delete document.body.dataset.discountsView;
   }
 
+  const tabsShell=document.querySelector(".siteTabsShell");
+  if(tabsShell) tabsShell.style.display = (tab === "search") ? "none" : "";
+
   // Let CSS react to current section (hide counters/sort on non-game pages)
   document.body.dataset.tab = tab;
+
+  if(tab !== "search" && !state.search){
+    try{ setSearchOpen(false); }catch(_){ }
+  }
 
   // Ensure subscriptions grid layout does not leak into other sections
   const __gridEl = document.getElementById("grid");
@@ -1536,21 +1579,152 @@ function initTabsUI(){
 }
 
 
-// Search UI (лупа справа вверху → раскрывающееся поле)
+// Search UI (лупа справа вверху → раскрывающееся поле + быстрые результаты)
 const searchWrapEl=document.getElementById("searchWrap");
 const searchToggleEl=document.getElementById("searchToggle");
 const searchPanelEl=document.getElementById("searchPanel");
-function setSearchOpen(isOpen){
+const searchCloseEl=document.getElementById("searchClose");
+const quickSearchGoEl=document.getElementById("quickSearchGo");
+const quickSearchResultsEl=document.getElementById("quickSearchResults");
+let __quickSearchTimer=null;
+let __quickSearchPreviewLoaded=false;
+let __previousTabBeforeSearch="home";
+
+function setSearchOpen(isOpen, opts={}){
   if(!searchWrapEl) return;
   searchWrapEl.classList.toggle("open", !!isOpen);
+  document.body.classList.toggle("search-is-open", !!isOpen && state.tab !== "search");
+  searchWrapEl.classList.toggle("searchPageMode", state.tab === "search" || !!opts.page);
   if(searchPanelEl) searchPanelEl.setAttribute("aria-hidden", String(!isOpen));
+  const qbox=document.getElementById("quickSearchBox");
+  if(qbox) qbox.setAttribute("aria-hidden", String(!isOpen || state.tab === "search"));
   if(isOpen){
     const input=document.getElementById("search");
-    if(input){
-      // небольшой таймаут, чтобы анимация начала раскрываться
-      setTimeout(()=>input.focus({preventScroll:true}), 0);
-    }
+    if(input) setTimeout(()=>input.focus({preventScroll:true}), 0);
+    try{
+      const row=document.querySelector(".searchInputRow");
+      const rect=row ? row.getBoundingClientRect() : null;
+      if(rect) document.documentElement.style.setProperty("--quick-search-top", Math.max(0, rect.bottom + 14) + "px");
+    }catch(_){}
+    if(state.tab !== "search") updateQuickSearchResults();
   }
+}
+function closeQuickSearch(clear=false){
+  if(clear){
+    state.search="";
+    const input=document.getElementById("search");
+    if(input) input.value="";
+  }
+  setSearchOpen(false);
+}
+async function fetchQuickList(url){
+  try{
+    const r=await fetch(url);
+    if(!r.ok) return [];
+    const j=await r.json();
+    return Array.isArray(j.items) ? j.items : [];
+  }catch(_){ return []; }
+}
+function shuffleQuickItems(items){
+  const arr=[...items];
+  for(let i=arr.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+  return arr;
+}
+function renderQuickCards(items){
+  if(!quickSearchResultsEl) return;
+  quickSearchResultsEl.innerHTML = "";
+  (items||[]).forEach((game)=>{
+    const slot=document.createElement("div");
+    slot.className="quickGameCardSlot";
+
+    const card=document.createElement("button");
+    card.className="quickTkCard";
+    card.type="button";
+    card.setAttribute("aria-label", game.name || "Игра");
+
+    const cover = game.cover
+      ? `<img src="${escapeHtml(optimizedPsImageUrl(game.cover, 320))}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.style.display='none'">`
+      : `<div class="quickTkNoCover">NO COVER</div>`;
+    const platform = escapeHtml(game.platform || "PS4 / PS5");
+    const edition = game.edition ? `<div class="quickTkEdition">${escapeHtml(game.edition)}</div>` : ``;
+    const discount = game.discPerc ? `<span class="quickTkDiscount">-${escapeHtml(String(game.discPerc))}%</span>` : ``;
+    const price = escapeHtml(fmtRub(game.finalPriceRub));
+    const isPreorderQuick = !!game.isPreorder || game.__quickSource === "preorders" || game.__cardTab === "preorders";
+    const preorderBadge = isPreorderQuick ? `<div class="preorderBadge quickTkPreorder" aria-label="Предзаказ">Предзаказ</div>` : ``;
+
+    card.innerHTML = `
+      <div class="quickTkCover">
+        <div class="platformStrip quickTkPlatform">${platform}</div>
+        ${preorderBadge}
+        ${cover}
+      </div>
+      <div class="quickTkTitle">${escapeHtml(game.name || "")}</div>
+      ${edition}
+      <div class="quickTkPriceRow"><span class="quickTkPrice">${price}</span>${discount}</div>
+    `;
+
+    card.onclick=()=>openGameModal(game);
+    slot.appendChild(card);
+    quickSearchResultsEl.appendChild(slot);
+  });
+  initQuickSearchDragScroll();
+}
+function initQuickSearchDragScroll(){
+  const scroller=quickSearchResultsEl;
+  if(!scroller || scroller.__dragReady) return;
+  scroller.__dragReady=true;
+  let down=false;
+  let startX=0;
+  let startLeft=0;
+  let moved=false;
+  scroller.addEventListener("mousedown",(e)=>{
+    if(e.button!==0) return;
+    down=true; moved=false; startX=e.clientX; startLeft=scroller.scrollLeft;
+    scroller.classList.add("isDragging");
+  });
+  window.addEventListener("mousemove",(e)=>{
+    if(!down) return;
+    const dx=e.clientX-startX;
+    if(Math.abs(dx)>3) moved=true;
+    scroller.scrollLeft=startLeft-dx;
+  });
+  window.addEventListener("mouseup",()=>{
+    down=false;
+    scroller.classList.remove("isDragging");
+    setTimeout(()=>{ moved=false; },0);
+  });
+  scroller.addEventListener("click",(e)=>{
+    if(moved){
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, true);
+}
+async function updateQuickSearchResults(){
+  if(!quickSearchResultsEl || state.tab === "search") return;
+  const q=String((document.getElementById("search")||{}).value || "").trim();
+  quickSearchResultsEl.innerHTML='<div class="quickLoading">Загрузка...</div>';
+  let items=[];
+  if(q){
+    items=await fetchQuickList(`/api/search?region=${encodeURIComponent(state.region)}&q=${encodeURIComponent(q)}&page=1&perPage=12`);
+  }else{
+    const [pre, news]=await Promise.all([
+      fetchQuickList(`/api/preorders?region=${encodeURIComponent(state.region)}&page=1`),
+      fetchQuickList(`/api/newreleases?region=${encodeURIComponent(state.region)}&page=1`)
+    ]);
+    const preItems=(pre||[]).slice(0,5).map(x=>Object.assign({}, x, {isPreorder:true, __quickSource:"preorders"}));
+    const newsItems=(news||[]).slice(0,5).map(x=>Object.assign({}, x, {__quickSource:"new"}));
+    items=shuffleQuickItems([...preItems, ...newsItems]);
+    __quickSearchPreviewLoaded=true;
+  }
+  if(!items.length){
+    quickSearchResultsEl.innerHTML='<div class="quickLoading">Ничего не найдено</div>';
+    return;
+  }
+  renderQuickCards(items);
 }
 if(searchToggleEl){
   searchToggleEl.addEventListener("click",(e)=>{
@@ -1559,14 +1733,63 @@ if(searchToggleEl){
     setSearchOpen(!isOpen);
   });
 }
+const searchInputEl=document.getElementById("search");
+if(searchInputEl){
+  searchInputEl.addEventListener("focus",()=>{
+    if(state.tab !== "search") setSearchOpen(true);
+  });
+  searchInputEl.addEventListener("click",(e)=>{
+    if(state.tab !== "search") setSearchOpen(true);
+  });
+}
+if(searchCloseEl){
+  searchCloseEl.addEventListener("click",(e)=>{
+    e.preventDefault();
+    e.stopPropagation();
+    if(state.tab === "search"){
+      state.search="";
+      const input=document.getElementById("search");
+      if(input) input.value="";
+      const back = __previousTabBeforeSearch && __previousTabBeforeSearch !== "search" ? __previousTabBeforeSearch : "home";
+      setActiveTab(back, {keepFilters:false});
+      load();
+      scrollTo(0,0);
+    }else{
+      closeQuickSearch(true);
+    }
+  });
+}
+if(quickSearchGoEl){
+  quickSearchGoEl.addEventListener("click",(e)=>{
+    e.preventDefault();
+    e.stopPropagation();
+    __previousTabBeforeSearch = state.tab && state.tab !== "search" ? state.tab : (__previousTabBeforeSearch || "home");
+    state.search=(document.getElementById("search")?.value||"");
+    state.page=1;
+    setActiveTab("search", {keepFilters:true, keepPage:false});
+    load();
+    scrollTo(0,0);
+  });
+}
 document.addEventListener("click",(e)=>{
   if(!searchWrapEl) return;
   if(!searchWrapEl.classList.contains("open")) return;
+  if(state.tab === "search") return;
   if(searchWrapEl.contains(e.target)) return;
+  const gameModal=document.getElementById("gameModal");
+  // Do not close quick search when the click belongs to the game card modal.
+  // Close buttons hide the modal before this document handler runs, so check
+  // contains(e.target) regardless of current display state.
+  if(gameModal && gameModal.contains(e.target)) return;
   setSearchOpen(false);
 });
 document.addEventListener("keydown",(e)=>{
-  if(e.key==="Escape") setSearchOpen(false);
+  if(e.key==="Escape"){
+    const gameModal=document.getElementById("gameModal");
+    if(gameModal && gameModal.style.display !== "none") return;
+    if(state.tab === "search") searchCloseEl?.click();
+    else setSearchOpen(false);
+  }
 });
 
 // restore state from URL query (shareable links)
@@ -1718,7 +1941,7 @@ function removeFromWishlist(gameId){
 }
 function toggleWishlist(game){ if(isInWishlist(game.id, state.region)) removeFromWishlist(game.id); else addToWishlist(game); }
 function isWishOpen(){ const ov=document.getElementById("wishOverlay"); return !!(ov && ov.style.display!=="none"); }
-function openWishlist(){ const ov=document.getElementById("wishOverlay"); if(!ov) return; ov.style.display="flex"; ov.setAttribute("aria-hidden","false"); document.body.classList.add("modalOpen"); renderWishlist(); }
+function openWishlist(){ const ov=document.getElementById("wishOverlay"); if(!ov) return; try{ if(state.tab!=="search") closeQuickSearch(false); }catch(_){ } ov.style.display="flex"; ov.setAttribute("aria-hidden","false"); document.body.classList.add("modalOpen"); renderWishlist(); }
 function closeWishlist(){ const ov=document.getElementById("wishOverlay"); if(!ov) return; ov.style.display="none"; ov.setAttribute("aria-hidden","true"); document.body.classList.remove("modalOpen"); }
 function normalizeGameForCart(game){
   // Store what we need to render the cart and build WhatsApp message
@@ -1743,6 +1966,7 @@ function isCartOpen(){
 function openCart(){
   const ov = document.getElementById("cartOverlay");
   if(!ov) return;
+  try{ if(state.tab!=="search") closeQuickSearch(false); }catch(_){ }
   ov.style.display = "flex";
   ov.setAttribute("aria-hidden", "false");
   document.body.classList.add("modalOpen");
@@ -2029,7 +2253,8 @@ function buildCard(game, whatsapp, showUntil){
     </div>`;
   const cw = div.querySelector(".coverWrap");
   if(cw){ cw.style.cursor="pointer"; cw.onclick=()=>openGameModal(game); }
-  div.querySelector(".buyBtn").onclick=()=>{
+  div.querySelector(".buyBtn").onclick=(e)=>{
+    if(e){ e.preventDefault(); e.stopPropagation(); }
     const nowInCart = isInCart(game.id, state.region);
     if(nowInCart) removeFromCart(game.id);
     else addToCart(game);
@@ -2517,7 +2742,7 @@ async function load(){
   const meta=await fetch("/api/meta").then(r=>r.json());
   populateGenreFilters(meta && meta.genres);
   // Apply active tab UI (do not reset page when loading)
-  const knownTabs = new Set(["home","preorders","new","discounts","allgames","subs","bestsellers","multiplayer"]);
+  const knownTabs = new Set(["home","preorders","new","discounts","allgames","subs","bestsellers","multiplayer","search"]);
   if(!knownTabs.has(state.tab)) state.tab="home";
   setActiveTab(state.tab, {keepPage:true,keepUntil:true});
 
@@ -2525,6 +2750,10 @@ async function load(){
     state.whatsapp = meta.settings?.whatsappLink || state.whatsapp || "https://wa.me/+79659556300";
     state.discountRates = meta.discountRates || state.discountRates || {TR:[],UA:[]};
     state.roundStep = Number(meta.settings?.roundStep || state.roundStep || 50);
+  }
+
+  if(state.tab==="search"){
+    setSearchOpen(true, {page:true});
   }
 
   if(state.tab==="home" && !(state.search||"").trim()){
@@ -2587,6 +2816,21 @@ async function load(){
   const pager=document.getElementById("pager");
   const emptyBox=document.getElementById("emptyBox");
 
+  if(state.tab === "search" && !String(state.search || "").trim()){
+    const dt=document.getElementById('discountTabs');
+    if(dt){ dt.innerHTML=""; dt.style.display="none"; }
+    const ad=document.getElementById("allDeals");
+    if(ad){ ad.innerHTML=""; ad.style.display="none"; }
+    if(grid) grid.innerHTML="";
+    if(pager) pager.innerHTML="";
+    if(emptyBox){
+      emptyBox.style.display="block";
+      emptyBox.textContent="Вы ещё ничего не искали";
+    }
+    try{history.replaceState(null,"",`?tab=search&region=${encodeURIComponent(state.region)}`);}catch(_){}
+    return;
+  }
+
   // Reset special layouts applied by other sections
   if(grid) grid.classList.remove("gridSubs");
   if(needPickDate){
@@ -2623,7 +2867,7 @@ async function load(){
   try{history.replaceState(null,"",`?${qs.toString()}`);}catch(_){}
   // Choose API: when search is active -> global search across all games + preorders (subscriptions excluded).
   let apiPath;
-  if((state.search||"").trim()){
+  if(state.tab==="search" || (state.search||"").trim()){
     apiPath = "/api/search?";
     // When searching globally, do not restrict by discount date, "all deals" or subscription page.
     qs.delete("until"); qs.delete("all"); qs.delete("sub");
@@ -2719,28 +2963,27 @@ document.getElementById("search").addEventListener("input",()=>{
   state.search=(document.getElementById("search").value||"");
   state.page=1;
   clearTimeout(__searchTimer);
-  __searchTimer=setTimeout(()=>load(),250);
+  if(state.tab === "search"){
+    __searchTimer=setTimeout(()=>load(),250);
+  }else{
+    __searchTimer=setTimeout(()=>updateQuickSearchResults(),180);
+  }
 });
 
-document.getElementById("platform").onchange=()=>{state.platform=document.getElementById("platform").value;state.page=1;load();};
+const platformSelectEl=document.getElementById("platform");
+if(platformSelectEl){
+  platformSelectEl.onchange=()=>{state.platform=platformSelectEl.value;state.page=1;load();};
+}
 document.getElementById("sort").onchange=()=>{state.sort=document.getElementById("sort").value;state.page=1;load();};
 
-document.getElementById("reset").onclick=()=>{
-  state.search="";
-  state.platform="";
-  state.players="";
-  state.language="";
-  state.genres=[];
-  state.sort="pop";
-  state.until="";
-  state.allDeals=false;
-  state.page=1;
-  document.getElementById("search").value="";
-  document.getElementById("platform").value="";
-  document.getElementById("sort").value="pop";
-  setSearchOpen(false);
-  load();
-};
+const resetBtnEl=document.getElementById("reset");
+if(resetBtnEl){
+  resetBtnEl.onclick=()=>{
+    resetSectionFilters({keepSearch:false});
+    setSearchOpen(false);
+    load();
+  };
+}
 
 
 
@@ -2833,13 +3076,21 @@ document.addEventListener("DOMContentLoaded",()=>{
   if(wishOverlay) wishOverlay.addEventListener("click",(e)=>{ if(e.target===wishOverlay) closeWishlist(); });
   if(wishClear) wishClear.onclick=(e)=>{ e.preventDefault(); clearWishlist(); };
 
-  const knownTabs2 = new Set(["home","preorders","new","discounts","allgames","subs","bestsellers"]);
+  const knownTabs2 = new Set(["home","preorders","new","discounts","allgames","subs","bestsellers","multiplayer","search"]);
   if(!knownTabs2.has(state.tab)) state.tab="home";
   setActiveTab(state.tab,{keepPage:true});
   initTabsUI();
   updateCartCount();
   updateWishCount();
   showWishlistDiscountToast();
+
+  const backToTop=document.getElementById("backToTop");
+  if(backToTop){
+    const updateBackToTop=()=>backToTop.classList.toggle("isVisible", window.scrollY > 420);
+    window.addEventListener("scroll", updateBackToTop, {passive:true});
+    updateBackToTop();
+    backToTop.onclick=()=>window.scrollTo({top:0, behavior:"smooth"});
+  }
 });
 
 document.addEventListener("keydown",(e)=>{
