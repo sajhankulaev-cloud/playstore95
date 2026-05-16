@@ -3962,3 +3962,13 @@ body.filter-open .topbar,
 body.filter-open .navContainer{
   z-index:1 !important;
 }
+@media (max-width: 640px) {
+    body.search-is-open:not([data-tab="search"]) .quickSearchBox {
+        flex: 0 0 auto !important;
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        padding-bottom: 18px !important;
+        overflow: visible !important;
+    }
+}
