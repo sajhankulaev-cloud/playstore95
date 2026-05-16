@@ -3277,3 +3277,697 @@ body.dark .filterClose, body[data-theme="dark"] .filterClose,
 body.dark .filterChip, body[data-theme="dark"] .filterChip,
 body.dark .filterClearBtn, body[data-theme="dark"] .filterClearBtn{background:#1b1b1f;color:#fff;}
 body.dark .filterDrawerFooter, body[data-theme="dark"] .filterDrawerFooter{background:linear-gradient(180deg, rgba(16,16,16,0), #101010 18%, #101010);}
+
+/* === Search redesign + sticky header + back-to-top === */
+.topbar{
+  position: sticky !important;
+  top: 0;
+  z-index: 90 !important;
+  backdrop-filter: blur(12px);
+}
+.headerActions{gap:8px;}
+.searchWrap{position:relative;z-index:120;}
+.searchPanel{
+  position:absolute;
+  top:0;
+  right:0;
+  width:min(740px, calc(100vw - 24px));
+  max-width:0;
+  opacity:0;
+  overflow:visible;
+  pointer-events:none;
+  transform-origin:right center;
+  transition:max-width .28s ease, opacity .2s ease;
+}
+.searchWrap.open .searchPanel{max-width:min(740px, calc(100vw - 24px));opacity:1;pointer-events:auto;}
+.searchInputRow{display:flex;align-items:center;gap:8px;width:100%;}
+.searchInput{
+  width:100%;
+  min-width:0 !important;
+  height:44px;
+  border-radius:14px !important;
+  border:1px solid rgba(255,255,255,.08) !important;
+  background:rgba(16,18,22,.96) !important;
+  color:#fff !important;
+  padding:0 44px 0 16px !important;
+  box-shadow:0 16px 40px rgba(0,0,0,.25);
+}
+.searchInput::placeholder{color:rgba(255,255,255,.65);}
+.searchClose{
+  flex:0 0 44px;
+  width:44px;
+  height:44px;
+  border:0;
+  border-radius:14px;
+  cursor:pointer;
+  background:rgba(16,18,22,.96);
+  color:#fff;
+  font-size:30px;
+  line-height:1;
+  box-shadow:0 16px 40px rgba(0,0,0,.22);
+}
+.searchWrap.open .searchToggle{opacity:0;pointer-events:none;}
+.quickSearchBox{
+  margin-top:12px;
+  width:min(740px, calc(100vw - 24px));
+  border-radius:22px;
+  padding:18px 14px 16px;
+  background:rgba(13,15,19,.74);
+  backdrop-filter: blur(18px);
+  box-shadow:0 24px 60px rgba(0,0,0,.32);
+  color:#fff;
+}
+.quickSearchHead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;padding:0 2px;}
+.quickSearchTitle{font-size:24px;font-weight:850;line-height:1.15;}
+.quickSearchGo{
+  width:38px;height:38px;border-radius:999px;border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.08);color:#fff;font-size:24px;cursor:pointer;
+}
+.quickSearchScroller{display:flex;gap:12px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;padding:2px 2px 8px;-webkit-overflow-scrolling:touch;}
+.quickSearchScroller::-webkit-scrollbar{height:5px;}
+.quickSearchScroller::-webkit-scrollbar-thumb{background:rgba(255,255,255,.22);border-radius:999px;}
+.quickGameCard{flex:0 0 150px;scroll-snap-align:start;border:0;background:transparent;color:#fff;text-align:left;padding:0;cursor:pointer;}
+.quickGameCover{position:relative;width:150px;height:150px;border-radius:10px;overflow:hidden;background:#111;}
+.quickGameCover img{width:100%;height:100%;object-fit:cover;display:block;}
+.quickGameTitle{margin-top:8px;font-size:14px;font-weight:800;line-height:1.15;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.quickGameEdition{margin-top:4px;color:rgba(255,255,255,.65);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.quickGameBottom{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:17px;font-weight:850;}
+.quickDiscount{font-size:12px;background:#fb4b35;color:#fff;border-radius:7px;padding:3px 6px;}
+.quickLoading{padding:22px 8px;color:rgba(255,255,255,.75);font-weight:700;}
+body[data-tab="search"] .siteTabsShell{display:none !important;}
+body[data-tab="search"] .topbar .filters{margin-top:14px;}
+body[data-tab="search"] .searchWrap{flex:1;}
+body[data-tab="search"] .searchToggle{display:none;}
+body[data-tab="search"] .searchPanel{position:relative;top:auto;right:auto;width:100%;max-width:none !important;opacity:1 !important;pointer-events:auto;}
+body[data-tab="search"] .quickSearchBox{display:none !important;}
+body[data-tab="search"] .headerActions{flex:1;min-width:0;}
+body[data-tab="search"] .brand{display:none;}
+body[data-tab="search"] .cartToggle{display:none;}
+body[data-tab="search"] .wishToggle--filters{display:none;}
+body[data-tab="search"] .container > .resultsBar{margin-top:18px;}
+.backToTop{
+  position:fixed;right:18px;bottom:18px;width:44px;height:44px;border:0;border-radius:999px;
+  background:#1452e7;color:#fff;font-size:24px;font-weight:900;z-index:88;cursor:pointer;
+  box-shadow:0 14px 30px rgba(0,0,0,.28);opacity:0;transform:translateY(12px);pointer-events:none;
+  transition:opacity .2s ease, transform .2s ease;
+}
+.backToTop.isVisible{opacity:1;transform:translateY(0);pointer-events:auto;}
+@media (max-width:640px){
+  .searchPanel{left:auto !important;right:0 !important;top:0 !important;width:calc(100vw - 22px);transform:none !important;}
+  .searchWrap.open .searchPanel{max-width:calc(100vw - 22px) !important;}
+  .quickSearchBox{width:calc(100vw - 22px);padding:16px 12px;}
+  .quickSearchTitle{font-size:23px;}
+  .quickGameCard{flex-basis:152px;}
+  .quickGameCover{width:152px;height:152px;}
+  body[data-tab="search"] .topbarHeader{display:block;}
+  body[data-tab="search"] .headerActions{width:100%;}
+  body[data-tab="search"] .searchPanel{width:100%;}
+  body[data-tab="search"] .searchInputRow{width:100%;}
+}
+
+/* === Fixes after search review === */
+.topbar{
+  z-index:10000 !important;
+  overflow:visible !important;
+}
+.topbarInner,
+.topbarHeader,
+.headerActions,
+.searchWrap{
+  overflow:visible !important;
+}
+.searchWrap{z-index:10020 !important;}
+.searchPanel{
+  z-index:10030 !important;
+  isolation:isolate;
+}
+.quickSearchBox{
+  position:relative;
+  z-index:10031 !important;
+}
+body.search-is-open .topbar{z-index:10000 !important;}
+body.search-is-open .container:not(.topbarInner){z-index:1 !important;}
+body.search-is-open .siteTabsShell,
+body.search-is-open .hero,
+body.search-is-open .homeSection,
+body.search-is-open .grid,
+body.search-is-open .discountBannersGrid,
+body.search-is-open .allDeals{
+  z-index:1 !important;
+}
+body.search-is-open .cartToggle,
+body.search-is-open .wishToggle--filters{
+  pointer-events:none;
+}
+
+.quickSearchScroller{
+  align-items:stretch;
+  cursor:grab;
+  user-select:none;
+  scrollbar-width:thin;
+}
+.quickSearchScroller.isDragging{
+  cursor:grabbing;
+  scroll-snap-type:none;
+}
+.quickSearchScroller.isDragging *{
+  user-select:none;
+}
+.quickGameCardSlot{
+  flex:0 0 174px;
+  width:174px;
+  scroll-snap-align:start;
+}
+.quickGameCardSlot .card{
+  width:100%;
+  height:100%;
+  border-radius:14px;
+  background:#fff;
+  color:#262a36;
+  box-shadow:0 8px 22px rgba(20,82,231,.12);
+}
+.quickGameCardSlot .coverWrap{
+  aspect-ratio:1/1;
+  height:auto !important;
+}
+.quickGameCardSlot .body-bar1{
+  padding:10px;
+}
+.quickGameCardSlot .title{
+  font-size:13px !important;
+  line-height:1.18;
+}
+.quickGameCardSlot .cardEdition{
+  font-size:12px;
+}
+.quickGameCardSlot .price{
+  font-size:16px;
+}
+.quickGameCardSlot .buyBtn{
+  min-width:0;
+  padding:8px 9px;
+  font-size:11px;
+}
+.quickGameCardSlot .wishBtn{
+  width:34px;
+  height:34px;
+  min-width:34px;
+}
+.quickGameCardSlot img{
+  -webkit-user-drag:none;
+  user-drag:none;
+}
+.quickGameCard,
+.quickGameCover,
+.quickGameTitle,
+.quickGameEdition,
+.quickGameBottom{display:none !important;}
+
+@media (min-width:641px){
+  .topbarInner{max-width:1200px !important;margin-left:auto !important;margin-right:auto !important;}
+}
+@media (max-width:640px){
+  .searchPanel{
+    position:fixed !important;
+    top:8px !important;
+    left:10px !important;
+    right:10px !important;
+    width:auto !important;
+    max-width:none !important;
+  }
+  .searchWrap.open .searchPanel{max-width:none !important;}
+  .quickSearchBox{width:100% !important;max-height:72vh;overflow:hidden;}
+  .quickSearchScroller{padding-bottom:10px;}
+  .quickGameCardSlot{flex-basis:156px;width:156px;}
+  body[data-tab="search"] .searchPanel{
+    position:relative !important;
+    top:auto !important;
+    left:auto !important;
+    right:auto !important;
+    width:100% !important;
+  }
+}
+/* Keep the remaining region row compact after removing platform/reset controls. */
+.filters .wishToggle--filters{
+  margin-left:8px !important;
+}
+
+
+/* === Final fixes: keep header structure, search above page, cart/wishlist untouched === */
+.cartOverlay{z-index:30000 !important;}
+.cartDrawer{position:relative;z-index:30001 !important;}
+body.modalOpen .topbar{z-index:1 !important;}
+body.search-is-open:not(.modalOpen) .topbar{z-index:20000 !important;}
+body.search-is-open:not(.modalOpen) .searchWrap{z-index:20020 !important;}
+body.search-is-open:not(.modalOpen) .searchPanel{z-index:20030 !important;}
+body.search-is-open:not(.modalOpen) .quickSearchBox{z-index:20031 !important;}
+body.search-is-open .cartToggle,
+body.search-is-open .wishToggle--filters{pointer-events:auto !important;}
+.quickSearchScroller{scrollbar-width:none !important;}
+.quickSearchScroller::-webkit-scrollbar{display:none !important;width:0;height:0;}
+.quickSearchScroller{padding-bottom:2px !important;}
+@media (min-width:641px){
+  .topbarInner{max-width:1200px;margin-left:auto;margin-right:auto;}
+  .searchPanel{right:0 !important;}
+}
+
+
+/* === Final quick-search overlay visual fix ===
+   Mobile quick search: solid dark top block, transparent full-screen results area,
+   no outer radius and no gaps from screen edges. */
+@media (max-width:640px){
+  body.search-is-open:not([data-tab="search"]) .searchWrap.open .searchPanel{
+    position:fixed !important;
+    inset:0 !important;
+    width:100vw !important;
+    height:100vh !important;
+    max-width:none !important;
+    display:flex !important;
+    flex-direction:column !important;
+    opacity:1 !important;
+    pointer-events:auto !important;
+    transform:none !important;
+    z-index:10050 !important;
+    background:transparent !important;
+    overflow:hidden !important;
+  }
+
+  body.search-is-open:not([data-tab="search"]) .searchWrap.open .searchInputRow{
+    flex:0 0 auto !important;
+    width:100% !important;
+    box-sizing:border-box !important;
+    padding:8px 14px 10px !important;
+    margin:0 !important;
+    gap:8px !important;
+    background:#0f1115 !important;
+  }
+
+  body.search-is-open:not([data-tab="search"]) .searchWrap.open .searchInput{
+    height:44px !important;
+    border-radius:7px !important;
+    box-shadow:none !important;
+  }
+
+  body.search-is-open:not([data-tab="search"]) .searchWrap.open .searchClose{
+    width:44px !important;
+    height:44px !important;
+    flex:0 0 44px !important;
+    border-radius:7px !important;
+    box-shadow:none !important;
+    background:#1a1c22 !important;
+  }
+
+  body.search-is-open:not([data-tab="search"]) .quickSearchBox{
+    flex:1 1 auto !important;
+    width:100vw !important;
+    max-height:none !important;
+    min-height:0 !important;
+    box-sizing:border-box !important;
+    margin:0 !important;
+    padding:20px 22px 24px !important;
+    border-radius:0 !important;
+    background:rgba(12,14,18,.58) !important;
+    backdrop-filter:blur(18px) !important;
+    -webkit-backdrop-filter:blur(18px) !important;
+    box-shadow:none !important;
+    overflow:hidden !important;
+  }
+
+  body.search-is-open:not([data-tab="search"]) .quickSearchHead{
+    padding:0 !important;
+    margin:0 0 30px !important;
+  }
+
+  body.search-is-open:not([data-tab="search"]) .quickSearchTitle{
+    font-size:26px !important;
+    line-height:1.25 !important;
+  }
+
+  body.search-is-open:not([data-tab="search"]) .quickSearchGo{
+    width:36px !important;
+    height:36px !important;
+    background:rgba(255,255,255,.08) !important;
+    border-color:rgba(255,255,255,.16) !important;
+  }
+
+  body.search-is-open:not([data-tab="search"]) .quickSearchScroller{
+    width:100% !important;
+    gap:12px !important;
+    padding:0 0 14px !important;
+    overflow-x:auto !important;
+    overflow-y:hidden !important;
+    scrollbar-width:none !important;
+  }
+
+  body.search-is-open:not([data-tab="search"]) .quickSearchScroller::-webkit-scrollbar{
+    display:none !important;
+  }
+}
+
+
+/* === Desktop quick search: header input + full-width results sidebar === */
+@media (min-width:641px){
+  .searchWrap.open .searchPanel{
+    width:300px !important;
+    max-width:300px !important;
+  }
+  .searchWrap.open .searchInputRow{
+    width:300px !important;
+    gap:0 !important;
+  }
+  .searchWrap.open .searchInput{
+    width:300px !important;
+    height:44px !important;
+    border-radius:8px !important;
+    padding:0 46px 0 18px !important;
+    background:rgba(16,18,22,.98) !important;
+  }
+  .searchWrap.open .searchClose{
+    display:none !important;
+  }
+  body.search-is-open:not([data-tab="search"]) .quickSearchBox{
+    position:fixed !important;
+    left:0 !important;
+    right:0 !important;
+    top:var(--quick-search-top, 78px) !important;
+    width:100vw !important;
+    max-width:none !important;
+    margin:0 !important;
+    box-sizing:border-box !important;
+    border-radius:0 !important;
+    padding:34px max(26px, calc((100vw - 1200px) / 2)) 42px !important;
+    background:rgba(10,12,16,.76) !important;
+    backdrop-filter:blur(18px) !important;
+    -webkit-backdrop-filter:blur(18px) !important;
+    box-shadow:0 22px 50px rgba(0,0,0,.28) !important;
+    overflow:hidden !important;
+  }
+  body.search-is-open:not([data-tab="search"]) .quickSearchHead{
+    max-width:1200px !important;
+    margin:0 auto 28px !important;
+    padding:0 !important;
+  }
+  body.search-is-open:not([data-tab="search"]) .quickSearchTitle{
+    font-size:28px !important;
+    line-height:1.15 !important;
+  }
+  body.search-is-open:not([data-tab="search"]) .quickSearchScroller{
+    max-width:1200px !important;
+    margin:0 auto !important;
+    gap:20px !important;
+    padding:0 0 10px !important;
+  }
+  body.search-is-open:not([data-tab="search"]) .quickGameCardSlot{
+    flex-basis:174px !important;
+    width:174px !important;
+  }
+}
+
+/* === Quick search final desktop/search-card fixes === */
+.quickSearchBox[aria-hidden="true"]{
+  display:none !important;
+}
+
+.quickTkCard{
+  display:block;
+  width:100%;
+  padding:0;
+  border:0;
+  background:transparent;
+  color:#fff;
+  text-align:left;
+  cursor:pointer;
+  font:inherit;
+}
+.quickTkCover{
+  position:relative;
+  width:100%;
+  aspect-ratio:1/1;
+  border-radius:6px;
+  overflow:hidden;
+  background:rgba(255,255,255,.08);
+}
+.quickTkCover img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+  -webkit-user-drag:none;
+  user-drag:none;
+}
+.quickTkNoCover{
+  width:100%;
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:12px;
+  font-weight:900;
+  opacity:.7;
+}
+.quickTkPlatform{
+  z-index:2;
+}
+.quickTkTitle{
+  margin-top:12px;
+  font-size:16px;
+  line-height:1.18;
+  font-weight:850;
+  color:#fff;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+.quickTkEdition{
+  margin-top:8px;
+  font-size:14px;
+  line-height:1.2;
+  color:rgba(255,255,255,.68);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.quickTkPriceRow{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  margin-top:8px;
+}
+.quickTkPrice{
+  color:#fff;
+  font-size:18px;
+  line-height:1;
+  font-weight:900;
+}
+.quickTkDiscount{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:22px;
+  padding:3px 7px;
+  border-radius:8px;
+  background:#ff4b35;
+  color:#fff;
+  font-size:12px;
+  font-weight:900;
+}
+.quickGameCardSlot .quickTkCard img{
+  -webkit-user-drag:none;
+  user-drag:none;
+}
+.quickGameCardSlot > .card{
+  display:none !important;
+}
+
+@media (min-width:641px){
+  .searchWrap{
+    width:300px !important;
+    flex:0 0 300px !important;
+  }
+  .searchToggle{
+    display:none !important;
+  }
+  .searchPanel,
+  .searchWrap.open .searchPanel{
+    position:relative !important;
+    top:auto !important;
+    right:auto !important;
+    width:300px !important;
+    max-width:300px !important;
+    opacity:1 !important;
+    pointer-events:auto !important;
+    transform:none !important;
+    overflow:visible !important;
+  }
+  .searchPanel[aria-hidden="true"]{
+    visibility:visible !important;
+  }
+  .searchInputRow,
+  .searchWrap.open .searchInputRow{
+    width:300px !important;
+    gap:0 !important;
+  }
+  .searchInput,
+  .searchWrap.open .searchInput{
+    width:300px !important;
+    height:44px !important;
+    border-radius:8px !important;
+    padding:0 46px 0 18px !important;
+    background:rgba(16,18,22,.98) !important;
+    box-shadow:none !important;
+  }
+  .searchClose,
+  .searchWrap.open .searchClose{
+    display:none !important;
+  }
+  .searchInputRow::after{
+    content:"";
+    position:absolute;
+    right:15px;
+    top:50%;
+    width:18px;
+    height:18px;
+    transform:translateY(-50%);
+    pointer-events:none;
+    opacity:.75;
+    background:currentColor;
+    color:rgba(255,255,255,.82);
+    -webkit-mask:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 4a6 6 0 104.472 10.03l4.249 4.249a1 1 0 001.414-1.414l-4.249-4.249A6 6 0 0010 4zm0 2a4 4 0 110 8 4 4 0 010-8z"/></svg>') center/contain no-repeat;
+            mask:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 4a6 6 0 104.472 10.03l4.249 4.249a1 1 0 001.414-1.414l-4.249-4.249A6 6 0 0010 4zm0 2a4 4 0 110 8 4 4 0 010-8z"/></svg>') center/contain no-repeat;
+  }
+  .searchWrap:not(.open) .quickSearchBox{
+    display:none !important;
+  }
+  body.search-is-open:not([data-tab="search"]) .quickGameCardSlot{
+    flex-basis:186px !important;
+    width:186px !important;
+  }
+}
+
+@media (max-width:640px){
+  body.search-is-open:not([data-tab="search"]) .quickGameCardSlot{
+    flex-basis:152px !important;
+    width:152px !important;
+  }
+  .quickTkTitle{
+    font-size:16px;
+  }
+  .quickTkEdition{
+    font-size:14px;
+  }
+}
+
+/* === Fix: preorder badge in quick search + X on full search page === */
+.quickTkPreorder{
+  position:absolute !important;
+  left:0 !important;
+  bottom:0 !important;
+  z-index:4 !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:4px 8px !important;
+  border-radius:0 10px 0 0 !important;
+  background:rgb(255 2 2 / 82%) !important;
+  color:#fff !important;
+  font-weight:800 !important;
+  font-size:10px !important;
+  line-height:1 !important;
+  letter-spacing:.3px !important;
+  pointer-events:none !important;
+}
+@media (min-width:641px){
+  body[data-tab="search"] .searchWrap{
+    width:100% !important;
+    flex:1 1 auto !important;
+  }
+  body[data-tab="search"] .searchPanel,
+  body[data-tab="search"] .searchWrap.open .searchPanel{
+    position:relative !important;
+    top:auto !important;
+    right:auto !important;
+    width:100% !important;
+    max-width:none !important;
+    opacity:1 !important;
+    pointer-events:auto !important;
+  }
+  body[data-tab="search"] .searchInputRow,
+  body[data-tab="search"] .searchWrap.open .searchInputRow{
+    width:100% !important;
+    gap:8px !important;
+  }
+  body[data-tab="search"] .searchInput,
+  body[data-tab="search"] .searchWrap.open .searchInput{
+    width:100% !important;
+    padding:0 16px !important;
+  }
+  body[data-tab="search"] .searchClose,
+  body[data-tab="search"] .searchWrap.open .searchClose{
+    display:block !important;
+    flex:0 0 44px !important;
+    width:44px !important;
+    height:44px !important;
+  }
+  body[data-tab="search"] .searchInputRow::after{
+    display:none !important;
+  }
+}
+
+/* === Fix: navigation must not move with sticky header === */
+.navContainer{
+  position:relative;
+  z-index:3;
+}
+.navContainer .siteTabsShell{
+  margin-top:8px;
+}
+body[data-tab="search"] .navContainer{
+  display:none !important;
+}
+@media (max-width:640px){
+  .navContainer{padding-top:0 !important;}
+  .navContainer .siteTabsShell{margin-top:8px !important;}
+}
+
+/* === Fix: navigation must not move with sticky header === */
+.navContainer{
+  position:relative;
+  z-index:3;
+}
+.navContainer .siteTabsShell{
+  margin-top:8px;
+}
+body[data-tab="search"] .navContainer{
+  display:none !important;
+}
+@media (max-width:640px){
+  .navContainer{padding-top:0 !important;}
+  .navContainer .siteTabsShell{margin-top:8px !important;}
+}
+
+
+/* === Fix: quick-search background without page-wide blur/fog === */
+body.search-is-open:not([data-tab="search"])::before{
+  display:none !important;
+  content:none !important;
+}
+body.search-is-open:not([data-tab="search"]) .quickSearchBox::before,
+body.search-is-open:not([data-tab="search"]) .quickSearchBox::after{
+  display:none !important;
+  content:none !important;
+}
+body.search-is-open:not([data-tab="search"]) .quickSearchBox{
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+@media (min-width:641px){
+  body.search-is-open:not([data-tab="search"]) .quickSearchBox{
+    background:rgba(10,12,16,.88) !important;
+  }
+}
+@media (max-width:640px){
+  body.search-is-open:not([data-tab="search"]) .quickSearchBox{
+    background:linear-gradient(180deg, rgba(10,12,16,.88) 0%, rgba(10,12,16,.76) 55%, rgba(10,12,16,.88) 100%) !important;
+  }
+}
