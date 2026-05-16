@@ -3946,3 +3946,19 @@ body[data-tab="search"] .navContainer{
   .navContainer{padding-top:0 !important;}
   .navContainer .siteTabsShell{margin-top:10px !important;}
 }
+
+
+/* === Fix: filters drawer must cover sticky header on mobile/desktop === */
+.filterOverlay{
+  z-index:40000 !important;
+}
+.filterBackdrop{
+  z-index:0 !important;
+}
+.filterDrawer{
+  z-index:1 !important;
+}
+body.filter-open .topbar,
+body.filter-open .navContainer{
+  z-index:1 !important;
+}
