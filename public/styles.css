@@ -3974,3 +3974,18 @@ body[data-tab="search"] .navContainer{
     align-items:flex-start !important;
   }
 }
+
+
+/* === Fix: filter drawer above sticky header === */
+.filterOverlay{
+  z-index:50000 !important;
+}
+.filterOverlay.open{
+  z-index:50000 !important;
+}
+.filterBackdrop{
+  z-index:0 !important;
+}
+.filterDrawer{
+  z-index:1 !important;
+}
