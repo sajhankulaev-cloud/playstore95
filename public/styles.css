@@ -3948,27 +3948,29 @@ body[data-tab="search"] .navContainer{
 }
 
 
-/* === Fix: filters drawer must cover sticky header on mobile/desktop === */
-.filterOverlay{
-  z-index:40000 !important;
-}
-.filterBackdrop{
-  z-index:0 !important;
-}
-.filterDrawer{
-  z-index:1 !important;
-}
-body.filter-open .topbar,
-body.filter-open .navContainer{
-  z-index:1 !important;
-}
-@media (max-width: 640px) {
-    body.search-is-open:not([data-tab="search"]) .quickSearchBox {
-        flex: 0 0 auto !important;
-        height: auto !important;
-        min-height: 0 !important;
-        max-height: none !important;
-        padding-bottom: 18px !important;
-        overflow: visible !important;
-    }
+/* === Mobile quick search height fix === */
+@media (max-width:640px){
+  body.search-is-open:not([data-tab="search"]) .searchWrap.open .searchPanel{
+    inset:0 0 auto 0 !important;
+    height:auto !important;
+    max-height:none !important;
+    overflow:visible !important;
+  }
+  body.search-is-open:not([data-tab="search"]) .quickSearchBox{
+    flex:0 0 auto !important;
+    height:auto !important;
+    min-height:auto !important;
+    max-height:none !important;
+    overflow:visible !important;
+    padding:10px 18px 14px !important;
+    backdrop-filter:none !important;
+    -webkit-backdrop-filter:none !important;
+  }
+  body.search-is-open:not([data-tab="search"]) .quickSearchHead{
+    margin:0 0 14px !important;
+  }
+  body.search-is-open:not([data-tab="search"]) .quickSearchScroller{
+    padding:0 !important;
+    align-items:flex-start !important;
+  }
 }
