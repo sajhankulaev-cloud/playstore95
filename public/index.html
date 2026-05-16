@@ -1802,7 +1802,7 @@ if(urlQS.get("platform")) state.platform=urlQS.get("platform");
 if(urlQS.get("players")) state.players=urlQS.get("players");
 if(urlQS.get("language")) state.language=urlQS.get("language");
 if(urlQS.get("genres")) state.genres=urlQS.get("genres").split(",").map(x=>x.trim()).filter(Boolean);
-if(urlQS.get("q")) state.search=urlQS.get("q");
+if(urlQS.get("q") && state.tab === "search") state.search=urlQS.get("q");
 if(urlQS.get("sub")) state.subPage=String(urlQS.get("sub"));
 if(urlQS.get("until")) state.until=String(urlQS.get("until"));
 if(urlQS.get("all")==="1") state.allDeals=true;
@@ -2736,9 +2736,18 @@ async function load(){
   document.getElementById("region").value=state.region;
   // sort select options depend on active tab; value is set in setActiveTab/setSortOptionsForTab
   if(document.getElementById("platform")) document.getElementById("platform").value=state.platform||"";
-  document.getElementById("search").value=state.search||"";
-  // если поиск задан из URL/сохранённого состояния — покажем поле раскрытым
-  if(state.search) setSearchOpen(true);
+  const searchEl=document.getElementById("search");
+  const currentHeaderSearchValue=searchEl ? (searchEl.value || "") : "";
+  if(state.tab === "search"){
+    if(searchEl) searchEl.value=state.search||"";
+    // На странице поиска раскрываем поле, если есть запрос.
+    if(state.search) setSearchOpen(true);
+  }else{
+    // Старый поиск больше не должен фильтровать обычные разделы сайта.
+    // Значение в поле можно оставить визуально, но в state.search оно не участвует.
+    state.search="";
+    if(searchEl) searchEl.value=currentHeaderSearchValue;
+  }
   const meta=await fetch("/api/meta").then(r=>r.json());
   populateGenreFilters(meta && meta.genres);
   // Apply active tab UI (do not reset page when loading)
@@ -2960,12 +2969,15 @@ document.getElementById("region").onchange=e=>{
 document.getElementById("sort").onchange=e=>{state.sort=e.target.value;state.page=1;load();};
 let __searchTimer=null;
 document.getElementById("search").addEventListener("input",()=>{
-  state.search=(document.getElementById("search").value||"");
-  state.page=1;
+  const value=(document.getElementById("search").value||"");
   clearTimeout(__searchTimer);
   if(state.tab === "search"){
+    state.search=value;
+    state.page=1;
     __searchTimer=setTimeout(()=>load(),250);
   }else{
+    // Быстрый поиск работает только в своём окне и не фильтрует текущую страницу.
+    state.search="";
     __searchTimer=setTimeout(()=>updateQuickSearchResults(),180);
   }
 });
