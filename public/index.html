@@ -655,12 +655,15 @@ function openDiscountDatePage(until){
   if(!iso) return;
   state.search = "";
   state.page = 1;
-  state.until = iso;
-  state.allDeals = false;
   const si=document.getElementById("search");
   if(si) si.value="";
   setSearchOpen(false);
+  // When opening a discount banner from the home hero, setActiveTab() may reset
+  // section filters while switching from Home to Discounts. Set the selected
+  // sale date after that reset so mobile tap navigation keeps the exact block.
   setActiveTab("discounts", {keepUntil:true, keepPage:false});
+  state.until = iso;
+  state.allDeals = false;
   load();
   scrollTo(0,0);
 }
