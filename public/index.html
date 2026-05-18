@@ -67,7 +67,7 @@
   </div>
 </div>
 
-<!--<button class="backToTop" id="backToTop" type="button" aria-label="Наверх">↑</button>-->
+<button class="backToTop" id="backToTop" type="button" aria-label="Наверх">↑</button>
 
 <div class="container">
   <div class="resultsBar" aria-label="Результаты">
@@ -650,6 +650,49 @@ function openHomeSection(tab){
   scrollTo(0,0);
 }
 
+function openDiscountDatePage(until){
+  const iso = String(until || "").trim();
+  if(!iso) return;
+  state.search = "";
+  state.page = 1;
+  state.until = iso;
+  state.allDeals = false;
+  const si=document.getElementById("search");
+  if(si) si.value="";
+  setSearchOpen(false);
+  setActiveTab("discounts", {keepUntil:true, keepPage:false});
+  load();
+  scrollTo(0,0);
+}
+
+async function appendHomeDiscountBanners(hero){
+  if(!hero) return;
+  try{
+    const [dj, bj] = await Promise.all([
+      fetch(`/api/discount-dates?region=${encodeURIComponent(state.region)}`, {cache:"no-store"}).then(r=>r.json()),
+      fetch(`/api/discount-banners`, {cache:"no-store"}).then(r=>r.json()).catch(()=>({}))
+    ]);
+    const dates = (dj && Array.isArray(dj.dates)) ? dj.dates : [];
+    const banners = (bj && bj.banners && typeof bj.banners === "object") ? bj.banners : {};
+    dates.forEach(d=>{
+      const iso = String(d && d.date ? d.date : "").trim();
+      const img = iso && banners[iso] ? String(banners[iso]) : "";
+      if(!iso || !img) return;
+      const a=document.createElement("a");
+      a.className="homeBanner homeBanner--discount";
+      a.href=`/?tab=discounts&region=${encodeURIComponent(state.region)}&until=${encodeURIComponent(iso)}`;
+      a.setAttribute("data-discount-until", iso);
+      a.setAttribute("aria-label", `Скидки до ${iso}`);
+      a.innerHTML=`<img src="${escapeHtml(img)}" alt="" loading="eager" decoding="async"/>`;
+      a.addEventListener("click", (e)=>{
+        e.preventDefault();
+        openDiscountDatePage(iso);
+      });
+      hero.appendChild(a);
+    });
+  }catch(_){}
+}
+
 function homeBlockHeader(title, targetTab){
   return `<div class="homeBlockHead"><h2>${escapeHtml(title)}</h2><button class="homeViewAll" type="button" data-home-view-all="${escapeHtml(targetTab)}">Посмотреть все</button></div>`;
 }
@@ -702,13 +745,14 @@ async function renderHome(){
   }));
   grid.querySelectorAll('[data-home-view-all]').forEach(btn=>btn.addEventListener('click',()=>openHomeSection(btn.getAttribute('data-home-view-all')||'home')));
   const hero=grid.querySelector('#homeHero');
+  await appendHomeDiscountBanners(hero);
 
   // Make top subscription banners clickable even when the horizontal
   // carousel drag handler captures pointer events.
   if(hero){
     let heroTapStart = null;
     hero.addEventListener('pointerdown', (e)=>{
-      const banner = e.target && e.target.closest ? e.target.closest('.homeBanner[data-home-sub], .homeBanner[data-home-page]') : null;
+      const banner = e.target && e.target.closest ? e.target.closest('.homeBanner[data-home-sub], .homeBanner[data-home-page], .homeBanner[data-discount-until]') : null;
       if(!banner || !hero.contains(banner)) { heroTapStart = null; return; }
       heroTapStart = { x:e.clientX, y:e.clientY, banner };
     }, true);
@@ -721,7 +765,10 @@ async function renderHome(){
       if(dx > 8 || dy > 8) return;
       e.preventDefault();
       e.stopPropagation();
-      if(banner.getAttribute('data-home-page') === 'multiplayer'){
+      const discountUntil = banner.getAttribute('data-discount-until') || '';
+      if(discountUntil){
+        openDiscountDatePage(discountUntil);
+      }else if(banner.getAttribute('data-home-page') === 'multiplayer'){
         openMultiplayerPage();
       }else{
         const sub = banner.getAttribute('data-home-sub') || '';
