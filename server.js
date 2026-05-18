@@ -3539,10 +3539,13 @@ function attachPublicEditions(items){
   return items;
 }
 
-app.get("/api/games", (req, res) => {
+app.get("/api/games", async (req, res) => {
   try {
     const store = readStore();
     const region = String(req.query.region || "TR").toUpperCase();
+    // Default sorting on Discounts must match the public "Все игры" page.
+    // Use TR Browse order as the canonical source for both regions.
+    const locale = "en-tr";
     const sort = String(req.query.sort || "pop");
     const page = Math.max(1, parseInt(String(req.query.page || "1"), 10));
     let perPage = 24;
@@ -3556,6 +3559,22 @@ app.get("/api/games", (req, res) => {
     const genres = String(req.query.genres || req.query.genre || "").split(",").map(x=>x.trim()).filter(Boolean);
     const language = String(req.query.language || req.query.lang || "").trim();
     const until = String(req.query.until || req.query.discountedUntil || "").trim();
+
+    if(!q && (sort === "pop" || !sort)){
+      try{ await withTimeout(warmupPsBrowseCache(locale, 6), 2500); }catch(_e){}
+    }
+
+    const psRankDoc = readPsBrowseCache();
+    const psRanksById = (psRankDoc && psRankDoc.locale === locale && psRankDoc.ranksById) ? psRankDoc.ranksById : {};
+    const psRanksByName = (psRankDoc && psRankDoc.locale === locale && psRankDoc.ranksByName) ? psRankDoc.ranksByName : {};
+    const normKey = (s) => normText(String(s || ""));
+    const firstFinite = (...vals) => {
+      for (const v of vals) {
+        const n = Number(v);
+        if (Number.isFinite(n)) return n;
+      }
+      return 999999;
+    };
 
     const gamesDoc = readJson(GAMES_PATH, { updatedAt:null, items:[] });
     let all = Array.isArray(gamesDoc.items) ? gamesDoc.items : [];
@@ -3616,6 +3635,7 @@ app.get("/api/games", (req, res) => {
       const trSub = (g.regions && g.regions.TR && g.regions.TR.sub) ? String(g.regions.TR.sub) : "";
       const uaSub = (g.regions && g.regions.UA && g.regions.UA.sub) ? String(g.regions.UA.sub) : "";
       const anySub = trSub || uaSub;
+      const conceptId = conceptForGame(g, conceptIndex);
 
       const base = {
         id: g.id,
@@ -3637,8 +3657,16 @@ app.get("/api/games", (req, res) => {
         storePrice: storePrice,
         finalPriceRub: rub,
         oldPriceRub: (Number(reg && reg.discPerc || 0) > 0 ? clampMinGamePriceRub(store, roundUp((storePrice / Math.max(0.01, (1 - (Number(reg.discPerc||0)/100)))) * pickRate(rules, (storePrice / Math.max(0.01, (1 - (Number(reg.discPerc||0)/100))))), step)) : 0),
-        conceptId: conceptForGame(g, conceptIndex),
-        popRank: g.popRank || 999999
+        conceptId,
+        popRank: g.popRank || 999999,
+        psRank: firstFinite(
+          psRanksById[String(conceptId || "").trim()],
+          psRanksById[String(g.id || "").trim()],
+          psRanksById[String((g.regions && g.regions.TR && (g.regions.TR.id || g.regions.TR.productId || g.regions.TR.storeId)) || "").trim()],
+          psRanksById[String((g.regions && g.regions.UA && (g.regions.UA.id || g.regions.UA.productId || g.regions.UA.storeId)) || "").trim()],
+          psRanksByName[normKey(g.name)],
+          psRanksByName[normKey(baseTitleForRank(g.name))]
+        )
       };
 
       if(q) base._score = relevanceScore(g.name || "", q);
@@ -3662,7 +3690,7 @@ app.get("/api/games", (req, res) => {
       if (sort === "name_desc") return String(b.name||"").localeCompare(String(a.name||""), "ru") || ((a.popRank||0)-(b.popRank||0));
       if (sort === "price_desc") return (b.finalPriceRub-a.finalPriceRub) || ((a.popRank||0)-(b.popRank||0));
       if (sort === "price_asc") return (a.finalPriceRub-b.finalPriceRub) || ((a.popRank||0)-(b.popRank||0));
-      return (a.popRank||0)-(b.popRank||0);
+      return (a.psRank||999999)-(b.psRank||999999) || (a.popRank||999999)-(b.popRank||999999);
     };
 
     if(q){
@@ -3675,7 +3703,7 @@ app.get("/api/games", (req, res) => {
 
     const total = computed.length;
     const startIndex = (page - 1) * perPage;
-    const items = computed.slice(startIndex, startIndex + perPage).map(({ _score, ...rest }) => rest);
+    const items = computed.slice(startIndex, startIndex + perPage).map(({ _score, psRank, ...rest }) => rest);
     res.json({ region, page, perPage, total, items, updatedAt: gamesDoc.updatedAt || null });
   } catch (e) {
     res.status(500).json({ error: String(e) });
