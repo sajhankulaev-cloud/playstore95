@@ -635,7 +635,7 @@ hr{border-color:var(--border)!important;}
 .cartDrawer{
   width:min(650px, 94vw);
   /* behave like game modal card (no full-screen feel) */
-  max-height:90vh;
+  max-height:85vh;
   height:auto;
   background:#f7f8fd;
   color:#262a36;
