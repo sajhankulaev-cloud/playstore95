@@ -4136,7 +4136,7 @@ body[data-tab="search"] .navContainer{
   .cartTopupRub{font-size:18px;}
   .cartTopupNominal{font-size:13px;}
   .cartTopupQty{min-width:44px;height:44px;}
-  .cartTopupInfoText{padding-left:46px;}
+  .cartTopupInfoText{/*padding-left:46px;*/}
 }
 
 /* Custom region picker */
