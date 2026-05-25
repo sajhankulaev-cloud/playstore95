@@ -4114,7 +4114,7 @@ body[data-tab="search"] .navContainer{
 .cartTopupInfoToggle[aria-expanded="true"] .cartTopupInfoArrow{transform:rotate(180deg);}
 .cartTopupInfoText{
   color:#111827;
-  padding:0 16px 16px 54px;
+  padding:0 16px 16px 16px;
   font-size:14px;
   line-height:1.45;
 }
@@ -4136,7 +4136,7 @@ body[data-tab="search"] .navContainer{
   .cartTopupRub{font-size:18px;}
   .cartTopupNominal{font-size:13px;}
   .cartTopupQty{min-width:44px;height:44px;}
-  .cartTopupInfoText{padding-left:46px;}
+  .cartTopupInfoText{/*padding-left:46px;*/}
 }
 
 /* Custom region picker */
