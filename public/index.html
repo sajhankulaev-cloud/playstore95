@@ -170,7 +170,7 @@ function scrollToSubsGamesIfRequested(){
   }, 80);
 }
 
-const TAB_LABELS={home:"Главная",preorders:"Предзаказы",new:"Новинки",discounts:"Скидки",allgames:"Все игры",subs:"Подписки",bestsellers:"Лидеры продаж"};
+const TAB_LABELS={home:"Главная",preorders:"Предзаказы",new:"Новинки",discounts:"Скидки",allgames:"Все игры",subs:"Подписки",topup:"Карты пополнения",bestsellers:"Лидеры продаж"};
 
 
 function escapeHtml(s){
@@ -444,6 +444,10 @@ function setActiveTab(tab, opts={}){
       renderMultiplayerPage();
       return;
     }
+    if(tab === "topup"){
+      renderTopupPage();
+      return;
+    }
     if(tab === "new"){
       showEmptySection("Раздел пуст");
       return;
@@ -714,6 +718,23 @@ function homeBlockHeader(title, targetTab){
   return `<div class="homeBlockHead"><h2>${escapeHtml(title)}</h2><button class="homeViewAll" type="button" data-home-view-all="${escapeHtml(targetTab)}">Посмотреть все</button></div>`;
 }
 
+
+function topupSidebarImage(region){
+  const R=String(region||state.region||"TR").toUpperCase();
+  if(R==="PL") return "/img/topup-sidebar-pl.png";
+  if(R==="IN") return "/img/topup-sidebar-in.png";
+  return "/img/topup-sidebar-tr.png";
+}
+function openTopupPage(){
+  state.search="";
+  state.subPage="";
+  const si=document.getElementById("search");
+  if(si) si.value="";
+  setSearchOpen(false);
+  setActiveTab("topup", {keepPage:true, renderNow:true});
+  scrollTo(0,0);
+}
+
 async function renderHome(){
   document.body.dataset.tab="home";
   try{ delete document.body.dataset.discountsView; }catch(_){ document.body.removeAttribute("data-discounts-view"); }
@@ -736,6 +757,7 @@ async function renderHome(){
         <a class="homeBanner homeBanner--deluxe" href="/?tab=subs&sub=deluxe#subs-games" data-home-sub="deluxe" data-scroll-games="1" aria-label="PS Plus Deluxe"><img src="/img/hero-deluxe.jpg" alt="PS Plus Deluxe" loading="eager" decoding="async"/></a>
         <a class="homeBanner homeBanner--eaplay" href="/?tab=subs&sub=eaplay#subs-games" data-home-sub="eaplay" data-scroll-games="1" aria-label="EA Play"><img src="/img/hero-eaplay.jpg" alt="EA Play" loading="eager" decoding="async"/></a>
         <a class="homeBanner homeBanner--multiplayer" href="/?tab=multiplayer" data-home-page="multiplayer" aria-label="Игры для нескольких игроков"><img src="/img/hero-multiplayer.jpg" alt="Игры для нескольких игроков" loading="eager" decoding="async"/></a>
+        ${String(state.region||"TR").toUpperCase()==="UA" ? "" : `<a class="homeBanner homeBanner--topup" href="/?tab=topup" data-home-page="topup" aria-label="Карты пополнения"><img src="${escapeHtml(topupSidebarImage(state.region))}" alt="Карты пополнения" loading="eager" decoding="async"/></a>`}
       </div>
       <div class="homeHeroDots" id="homeHeroDots" aria-hidden="true"></div>
     </section>
@@ -787,6 +809,8 @@ async function renderHome(){
         openDiscountDatePage(discountUntil);
       }else if(banner.getAttribute('data-home-page') === 'multiplayer'){
         openMultiplayerPage();
+      }else if(banner.getAttribute('data-home-page') === 'topup'){
+        openTopupPage();
       }else{
         const sub = banner.getAttribute('data-home-sub') || '';
         const toGames = banner.getAttribute('data-scroll-games') === '1';
@@ -3091,10 +3115,86 @@ async function renderDiscountOverview(){
   }
 }
 
+
+function topupRegionName(region){
+  const R=String(region||state.region||"TR").toUpperCase();
+  if(R==="PL") return "Польша";
+  if(R==="IN") return "Индия";
+  if(R==="TR") return "Турция";
+  return "СНГ";
+}
+function buyTopupCardWhatsApp(card){
+  if(!card) return;
+  const amount=Number(card.amount||0);
+  const rub=Number(card.rub||0);
+  const lines=[];
+  lines.push("Хочу купить карту пополнения:");
+  lines.push(`Регион: ${topupRegionName(state.region)} (${state.region})`);
+  lines.push(`Номинал: ${formatStoreCurrency(amount, state.region)}`);
+  if(rub) lines.push(`Цена: ${fmtRub(rub)}`);
+  openWhatsAppMessage(lines.join("\n"));
+}
+async function renderTopupPage(){
+  document.body.dataset.tab="topup";
+  const grid=document.getElementById("grid");
+  const pager=document.getElementById("pager");
+  const emptyBox=document.getElementById("emptyBox");
+  const dt=document.getElementById('discountTabs');
+  const ad=document.getElementById('allDeals');
+  if(dt){ dt.innerHTML=""; dt.style.display="none"; }
+  if(ad){ ad.innerHTML=""; ad.style.display="none"; }
+  if(pager) pager.innerHTML="";
+  if(emptyBox) emptyBox.style.display="none";
+  if(!grid) return;
+  grid.classList.remove("searchResults", "gridSubs");
+  grid.classList.add("topupPageGrid");
+  const controls=document.querySelector(".resultsBar");
+  if(controls) controls.style.display="none";
+  const R=String(state.region||"TR").toUpperCase();
+  if(R==="UA"){
+    grid.innerHTML=`<div class="topupPage"><div class="sectionTop"><button class="sectionBackBtn" type="button" id="topupBack">‹ Назад</button><h1>Карты пополнения</h1></div><div class="topupEmpty card">Для региона СНГ карты пополнения не используются.</div></div>`;
+    const back=document.getElementById("topupBack");
+    if(back) back.onclick=()=>openHomeSection("home");
+    return;
+  }
+  const cards=((state.topupCards&&state.topupCards[R])||[])
+    .map(c=>({amount:Number(c.amount||0), rub:Number(c.rub||0)}))
+    .filter(c=>c.amount>0 && c.rub>0)
+    .sort((a,b)=>a.amount-b.amount);
+  const rows=cards.map(c=>{
+    const img=topupCardImage(R, c.amount);
+    return `<article class="topupProductCard">
+      <div class="topupProductImageWrap">${img ? `<img src="${escapeHtml(img)}" alt="${escapeHtml(formatStoreCurrency(c.amount,R))}" loading="lazy" decoding="async">` : `<div class="noCoverBox">NO IMAGE</div>`}</div>
+      <div class="topupProductBody">
+        <div class="topupProductNominal">${escapeHtml(formatStoreCurrency(c.amount,R))}</div>
+        <div class="topupProductPrice">${fmtRub(c.rub)}</div>
+        <button class="buyBtn topupProductBuy" type="button" data-topup-buy="${escapeHtml(String(c.amount))}">Купить</button>
+      </div>
+    </article>`;
+  }).join("");
+  grid.innerHTML=`<div class="topupPage">
+    <div class="sectionTop"><button class="sectionBackBtn" type="button" id="topupBack">‹ Назад</button><h1>Карты пополнения PSN ${escapeHtml(topupRegionName(R))}</h1></div>
+    ${rows ? `<div class="topupProducts">${rows}</div>` : `<div class="topupEmpty card">Карты пополнения для этого региона пока не добавлены.</div>`}
+  </div>`;
+  const back=document.getElementById("topupBack");
+  if(back) back.onclick=()=>openHomeSection("home");
+  grid.querySelectorAll("[data-topup-buy]").forEach(btn=>{
+    btn.onclick=()=>{
+      const amount=Number(btn.getAttribute("data-topup-buy")||0);
+      const card=cards.find(c=>Number(c.amount)===amount);
+      buyTopupCardWhatsApp(card);
+    };
+  });
+}
+
 async function load(){
   // keep filters selected across pagination
   document.getElementById("region").value=state.region;
   updateRegionPicker();
+  const __resultsBar=document.querySelector(".resultsBar");
+  if(__resultsBar) __resultsBar.style.display="";
+  const __gridForReset=document.getElementById("grid");
+  if(__gridForReset) __gridForReset.classList.remove("topupPageGrid");
   // sort select options depend on active tab; value is set in setActiveTab/setSortOptionsForTab
   if(document.getElementById("platform")) document.getElementById("platform").value=state.platform||"";
   const searchEl=document.getElementById("search");
@@ -3112,7 +3212,7 @@ async function load(){
   const meta=await fetch("/api/meta").then(r=>r.json());
   populateGenreFilters(meta && meta.genres);
   // Apply active tab UI (do not reset page when loading)
-  const knownTabs = new Set(["home","preorders","new","discounts","allgames","subs","bestsellers","multiplayer","search"]);
+  const knownTabs = new Set(["home","preorders","new","discounts","allgames","subs","topup","bestsellers","multiplayer","search"]);
   if(!knownTabs.has(state.tab)) state.tab="home";
   setActiveTab(state.tab, {keepPage:true,keepUntil:true});
 
@@ -3140,6 +3240,11 @@ async function load(){
 
   if(state.tab==="multiplayer" && !(state.search||"").trim()){
     await renderMultiplayerPage();
+    return;
+  }
+
+  if(state.tab==="topup" && !(state.search||"").trim()){
+    await renderTopupPage();
     return;
   }
 
