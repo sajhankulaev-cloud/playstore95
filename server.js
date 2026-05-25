@@ -2012,47 +2012,458 @@ function pickCoverFromChihiro(obj){
 }
 
 function pickPricesFromChihiro(obj){
-  // returns { base, discounted, currency } in numeric (if possible) and display strings
+  // Возвращает обычную цену PS Store (base/list/original), а не скидочную.
+  // У PS Store встречаются разные формы Chihiro:
+  // - sku.prices.basePrice / discountedPrice
+  // - sku.prices.nonPlusUser.actualPrice + strikethroughPrice
+  // - значения могут лежать строкой, числом или объектом { value, display }
   const skus = obj?.skus || obj?.data?.skus || [];
-  const def = obj?.default_sku || obj?.data?.default_sku;
+  const def = obj?.default_sku || obj?.data?.default_sku || null;
   const skuId = def?.id || def?.sku_id;
   let sku = null;
-  if (skuId && Array.isArray(skus)) sku = skus.find(s => s?.id === skuId) || null;
+  if (skuId && Array.isArray(skus)) sku = skus.find(s => String(s?.id || s?.sku_id || '').toUpperCase() === String(skuId).toUpperCase()) || null;
   if (!sku && Array.isArray(skus) && skus.length) sku = skus[0];
+  if (!sku && def) sku = def;
 
-  const prices = sku?.prices || sku?.price || sku?.default_price || null;
-  // different shapes: { basePrice, discountedPrice, currencyCode } or { base_price, discounted_price }
-  const base = prices?.basePrice ?? prices?.base_price ?? prices?.original_price ?? prices?.strikethrough_price ?? null;
-  const disc = prices?.discountedPrice ?? prices?.discounted_price ?? prices?.actual_price ?? prices?.sale_price ?? null;
-  const currency = prices?.currencyCode ?? prices?.currency_code ?? prices?.currency ?? null;
-  const display = prices?.displayPrice ?? prices?.display_price ?? prices?.formatted ?? null;
+  const priceRoots = [];
+  if (sku) {
+    priceRoots.push(sku?.prices, sku?.price, sku?.default_price, sku?.price_info, sku);
+  }
+  if (def && def !== sku) {
+    priceRoots.push(def?.prices, def?.price, def?.default_price, def?.price_info, def);
+  }
+  priceRoots.push(obj?.prices, obj?.price, obj?.data?.prices, obj?.data?.price);
 
-  // try parse numbers from strings like "₺ 1.299,00" or "1 299,00 ₴"
-  const toNum = (v) => {
+  const toNum = (v, currencyHint) => {
     if (v === null || v === undefined) return null;
-    if (typeof v === "number") return v;
+    if (typeof v === "number") {
+      if (!Number.isFinite(v) || v <= 0) return null;
+      // В Chihiro поле value иногда приходит в копейках/грошах/пайсах.
+      // Если это явно minor units, рядом обычно есть display; его мы парсим раньше.
+      // Этот fallback нужен только когда display отсутствует.
+      if (v >= 10000 && Number.isInteger(v)) return v / 100;
+      return v;
+    }
+    if (typeof v === "object") {
+      // Сначала берём человекочитаемое поле, чтобы не ошибиться на minor units value=32900.
+      const stringKeys = ["display", "displayPrice", "display_price", "formatted", "formattedPrice", "formatted_price", "text", "label", "priceText", "price_text"];
+      for (const k of stringKeys) {
+        const n = toNum(v[k], currencyHint);
+        if (n !== null) return n;
+      }
+      const valueKeys = ["amount", "price", "value", "centAmount", "cent_amount"];
+      for (const k of valueKeys) {
+        const n = toNum(v[k], currencyHint);
+        if (n !== null) return n;
+      }
+      return null;
+    }
     if (typeof v !== "string") return null;
-    // keep digits, dot, comma
-    let s = v.replace(/[^\d,.\-]/g, "").trim();
+    let s = v.replace(/\u00a0/g, " ").trim();
     if (!s) return null;
-    // if both comma and dot, assume dot thousand sep and comma decimal
-    if (s.includes(",") && s.includes(".")) {
-      // remove dots, replace comma with dot
-      s = s.replace(/\./g, "").replace(",", ".");
-    } else if (s.includes(",") && !s.includes(".")) {
-      // comma decimal -> dot
+    // keep digits, dot, comma
+    s = s.replace(/[^\d,\.\-]/g, "").trim();
+    if (!s) return null;
+    // if both comma and dot, the last separator is decimal; other separators are thousands
+    const lastComma = s.lastIndexOf(",");
+    const lastDot = s.lastIndexOf(".");
+    if (lastComma >= 0 && lastDot >= 0) {
+      if (lastComma > lastDot) s = s.replace(/\./g, "").replace(",", ".");
+      else s = s.replace(/,/g, "");
+    } else if (lastComma >= 0) {
       s = s.replace(",", ".");
     }
     const n = Number(s);
-    return Number.isFinite(n) ? n : null;
+    return Number.isFinite(n) && n > 0 ? n : null;
   };
 
-  return {
-    base: toNum(base),
-    discounted: toNum(disc),
-    currency,
-    display
+  const detectCurrency = (node) => {
+    let cur = null;
+    const walk = (x) => {
+      if (cur || !x || typeof x !== "object") return;
+      if (Array.isArray(x)) { for (const it of x) walk(it); return; }
+      for (const [k,v] of Object.entries(x)) {
+        const key = String(k).toLowerCase();
+        if ((key.includes("currency") || key === "code") && typeof v === "string" && /^[A-Z]{3}$/.test(v.trim().toUpperCase())) {
+          cur = v.trim().toUpperCase();
+          return;
+        }
+        if (v && typeof v === "object") walk(v);
+      }
+    };
+    walk(node);
+    return cur;
   };
+
+  const currency = detectCurrency(sku) || detectCurrency(def) || detectCurrency(obj) || null;
+
+  const candidates = [];
+  const addCandidate = (kind, value, path) => {
+    const n = toNum(value, currency);
+    if (n === null) return;
+    if (!Number.isFinite(n) || n <= 0 || n > 999999) return;
+    candidates.push({ kind, value:n, path:String(path || "") });
+  };
+
+  const scan = (node, path="") => {
+    if (node === null || node === undefined) return;
+    if (typeof node !== "object") return;
+    if (Array.isArray(node)) {
+      for (let i=0;i<node.length;i++) scan(node[i], `${path}[${i}]`);
+      return;
+    }
+
+    for (const [k,v] of Object.entries(node)) {
+      const key = String(k);
+      const lowPath = `${path}.${key}`.toLowerCase();
+
+      // PS Plus цены не должны становиться обычной ценой региона.
+      if (/plus|psplus|playstationplus|subscription|member|membership/.test(lowPath)) {
+        continue;
+      }
+
+      // Самые надёжные имена обычной цены / зачёркнутой цены.
+      if (/base\s*price|base_price|original\s*price|original_price|strikethrough|strike_through|list\s*price|list_price|regular\s*price|regular_price|was\s*price|was_price|full\s*price|full_price/.test(lowPath)) {
+        addCandidate("base", v, lowPath);
+      }
+
+      // Цена без скидки иногда лежит как actual/current, если скидки нет.
+      // Используем её только если base-кандидатов нет.
+      if (/actual\s*price|actual_price|current\s*price|current_price|display\s*price|display_price|final\s*price|final_price/.test(lowPath)) {
+        addCandidate("actual", v, lowPath);
+      }
+
+      if (v && typeof v === "object") scan(v, lowPath);
+    }
+  };
+
+  for (const root of priceRoots) if (root) scan(root, "priceRoot");
+
+  const baseCandidates = candidates.filter(c => c.kind === "base");
+  const actualCandidates = candidates.filter(c => c.kind === "actual");
+
+  // Если есть зачёркнутая/base цена — это и есть обычная цена. Берём максимальную
+  // среди base-кандидатов, потому что скидочная цена всегда ниже обычной.
+  if (baseCandidates.length) {
+    baseCandidates.sort((a,b)=>b.value-a.value);
+    return { base: baseCandidates[0].value, discounted: (actualCandidates[0] ? actualCandidates[0].value : null), currency, display:null, sourcePath: baseCandidates[0].path };
+  }
+
+  // Если скидки нет, в Chihiro часто есть только actual/display price — тогда это обычная цена.
+  if (actualCandidates.length) {
+    actualCandidates.sort((a,b)=>b.value-a.value);
+    return { base: actualCandidates[0].value, discounted:null, currency, display:null, sourcePath: actualCandidates[0].path };
+  }
+
+  return { base:null, discounted:null, currency, display:null };
+}
+
+
+function hasDiscountSignalInChihiro(obj){
+  let found = false;
+  const seen = new Set();
+  const walk = (node, path="") => {
+    if(found || node === null || node === undefined) return;
+    if(typeof node !== "object") {
+      if(typeof node === "string") {
+        const t = node.toLowerCase();
+        if(/save\s*\d+%|discount(ed)?|sale|offer|promo/.test(t)) found = true;
+      }
+      return;
+    }
+    if(seen.has(node)) return;
+    seen.add(node);
+    if(Array.isArray(node)) { for(const it of node) walk(it, path); return; }
+    for(const [k,v] of Object.entries(node)){
+      const low = `${path}.${k}`.toLowerCase();
+      if(/discount|saving|promo|offer|sale/.test(low)){
+        if(typeof v === "number" && Number(v) > 0) { found = true; return; }
+        if(typeof v === "string" && v.trim() && !/^0+%?$/.test(v.trim())) { found = true; return; }
+        if(v && typeof v === "object") { found = true; return; }
+      }
+      walk(v, low);
+      if(found) return;
+    }
+  };
+  walk(obj);
+  return found;
+}
+
+function isBasePriceSourcePath(pathValue){
+  const p = String(pathValue || "").toLowerCase();
+  return /base\s*price|base_price|original\s*price|original_price|strikethrough|strike_through|list\s*price|list_price|regular\s*price|regular_price|was\s*price|was_price|full\s*price|full_price/.test(p);
+}
+
+function parseRegionalMoneyText(text){
+  let s = String(text || "").replace(/\u00a0/g," ").trim();
+  s = s.replace(/(?:Rs\.?|INR|₹|zł|zl|PLN)/ig, "");
+  s = s.replace(/[^\d.,-]/g, "").trim();
+  if(!s) return null;
+  const lastComma = s.lastIndexOf(",");
+  const lastDot = s.lastIndexOf(".");
+  if(lastComma >= 0 && lastDot >= 0){
+    if(lastComma > lastDot) s = s.replace(/\./g, "").replace(",", ".");
+    else s = s.replace(/,/g, "");
+  }else if(lastComma >= 0){
+    const dec = s.length - lastComma - 1;
+    if(dec === 2) s = s.replace(",", ".");
+    else s = s.replace(/,/g, "");
+  }
+  const n = Number(s);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function normalizePsStoreVisibleText(html){
+  return String(html || "")
+    .replace(/\\u0026/g,"&")
+    .replace(/&nbsp;/gi," ")
+    .replace(/&#160;/gi," ")
+    .replace(/&amp;/gi,"&")
+    .replace(/&quot;/gi,'"')
+    .replace(/&#x27;/gi,"'")
+    .replace(/<script[\s\S]*?<\/script>/gi," ")
+    .replace(/<style[\s\S]*?<\/style>/gi," ")
+    .replace(/<[^>]+>/g," ")
+    .replace(/\s+/g," ")
+    .trim();
+}
+
+function moneyPatternForLocale(locale){
+  const loc = String(locale || "").toLowerCase();
+  return loc.includes("in")
+    ? String.raw`(?:Rs\.?|INR|₹)\s*[\d.,]+|[\d.,]+\s*(?:Rs\.?|INR|₹)`
+    : String.raw`[\d.,]+\s*(?:zł|zl|PLN)|(?:zł|zl|PLN)\s*[\d.,]+`;
+}
+
+function extractRegularPriceFromTextBlock(textBlock, locale){
+  const text = String(textBlock || "").replace(/\s+/g," ").trim();
+  if(!text) return null;
+  const currencyPattern = moneyPatternForLocale(locale);
+
+  const labels = [
+    /discounted\s+from\s+original\s+price\s+of/i,
+    /original\s+price\s+of/i,
+    /original\s+price/i,
+    /regular\s+price/i,
+    /list\s+price/i
+  ];
+  for(const lab of labels){
+    const m = text.match(new RegExp(lab.source + String.raw`\s*(` + currencyPattern + `)`, "i"));
+    if(m){
+      const n = parseRegionalMoneyText(m[1]);
+      if(n) return n;
+    }
+  }
+
+  // If there is a visible discount marker but no explicit original price, do not guess.
+  if(/discounted\s+from|original\s+price|save\s+\d+%|lowest\s+price|offer\s+ends|discount/i.test(text)){
+    return null;
+  }
+
+  const m = text.match(new RegExp(currencyPattern, "i"));
+  if(m){
+    const n = parseRegionalMoneyText(m[0]);
+    if(n) return n;
+  }
+  return null;
+}
+
+function extractRegularPriceFromHeroHtml(html, locale){
+  const text = normalizePsStoreVisibleText(html);
+  if(!text) return null;
+
+  // The exact product price is in the top/hero purchase block before the first Add to Cart.
+  // Edition cards below contain other edition prices, so they must not be scanned.
+  const firstCart = text.search(/Add\s+to\s+Cart/i);
+  if(firstCart >= 0){
+    const beforeCart = text.slice(0, firstCart);
+    // Keep only the last part before the hero Add to Cart to avoid header/footer text.
+    const hero = beforeCart.slice(Math.max(0, beforeCart.length - 2500));
+    const n = extractRegularPriceFromTextBlock(hero, locale);
+    if(n) return n;
+  }
+
+  // Fallback for pages where the button text is different: cut everything from Editions downward.
+  const editionsAt = text.search(/\bEditions\s*:/i);
+  const topOnly = editionsAt >= 0 ? text.slice(0, editionsAt) : text.slice(0, 4000);
+  return extractRegularPriceFromTextBlock(topOnly, locale);
+}
+
+function extractRegularPriceFromVisibleHtml(html, locale){
+  // Kept for compatibility with older code paths, but now it is hero-scoped.
+  return extractRegularPriceFromHeroHtml(html, locale);
+}
+
+function extractRegularPriceFromHtmlNextData(html, expectedSku){
+  const h = String(html || "");
+  const m = h.match(/<script[^>]+id=["']__NEXT_DATA__["'][^>]*>([\s\S]*?)<\/script>/i);
+  if(!m) return null;
+  try{
+    const data = JSON.parse(m[1]);
+    const skuNeedle = String(expectedSku || "").trim().toUpperCase();
+    let best = null;
+    const visit = (node) => {
+      if(!node || typeof node !== "object") return;
+      if(Array.isArray(node)){ for(const it of node) visit(it); return; }
+      const id = String(node.id || node.skuId || node.sku_id || node.productId || node.product_id || "").trim().toUpperCase();
+      if(!skuNeedle || id === skuNeedle || (id && skuNeedle && skuNeedle.includes(id))){
+        const pr = pickPricesFromChihiro({ default_sku: node, skus:[node] });
+        if(pr && Number.isFinite(Number(pr.base)) && Number(pr.base) > 0){
+          if(!best || Number(pr.base) > Number(best.base)) best = pr;
+        }
+      }
+      for(const v of Object.values(node)) visit(v);
+    };
+    visit(data);
+    return best;
+  }catch(_e){
+    return null;
+  }
+}
+
+async function fetchRegularRegionalPrice(productId, locale){
+  const pid = String(productId || "").trim().toUpperCase();
+  const loc = String(locale || "").trim().toLowerCase();
+  if(!pid || !loc) return null;
+
+  // For PL/IN updates we must not read prices from the Editions block or from default_sku.
+  // PS Store pages contain the exact edition price in the hero purchase block before
+  // the first "Add to Cart" button. We parse only that block and ignore other editions.
+  try{
+    const html = await fetchText(`https://store.playstation.com/${loc}/product/${pid}`, { acceptLanguage: loc.replace('-', '_') });
+    if(html && !looksBlocked(html)){
+      const fromHero = extractRegularPriceFromHeroHtml(html, loc);
+      if(Number.isFinite(Number(fromHero)) && Number(fromHero) > 0){
+        return { price: Number(fromHero), currency: loc.includes("in") ? "INR" : (loc.includes("pl") ? "PLN" : null), productId: pid, source: "html_hero_regular" };
+      }
+    }
+  }catch(_e){}
+
+  // No guessing: if the exact hero price cannot be parsed, keep the previous/manual value.
+  // This avoids writing a Deluxe/Ultimate price into Standard Edition.
+  return null;
+}
+
+function regionalPriceProductCandidates(game, regionCode){
+  const r = String(regionCode || '').toUpperCase();
+  const ids = [];
+  const add = (v)=>{
+    const s = String(v || '').trim().toUpperCase();
+    if(s && !ids.includes(s)) ids.push(s);
+  };
+  // The full product id after /product/ identifies the exact edition. Try the game's own id first.
+  add(game && game.id);
+  add(game && game.productIds && game.productIds[r]);
+  add(game && game.productIds && game.productIds.TR);
+  add(game && game.productIds && game.productIds.UA);
+  return ids;
+}
+
+async function updatePlInRegularPricesForDoc(filePath){
+  const doc = readJson(filePath, { updatedAt:null, items:[] });
+  const items = Array.isArray(doc.items) ? doc.items : [];
+  const regions = [
+    { code:'PL', locale: PL_LOCALE, currency:'PLN' },
+    { code:'IN', locale: IN_LOCALE, currency:'INR' },
+  ];
+  const stats = { total: items.length, PL:{updated:0, skipped:0, failed:0}, IN:{updated:0, skipped:0, failed:0} };
+
+  for(const g of items){
+    if(!g || typeof g !== 'object') continue;
+    g.regions = (g.regions && typeof g.regions === 'object') ? g.regions : {};
+    g.productIds = (g.productIds && typeof g.productIds === 'object') ? g.productIds : {};
+
+    for(const rr of regions){
+      const cur = (g.regions[rr.code] && typeof g.regions[rr.code] === 'object') ? g.regions[rr.code] : {};
+      let found = null;
+      for(const pid of regionalPriceProductCandidates(g, rr.code)){
+        found = await fetchRegularRegionalPrice(pid, rr.locale);
+        if(found) break;
+      }
+      if(found && Number.isFinite(Number(found.price)) && Number(found.price) > 0){
+        g.regions[rr.code] = Object.assign({}, cur, {
+          salePrice: Number(found.price),
+          ru: (g.regions.TR && g.regions.TR.ru) ? g.regions.TR.ru : (cur.ru || 'none'),
+          sub: (g.regions.TR && g.regions.TR.sub) ? String(g.regions.TR.sub) : (cur.sub ? String(cur.sub) : ''),
+          currency: found.currency || rr.currency,
+          updatedAt: new Date().toISOString()
+        });
+        g.productIds[rr.code] = found.productId || g.productIds[rr.code] || null;
+        stats[rr.code].updated++;
+      }else{
+        // Do not erase existing manually entered prices.
+        if(Number.isFinite(Number(cur.salePrice)) && Number(cur.salePrice) > 0) stats[rr.code].skipped++;
+        else stats[rr.code].failed++;
+      }
+    }
+  }
+
+  writeJson(filePath, { updatedAt: new Date().toISOString(), items });
+  return stats;
+}
+
+async function updatePlInRegularPricesForAllGames(){
+  return updatePlInRegularPricesForDoc(ALL_GAMES_PATH);
+}
+async function updatePlInRegularPricesForNewReleases(){
+  return updatePlInRegularPricesForDoc(NEW_RELEASES_PATH);
+}
+async function updatePlInRegularPricesForPreorders(){
+  return updatePlInRegularPricesForDoc(PREORDERS_PATH);
+}
+
+async function updateRegularPricesForDocRegion(filePath, regionCode){
+  const code = String(regionCode || '').toUpperCase();
+  const region = code === 'PL'
+    ? { code:'PL', locale: PL_LOCALE, currency:'PLN' }
+    : code === 'IN'
+      ? { code:'IN', locale: IN_LOCALE, currency:'INR' }
+      : null;
+  if(!region) throw new Error('unsupported_region');
+
+  const doc = readJson(filePath, { updatedAt:null, items:[] });
+  const items = Array.isArray(doc.items) ? doc.items : [];
+  const stats = { total: items.length, updated:0, skipped:0, failed:0 };
+
+  for(const g of items){
+    if(!g || typeof g !== 'object') continue;
+    g.regions = (g.regions && typeof g.regions === 'object') ? g.regions : {};
+    g.productIds = (g.productIds && typeof g.productIds === 'object') ? g.productIds : {};
+
+    const cur = (g.regions[code] && typeof g.regions[code] === 'object') ? g.regions[code] : {};
+    let found = null;
+    for(const pid of regionalPriceProductCandidates(g, code)){
+      found = await fetchRegularRegionalPrice(pid, region.locale);
+      if(found) break;
+    }
+
+    if(found && Number.isFinite(Number(found.price)) && Number(found.price) > 0){
+      // Always update the value when the regular price is found, even if a price already exists.
+      g.regions[code] = Object.assign({}, cur, {
+        salePrice: Number(found.price),
+        ru: (g.regions.TR && g.regions.TR.ru) ? g.regions.TR.ru : (cur.ru || 'none'),
+        sub: (g.regions.TR && g.regions.TR.sub) ? String(g.regions.TR.sub) : (cur.sub ? String(cur.sub) : ''),
+        currency: found.currency || region.currency,
+        updatedAt: new Date().toISOString()
+      });
+      g.productIds[code] = found.productId || g.productIds[code] || null;
+      stats.updated++;
+    }else{
+      // Do not overwrite a manually entered price with an unknown or suspected discount price.
+      if(Number.isFinite(Number(cur.salePrice)) && Number(cur.salePrice) > 0) stats.skipped++;
+      else stats.failed++;
+    }
+  }
+
+  writeJson(filePath, { updatedAt: new Date().toISOString(), items });
+  return stats;
+}
+
+async function updateRegularPricesForRegion(regionCode){
+  const allGames = await updateRegularPricesForDocRegion(ALL_GAMES_PATH, regionCode);
+  const newReleases = await updateRegularPricesForDocRegion(NEW_RELEASES_PATH, regionCode);
+  const preorders = await updateRegularPricesForDocRegion(PREORDERS_PATH, regionCode);
+  return { region: String(regionCode || '').toUpperCase(), allGames, newReleases, preorders };
 }
 
 
@@ -2256,6 +2667,8 @@ function loadEnv() {
 const ENV = loadEnv();
 const TR_LOCALE = (ENV.TR_LOCALE || "tr-tr").trim();
 const UA_LOCALE = (ENV.UA_LOCALE || "ru-ua").trim();
+const PL_LOCALE = (ENV.PL_LOCALE || "en-pl").trim();
+const IN_LOCALE = (ENV.IN_LOCALE || "en-in").trim();
 
 function readJson(p, fallback) { try { return JSON.parse(fs.readFileSync(p, "utf-8")); } catch { return fallback; } }
 function writeJson(p, obj) { fs.writeFileSync(p, JSON.stringify(obj, null, 2), "utf-8"); }
@@ -2492,34 +2905,105 @@ function defaultDiscountRates(){
   };
 }
 
+
+function defaultTopupCards(){
+  return {
+    TR:[
+      {amount:250, rub:1050},
+      {amount:500, rub:1500},
+      {amount:750, rub:2200},
+      {amount:1000, rub:2650},
+      {amount:1500, rub:4000},
+      {amount:2000, rub:4800},
+      {amount:2500, rub:6200},
+      {amount:3000, rub:7150},
+      {amount:4000, rub:9350},
+      {amount:5000, rub:11600}
+    ],
+    PL:[
+      {amount:50, rub:1750},
+      {amount:100, rub:3200},
+      {amount:200, rub:5900},
+      {amount:500, rub:13200}
+    ],
+    IN:[
+      {amount:1000, rub:1650},
+      {amount:2000, rub:2750},
+      {amount:3000, rub:4200},
+      {amount:4000, rub:5100},
+      {amount:5000, rub:6600}
+    ]
+  };
+}
+
 function readStore() {
   const s = readJson(STORE_PATH, { settings:{roundStep:50, whatsappLink:"", minPriceRub:450}, rates:{TR:[],UA:[]}, discountRates:defaultDiscountRates() });
   if(!s.settings) s.settings = { roundStep:50, whatsappLink:"", minPriceRub:450 };
+  if(!s.rates || typeof s.rates !== "object") s.rates = { TR:[], UA:[], PL:[], IN:[] };
+  if(!Array.isArray(s.rates.TR)) s.rates.TR = [];
+  if(!Array.isArray(s.rates.UA)) s.rates.UA = [];
+  if(!Array.isArray(s.rates.PL)) s.rates.PL = [];
+  if(!Array.isArray(s.rates.IN)) s.rates.IN = [];
+  if(typeof s.settings.useTurkeyTopupCards === "undefined") s.settings.useTurkeyTopupCards = false;
+  if(!s.topupCards || typeof s.topupCards !== "object") s.topupCards = defaultTopupCards();
+  const _defaultTopupCards = defaultTopupCards();
+  for(const _r of ["TR","PL","IN"]){
+    if(!Array.isArray(s.topupCards[_r])) s.topupCards[_r] = _defaultTopupCards[_r];
+    s.topupCards[_r] = s.topupCards[_r]
+      .map(c => ({ amount:Number(c.amount), rub:Number(c.rub) }))
+      .filter(c => Number.isFinite(c.amount) && c.amount > 0 && Number.isFinite(c.rub) && c.rub > 0);
+    if(!s.topupCards[_r].length) s.topupCards[_r] = _defaultTopupCards[_r];
+  }
   if(typeof s.settings.minPriceRub === "undefined") s.settings.minPriceRub = 450;
   if(!s.discountRates) s.discountRates = defaultDiscountRates();
   if(!Array.isArray(s.discountRates.TR)) s.discountRates.TR = defaultDiscountRates().TR;
   if(!Array.isArray(s.discountRates.UA)) s.discountRates.UA = defaultDiscountRates().UA;
+  if(!Array.isArray(s.discountRates.PL)) s.discountRates.PL = [];
+  if(!Array.isArray(s.discountRates.IN)) s.discountRates.IN = [];
   // Subscription prices live in the same store.json and are editable from admin.
   // If missing (older installs) – seed defaults.
-  if(!s.subscriptionsPrices){
-    s.subscriptionsPrices = {
-      TR:{
-        psplus:{
-          essential:{"1":1200,"3":2400,"12":5850},
-          extra:{"1":1600,"3":3550,"12":9750},
-          deluxe:{"1":1700,"3":3950,"12":11250},
-        },
-        eaplay:{"1":1100,"12":4350}
+  const _defaultSubscriptionsPrices = {
+    TR:{
+      psplus:{
+        essential:{"1":1200,"3":2400,"12":5850},
+        extra:{"1":1600,"3":3550,"12":9750},
+        deluxe:{"1":1700,"3":3950,"12":11250},
       },
-      UA:{
-        psplus:{
-          essential:{"1":1100,"3":2000,"12":4200},
-          extra:{"1":1400,"3":3150,"12":6100},
-          deluxe:{"1":1600,"3":3450,"12":6850},
-        },
-        eaplay:{"1":900,"12":3000}
-      }
-    };
+      eaplay:{"1":1100,"12":4350}
+    },
+    UA:{
+      psplus:{
+        essential:{"1":1100,"3":2000,"12":4200},
+        extra:{"1":1400,"3":3150,"12":6100},
+        deluxe:{"1":1600,"3":3450,"12":6850},
+      },
+      eaplay:{"1":900,"12":3000}
+    },
+    IN:{
+      psplus:{
+        essential:{"1":1600,"3":2900,"12":6450},
+        extra:{"1":1600,"3":3600,"12":10000},
+        deluxe:{"1":2600,"3":3900,"12":10850},
+      },
+      eaplay:{"1":0,"12":0}
+    },
+    PL:{
+      psplus:{
+        essential:{"1":1750,"3":4300,"12":7650},
+        extra:{"1":3100,"3":5700,"12":13800},
+        deluxe:{"1":3150,"3":6750,"12":15900},
+      },
+      eaplay:{"1":0,"12":0}
+    }
+  };
+  if(!s.subscriptionsPrices || typeof s.subscriptionsPrices !== 'object') s.subscriptionsPrices = {};
+  for(const _r of ['TR','UA','PL','IN']){
+    if(!s.subscriptionsPrices[_r]) s.subscriptionsPrices[_r] = _defaultSubscriptionsPrices[_r];
+    if(!s.subscriptionsPrices[_r].psplus) s.subscriptionsPrices[_r].psplus = _defaultSubscriptionsPrices[_r].psplus;
+    if(!s.subscriptionsPrices[_r].eaplay) s.subscriptionsPrices[_r].eaplay = _defaultSubscriptionsPrices[_r].eaplay;
+    for(const _tier of ['essential','extra','deluxe']){
+      if(!s.subscriptionsPrices[_r].psplus[_tier]) s.subscriptionsPrices[_r].psplus[_tier] = _defaultSubscriptionsPrices[_r].psplus[_tier];
+    }
   }
   if (ENV.WHATSAPP_LINK) s.settings.whatsappLink = ENV.WHATSAPP_LINK;
   if (ENV.ROUND_STEP) s.settings.roundStep = Number(ENV.ROUND_STEP) === 100 ? 100 : 50;
@@ -2545,6 +3029,74 @@ function pickRate(rules, price) {
 }
 function roundUp(value, step) { const s = Number(step) || 50; return Math.ceil(value / s) * s; }
 function roundDown(value, step) { const s = Number(step) || 50; return Math.floor(value / s) * s; }
+
+function shouldUseTopupCards(store, region){
+  const R = String(region || "TR").toUpperCase();
+  if(R === "PL" || R === "IN") return true;
+  if(R === "TR") return !!(store && store.settings && store.settings.useTurkeyTopupCards);
+  return false;
+}
+
+function calcTopupCardsRub(cards, price){
+  const rawPrice = Number(price || 0);
+  const target = Math.ceil(rawPrice);
+  const list = (Array.isArray(cards) ? cards : [])
+    .map(c => ({ amount:Math.ceil(Number(c.amount || 0)), rub:Number(c.rub || 0) }))
+    .filter(c => Number.isFinite(c.amount) && c.amount > 0 && Number.isFinite(c.rub) && c.rub > 0)
+    .sort((a,b) => a.amount - b.amount);
+  if(!Number.isFinite(rawPrice) || rawPrice <= 0 || !Number.isFinite(target) || target <= 0 || !list.length) return 0;
+
+  const maxAmount = Math.max(...list.map(c => c.amount));
+  const limit = target + maxAmount;
+  const inf = Number.POSITIVE_INFINITY;
+  const dp = Array(limit + 1).fill(inf);
+  dp[0] = 0;
+  for(let sum=0; sum<=limit; sum++){
+    if(!Number.isFinite(dp[sum])) continue;
+    for(const card of list){
+      const next = sum + card.amount;
+      if(next <= limit && dp[sum] + card.rub < dp[next]) dp[next] = dp[sum] + card.rub;
+    }
+  }
+  let bestRub = inf;
+  let bestSum = inf;
+  for(let sum=target; sum<=limit; sum++){
+    if(dp[sum] < bestRub || (dp[sum] === bestRub && sum < bestSum)){
+      bestRub = dp[sum];
+      bestSum = sum;
+    }
+  }
+  if(!Number.isFinite(bestRub) || !Number.isFinite(bestSum) || bestSum <= 0) return 0;
+
+  // Cards are selected only to determine the real top-up rate.
+  // On the site we show the proportional price of the game itself,
+  // not the full price of the selected cards. Example: 339 ZL with
+  // 350 ZL cards for 10850 RUB => 339 * 10850 / 350.
+  return rawPrice * (bestRub / bestSum);
+}
+
+function calcRegionRub(store, region, price){
+  const R = String(region || "TR").toUpperCase();
+  const p = Number(price || 0);
+  const step = Number(store && store.settings && store.settings.roundStep || 50);
+  if(!Number.isFinite(p) || p <= 0) return 0;
+  let rub = 0;
+  const usesTopupCards = shouldUseTopupCards(store, R);
+  if(usesTopupCards){
+    rub = calcTopupCardsRub(store && store.topupCards && store.topupCards[R], p);
+    rub = roundUp(rub, step);
+  }else{
+    const rules = (store && store.rates && store.rates[R]) ? store.rates[R] : [];
+    rub = roundUp(p * pickRate(rules, p), step);
+  }
+
+  // The 450 RUB minimum remains for Ukraine and for Turkey with the usual rate.
+  // When admin enables top-up card calculation for Turkey, show the real calculated
+  // price even if it is lower than the global minimum.
+  if(R === "TR" && usesTopupCards) return rub;
+  return clampMinGamePriceRub(store, rub);
+}
+
 
 // --- parsing helpers
 function extractTitle(html){
@@ -3175,15 +3727,16 @@ app.get("/api/meta", (req, res) => {
   const games = readJson(GAMES_PATH, { updatedAt:null, items:[] });
   const allGames = readJson(ALL_GAMES_PATH, { updatedAt:null, items:[] });
   const preorders = readJson(PREORDERS_PATH, { updatedAt:null, items:[] });
-  const hasAnyUntil = { TR:false, UA:false };
+  const hasAnyUntil = { TR:false, UA:false, PL:false, IN:false };
   for (const g of (games.items||[])) {
-    for (const r of ["TR","UA"]) {
-      if (g.regions && g.regions[r] && g.regions[r].discountedUntil) hasAnyUntil[r]=true;
+    for (const r of ["TR","UA","PL","IN"]) {
+      if (virtualDiscountUntilFor(g, r)) hasAnyUntil[r]=true;
     }
   }
   res.json({
     settings: store.settings,
     discountRates: store.discountRates || defaultDiscountRates(),
+    topupCards: store.topupCards || defaultTopupCards(),
     updatedAt: { games: games.updatedAt || null },
     hasAnyUntil,
     total: Array.isArray(games.items) ? games.items.length : 0,
@@ -3200,6 +3753,130 @@ app.get("/api/subscriptions-prices", (req, res) => {
     res.json(store.subscriptionsPrices || {});
   }catch(e){
     res.status(500).json({ error: "failed_to_read_store" });
+  }
+});
+
+
+// Public: refresh cart items from current database state.
+// The cart stores product IDs in localStorage, but price/discount data can change later.
+// This endpoint returns the same public shape as catalog cards for the requested IDs.
+function buildCurrentPublicCartItem(raw, region, source, ctx){
+  if(!raw || typeof raw !== 'object') return null;
+  const store = ctx.store || readStore();
+  const R = String(region || 'TR').toUpperCase();
+  const descIndex = ctx.descIndex || buildDescriptionIndex();
+  const conceptIndex = ctx.conceptIndex || buildConceptIndex();
+  const regionBaseIndex = ctx.regionBaseIndex || null;
+  const discountsIndex = ctx.discountsIndex || readActiveDiscountsIndex();
+
+  let reg = (raw.regions && raw.regions[R]) ? raw.regions[R] : null;
+  let baseStorePrice = reg ? Number(reg.salePrice || 0) : 0;
+  let storePrice = baseStorePrice;
+  let discPerc = 0;
+  let discountedUntil = null;
+
+  if(source === 'all'){
+    const dg = (raw.id && discountsIndex.byId.get(String(raw.id))) || null;
+    if(dg){
+      if(R === 'PL' || R === 'IN'){
+        const dreg = publicDiscountRegionFor(dg, R, regionBaseIndex);
+        if(dreg && isDiscountActiveForRegion((dg.regions && dg.regions.TR) ? dg.regions.TR : dreg)){
+          const n = Number(dreg.salePrice || 0);
+          if(Number.isFinite(n) && n > 0){
+            storePrice = n;
+            discPerc = Number(dreg.discPerc || 0) || 0;
+            discountedUntil = dreg.discountedUntil || null;
+          }
+        }
+      }else if(dg.regions && dg.regions[R] && isDiscountActiveForRegion(dg.regions[R])){
+        const dreg = dg.regions[R];
+        discPerc = Number(dreg.discPerc || 0) || 0;
+        discountedUntil = dreg.discountedUntil || null;
+        const dPrice = Number(dreg.salePrice || 0);
+        if(Number.isFinite(dPrice) && dPrice > 0){
+          storePrice = dPrice;
+        }else if(discPerc > 0 && Number.isFinite(baseStorePrice) && baseStorePrice > 0){
+          storePrice = Math.max(0, baseStorePrice * (1 - discPerc/100));
+        }
+      }
+    }
+  }else if(source === 'discount'){
+    if(R === 'PL' || R === 'IN'){
+      reg = publicDiscountRegionFor(raw, R, regionBaseIndex);
+    }
+    if(!reg || !isDiscountActiveForRegion((R === 'PL' || R === 'IN') ? (raw.regions && raw.regions.TR) : reg)) return null;
+    storePrice = Number(reg.salePrice || 0);
+    baseStorePrice = storePrice;
+    discPerc = Number(reg.discPerc || 0) || 0;
+    discountedUntil = reg.discountedUntil || null;
+  }
+
+  if(!Number.isFinite(storePrice) || storePrice <= 0) return null;
+
+  const rub = calcRegionRub(store, R, storePrice);
+  const trSub = (raw.regions && raw.regions.TR && raw.regions.TR.sub) ? String(raw.regions.TR.sub) : "";
+  const uaSub = (raw.regions && raw.regions.UA && raw.regions.UA.sub) ? String(raw.regions.UA.sub) : "";
+  const anySub = trSub || uaSub;
+
+  return {
+    id: raw.id,
+    name: raw.name || '',
+    edition: anySub ? 'Standard Edition' : (raw.edition || 'Standard Edition'),
+    sub: anySub,
+    platform: raw.platform || 'PS4 / PS5',
+    cover: raw.cover || '',
+    discPerc,
+    discountedUntil,
+    storePrice,
+    finalPriceRub: rub,
+    oldPriceRub: (source !== 'preorder' && discPerc > 0 && Number.isFinite(baseStorePrice) && baseStorePrice > 0) ? calcRegionRub(store, R, baseStorePrice) : 0,
+    conceptId: conceptForGame(raw, conceptIndex),
+    isPreorder: source === 'preorder' || isFutureReleaseDateYMD(raw.releaseDate)
+  };
+}
+
+app.get("/api/cart-items", (req, res) => {
+  try{
+    const region = String(req.query.region || "TR").toUpperCase();
+    const ids = String(req.query.ids || "").split(",").map(x=>String(x||"").trim()).filter(Boolean).slice(0, 100);
+    if(!ids.length) return res.json({ ok:true, items:[], missingIds:[] });
+
+    const allDoc = readJson(ALL_GAMES_PATH, {items:[]});
+    const preDoc = readJson(PREORDERS_PATH, {items:[]});
+    const disDoc = readJson(GAMES_PATH, {items:[]});
+    const allItems = Array.isArray(allDoc.items) ? allDoc.items : [];
+    const preItems = Array.isArray(preDoc.items) ? preDoc.items : [];
+    const disItems = Array.isArray(disDoc.items) ? disDoc.items : [];
+
+    const byId = (arr)=>{
+      const m = new Map();
+      for(const g of arr){ if(g && g.id && !m.has(String(g.id))) m.set(String(g.id), g); }
+      return m;
+    };
+    const allById = byId(allItems);
+    const preById = byId(preItems);
+    const disById = byId(disItems);
+    const ctx = {
+      store: readStore(),
+      descIndex: buildDescriptionIndex(),
+      conceptIndex: buildConceptIndex(),
+      discountsIndex: readActiveDiscountsIndex(),
+      regionBaseIndex: (region === 'PL' || region === 'IN') ? buildAllGamesRegionPriceIndex(region) : null
+    };
+
+    const items = [];
+    const missingIds = [];
+    for(const id of ids){
+      let out = null;
+      if(allById.has(id)) out = buildCurrentPublicCartItem(allById.get(id), region, 'all', ctx);
+      if(!out && preById.has(id)) out = buildCurrentPublicCartItem(preById.get(id), region, 'preorder', ctx);
+      if(!out && disById.has(id)) out = buildCurrentPublicCartItem(disById.get(id), region, 'discount', ctx);
+      if(out) items.push(out);
+      else missingIds.push(id);
+    }
+    res.json({ ok:true, region, items, missingIds });
+  }catch(e){
+    res.status(500).json({ ok:false, error:String(e && e.message || e) });
   }
 });
 
@@ -3314,6 +3991,92 @@ function mergeDiscountItemsById(existingItems, newItems){
 }
 
 
+
+function collectRegionLookupKeys(g, region){
+  const keys = [];
+  const push = (v)=>{ const k = String(v || '').trim(); if(k && !keys.includes(k)) keys.push(k); };
+  const R = String(region || '').toUpperCase();
+  if(!g || typeof g !== 'object') return keys;
+  push(g.id);
+  push(g.conceptId);
+  if(g.productIds && typeof g.productIds === 'object'){
+    push(g.productIds[R]);
+    push(g.productIds.TR);
+    push(g.productIds.UA);
+    push(g.productIds.PL);
+    push(g.productIds.IN);
+  }
+  if(g.regions && typeof g.regions === 'object'){
+    for(const key of [R,'TR','UA','PL','IN']){
+      const rg = g.regions[key];
+      if(rg && typeof rg === 'object'){
+        push(rg.id);
+        push(rg.productId);
+        push(rg.storeId);
+      }
+    }
+  }
+  return keys;
+}
+
+function buildAllGamesRegionPriceIndex(region){
+  const R = String(region || '').toUpperCase();
+  const doc = readJson(ALL_GAMES_PATH, {items:[]});
+  const items = Array.isArray(doc) ? doc : (Array.isArray(doc.items) ? doc.items : []);
+  const map = new Map();
+  for(const g of items){
+    const reg = g && g.regions && g.regions[R] ? g.regions[R] : null;
+    const price = reg ? Number(reg.salePrice || 0) : 0;
+    if(!Number.isFinite(price) || price <= 0) continue;
+    const value = Object.assign({}, reg, { salePrice: price });
+    for(const key of collectRegionLookupKeys(g, R)){
+      if(key && !map.has(key)) map.set(key, value);
+    }
+  }
+  return map;
+}
+
+function findIndexedRegionBaseReg(index, g, region){
+  if(!index || typeof index.get !== 'function') return null;
+  for(const key of collectRegionLookupKeys(g, region)){
+    const found = index.get(key);
+    if(found) return found;
+  }
+  return null;
+}
+
+function publicDiscountRegionFor(g, region, regionBaseIndex){
+  const R = String(region || 'TR').toUpperCase();
+  const ownReg = (g && g.regions && g.regions[R]) ? g.regions[R] : null;
+  if(R !== 'PL' && R !== 'IN') return ownReg;
+
+  const trReg = (g && g.regions && g.regions.TR) ? g.regions.TR : null;
+  const discPerc = trReg ? Number(trReg.discPerc || 0) : 0;
+  const baseReg = findIndexedRegionBaseReg(regionBaseIndex, g, R) || ownReg;
+  const basePrice = baseReg ? Number(baseReg.salePrice || 0) : 0;
+
+  if(baseReg && Number.isFinite(basePrice) && basePrice > 0 && isDiscountActiveForRegion(trReg) && discPerc > 0){
+    const discounted = Math.max(0, Math.round((basePrice * (1 - discPerc / 100)) * 100) / 100);
+    return Object.assign({}, baseReg, {
+      salePrice: discounted,
+      discPerc,
+      discountedUntil: trReg.discountedUntil || null,
+      ru: (g && g.regions && g.regions.TR && g.regions.TR.ru) ? g.regions.TR.ru : (baseReg.ru || 'none'),
+      sub: (g && g.regions && g.regions.TR && g.regions.TR.sub) ? g.regions.TR.sub : (baseReg.sub || '')
+    });
+  }
+  return ownReg;
+}
+
+function virtualDiscountUntilFor(g, region){
+  const R = String(region || 'TR').toUpperCase();
+  if(R === 'PL' || R === 'IN'){
+    const trReg = g && g.regions ? g.regions.TR : null;
+    return isDiscountActiveForRegion(trReg) ? (trReg.discountedUntil || '') : '';
+  }
+  return (g && g.regions && g.regions[R]) ? (g.regions[R].discountedUntil || '') : '';
+}
+
 function smartMatch(name, q){
   const nq0 = normText(q);
   if(!nq0) return true;
@@ -3417,8 +4180,13 @@ function gameRuStatus(game, region){
   const regs = game && game.regions ? game.regions : {};
   const tryRegs = [];
   const r = String(region||'').toUpperCase();
-  if(r) tryRegs.push(r);
-  tryRegs.push('TR','UA');
+  if(r === 'PL' || r === 'IN'){
+    // PL/IN берут информацию о русском языке из турецкой карточки в нашей базе, а не из PS Store этих регионов.
+    tryRegs.push('TR','UA');
+  }else{
+    if(r) tryRegs.push(r);
+    tryRegs.push('TR','UA');
+  }
   for(const key of tryRegs){
     const reg = regs && regs[key];
     if(!reg) continue;
@@ -3462,7 +4230,7 @@ app.get("/api/discount-dates", (req, res) => {
     const counts = {};
     for (const g of all) {
       // Дату скидки берём из данных игры по выбранному региону
-      const until = norm(g && g.regions && g.regions[region] ? (g.regions[region].discountedUntil || "") : "");
+      const until = norm(virtualDiscountUntilFor(g, region));
       if (!until) continue;
       counts[until] = (counts[until] || 0) + 1;
     }
@@ -3606,6 +4374,8 @@ app.get("/api/games", async (req, res) => {
         if(k && !allGamesPlayersById.has(k)) allGamesPlayersById.set(k, playersVal);
       }
     }
+    const regionBaseIndex = (region === "PL" || region === "IN") ? buildAllGamesRegionPriceIndex(region) : null;
+
     const playersFromAllGames = (g) => {
       const keys = [g.id, g.conceptId];
       if(g.productIds && typeof g.productIds === 'object') keys.push(g.productIds.TR, g.productIds.UA);
@@ -3622,16 +4392,14 @@ app.get("/api/games", async (req, res) => {
     };
 
     let computed = all.map(g => {
-      const reg = (g.regions && g.regions[region]) ? g.regions[region] : null;
+      const reg = publicDiscountRegionFor(g, region, regionBaseIndex);
       const storePrice = reg ? Number(reg.salePrice || 0) : 0;
 
       // Hide the game ONLY in the selected region when that region's price is 0 (or missing/invalid).
       // Example: TR=450 -> visible in TR; UA=0 -> hidden in UA.
       if (!Number.isFinite(storePrice) || storePrice <= 0) return null;
 
-      const rate = pickRate(rules, storePrice);
-      let rub = roundUp(storePrice * rate, step);
-      rub = clampMinGamePriceRub(store, rub);
+      const rub = calcRegionRub(store, region, storePrice);
       const trSub = (g.regions && g.regions.TR && g.regions.TR.sub) ? String(g.regions.TR.sub) : "";
       const uaSub = (g.regions && g.regions.UA && g.regions.UA.sub) ? String(g.regions.UA.sub) : "";
       const anySub = trSub || uaSub;
@@ -3641,7 +4409,7 @@ app.get("/api/games", async (req, res) => {
         id: g.id,
         name: g.name,
         edition: anySub ? "Standard Edition" : (g.edition || "Standard Edition"),
-        ru: normalizeRuVal(reg && (reg.ru ?? reg.ruLang ?? reg.russian ?? reg.rus ?? reg.langRu ?? reg.languageRu)),
+        ru: gameRuStatus(g, (typeof R !== 'undefined' ? R : (typeof region !== 'undefined' ? region : 'TR'))),
         // Subscription is not tied to a region in the UI (one badge for the game).
         // Prefer TR value (admin currently sets it there), fallback to UA.
         sub: anySub,
@@ -3656,7 +4424,7 @@ app.get("/api/games", async (req, res) => {
         discountedUntil: reg ? (reg.discountedUntil || null) : null,
         storePrice: storePrice,
         finalPriceRub: rub,
-        oldPriceRub: (Number(reg && reg.discPerc || 0) > 0 ? clampMinGamePriceRub(store, roundUp((storePrice / Math.max(0.01, (1 - (Number(reg.discPerc||0)/100)))) * pickRate(rules, (storePrice / Math.max(0.01, (1 - (Number(reg.discPerc||0)/100))))), step)) : 0),
+        oldPriceRub: (Number(reg && reg.discPerc || 0) > 0 ? calcRegionRub(store, region, (storePrice / Math.max(0.01, (1 - (Number(reg.discPerc||0)/100))))) : 0),
         conceptId,
         popRank: g.popRank || 999999,
         psRank: firstFinite(
@@ -3721,6 +4489,7 @@ app.get("/api/game-editions", (req, res) => {
     const step = store.settings.roundStep || 50;
     const descIndex = buildDescriptionIndex();
     const conceptIndex = buildConceptIndex();
+    const regionBaseIndex = (region === "PL" || region === "IN") ? buildAllGamesRegionPriceIndex(region) : null;
 
     const collect = [];
     const pushAll = (file, source)=>{
@@ -3809,13 +4578,11 @@ app.get("/api/game-editions", (req, res) => {
       const g = entry.raw || {};
       const cid = conceptForGame(g, conceptIndex);
       if(!isDirectConceptMatch(g)) continue;
-      const reg = (g.regions && g.regions[region]) ? g.regions[region] : null;
+      const reg = entry.source === 'discount' ? publicDiscountRegionFor(g, region, regionBaseIndex) : ((g.regions && g.regions[region]) ? g.regions[region] : null);
       const storePrice = reg ? Number(reg.salePrice || 0) : 0;
       if(!Number.isFinite(storePrice) || storePrice <= 0) continue;
       const discPerc = reg ? Number(reg.discPerc || 0) : 0;
-      const rate = pickRate(rules, storePrice);
-      let rub = roundUp(storePrice * rate, step);
-      rub = clampMinGamePriceRub(store, rub);
+      const rub = calcRegionRub(store, region, storePrice);
       const baseStorePrice = discPerc > 0 ? (storePrice / Math.max(0.01, (1 - (discPerc/100)))) : storePrice;
       const trSub = (g.regions && g.regions.TR && g.regions.TR.sub) ? String(g.regions.TR.sub) : "";
       const uaSub = (g.regions && g.regions.UA && g.regions.UA.sub) ? String(g.regions.UA.sub) : "";
@@ -3824,7 +4591,7 @@ app.get("/api/game-editions", (req, res) => {
         id: g.id,
         name: g.name,
         edition: anySub ? "Standard Edition" : (g.edition || "Standard Edition"),
-        ru: normalizeRuVal(reg && (reg.ru ?? reg.ruLang ?? reg.russian ?? reg.rus ?? reg.langRu ?? reg.languageRu)),
+        ru: gameRuStatus(g, (typeof R !== 'undefined' ? R : (typeof region !== 'undefined' ? region : 'TR'))),
         sub: anySub,
         platform: g.platform || "PS4 / PS5",
         genres: g.genres || "",
@@ -3837,7 +4604,7 @@ app.get("/api/game-editions", (req, res) => {
         discountedUntil: reg ? (reg.discountedUntil || null) : null,
         storePrice,
         finalPriceRub: rub,
-        oldPriceRub: (discPerc > 0 ? clampMinGamePriceRub(store, roundUp(baseStorePrice * pickRate(rules, baseStorePrice), step)) : 0),
+        oldPriceRub: (discPerc > 0 ? calcRegionRub(store, region, baseStorePrice) : 0),
         conceptId: cid,
         releaseDate: g.releaseDate || null,
         isPreorder: entry.source === 'preorder' && isFutureReleaseDateYMD(g.releaseDate)
@@ -3893,6 +4660,29 @@ app.put("/api/admin/rates", requireAdmin, (req, res) => {
   res.json({ ok:true });
 });
 
+app.get("/api/admin/topup-cards", requireAdmin, (req, res) => {
+  const store = readStore();
+  const region = String(req.query.region || "TR").toUpperCase();
+  res.json({ ok:true, region, cards: (store.topupCards && store.topupCards[region]) || [] });
+});
+
+function saveAdminTopupCards(req, res){
+  const store = readStore();
+  const region = String(req.body.region || "TR").toUpperCase();
+  if(!["TR","PL","IN"].includes(region)) return res.status(400).json({ ok:false, error:"bad_region" });
+  const cards = Array.isArray(req.body.cards) ? req.body.cards : [];
+  const cleaned = cards
+    .map(c => ({ amount:Number(c.amount), rub:Number(c.rub) }))
+    .filter(c => Number.isFinite(c.amount) && c.amount > 0 && Number.isFinite(c.rub) && c.rub > 0)
+    .sort((a,b) => a.amount - b.amount);
+  store.topupCards = store.topupCards || defaultTopupCards();
+  store.topupCards[region] = cleaned.length ? cleaned : (defaultTopupCards()[region] || []);
+  writeJson(STORE_PATH, store);
+  res.json({ ok:true, region, cards: store.topupCards[region] });
+}
+app.put("/api/admin/topup-cards", requireAdmin, saveAdminTopupCards);
+app.post("/api/admin/topup-cards", requireAdmin, saveAdminTopupCards);
+
 // Admin: subscriptions prices (PS Plus + EA Play)
 app.get("/api/admin/subscriptions-prices", requireAdmin, (req, res) => {
   const store = readStore();
@@ -3933,7 +4723,9 @@ app.put("/api/admin/subscriptions-prices", requireAdmin, (req, res) => {
 
   store.subscriptionsPrices = {
     TR: normRegion("TR"),
-    UA: normRegion("UA")
+    UA: normRegion("UA"),
+    PL: normRegion("PL"),
+    IN: normRegion("IN")
   };
   writeJson(STORE_PATH, store);
   res.json({ ok:true, prices: store.subscriptionsPrices });
@@ -3958,6 +4750,7 @@ app.put("/api/admin/settings", requireAdmin, (req, res) => {
   store.settings = store.settings || {};
   if (req.body.roundStep !== undefined) store.settings.roundStep = Number(req.body.roundStep) === 100 ? 100 : 50;
   if (req.body.whatsappLink !== undefined) store.settings.whatsappLink = String(req.body.whatsappLink);
+  if (req.body.useTurkeyTopupCards !== undefined) store.settings.useTurkeyTopupCards = !!req.body.useTurkeyTopupCards;
   const dd = req.body.defaultDiscountUntil ?? req.body.defaultDate;
   if (dd !== undefined) store.settings.defaultDiscountUntil = dd ? String(dd) : null;
   writeJson(STORE_PATH, store);
@@ -4059,7 +4852,23 @@ app.get("/api/admin/games/:id", requireAdmin, (req, res) => {
     const items = Array.isArray(doc.items) ? doc.items : [];
     const g = items.find(x => String(x.id) === id);
     if(!g) return res.status(404).json({ ok:false, error:"not_found" });
-    res.json({ ok:true, item: g });
+
+    // In the discount editor PL/IN fields should show the same discounted
+    // PS Store prices that are used on the public discounts page. The base
+    // PL/IN prices live in the all-games database, while the discount percent
+    // and date come from the TR discount row.
+    const out = JSON.parse(JSON.stringify(g));
+    try{
+      const plIndex = buildAllGamesRegionPriceIndex('PL');
+      const inIndex = buildAllGamesRegionPriceIndex('IN');
+      const pl = publicDiscountRegionFor(g, 'PL', plIndex);
+      const ind = publicDiscountRegionFor(g, 'IN', inIndex);
+      out.regions = (out.regions && typeof out.regions === 'object') ? out.regions : {};
+      if(pl) out.regions.PL = Object.assign({}, out.regions.PL || {}, pl);
+      if(ind) out.regions.IN = Object.assign({}, out.regions.IN || {}, ind);
+    }catch(_e){}
+
+    res.json({ ok:true, item: out });
   }catch(e){
     res.status(500).json({ ok:false, error:String(e) });
   }
@@ -4124,19 +4933,29 @@ app.put("/api/admin/games/:id", requireAdmin, (req, res) => {
     };
     updRegion("TR");
     updRegion("UA");
+    updRegion("PL");
+    updRegion("IN");
 
     // Ensure required region shape exists
     if(!next.regions.TR) next.regions.TR = { discPerc:0, discountedUntil:null, salePrice:0, ru:"none", sub:"" };
     if(!next.regions.UA) next.regions.UA = { discPerc:0, discountedUntil:null, salePrice:0, ru:"none", sub:"" };
+    if(!next.regions.PL) next.regions.PL = { discPerc:0, discountedUntil:null, salePrice:0, ru:"none", sub:"" };
+    if(!next.regions.IN) next.regions.IN = { discPerc:0, discountedUntil:null, salePrice:0, ru:"none", sub:"" };
 
     // Normalize RU values
     try{ next.regions.TR.ru = normalizeRuVal(next.regions.TR.ru); }catch(_e){}
     try{ next.regions.UA.ru = normalizeRuVal(next.regions.UA.ru); }catch(_e){}
+    try{ next.regions.PL.ru = normalizeRuVal(next.regions.PL.ru || next.regions.TR.ru); }catch(_e){}
+    try{ next.regions.IN.ru = normalizeRuVal(next.regions.IN.ru || next.regions.TR.ru); }catch(_e){}
     if(typeof next.regions.TR.sub !== "string") next.regions.TR.sub = next.regions.TR.sub ? String(next.regions.TR.sub) : "";
     if(typeof next.regions.UA.sub !== "string") next.regions.UA.sub = next.regions.UA.sub ? String(next.regions.UA.sub) : "";
+    if(typeof next.regions.PL.sub !== "string") next.regions.PL.sub = next.regions.PL.sub ? String(next.regions.PL.sub) : "";
+    if(typeof next.regions.IN.sub !== "string") next.regions.IN.sub = next.regions.IN.sub ? String(next.regions.IN.sub) : "";
 
-    // Подписка единая (TR=UA)
+    // Подписка единая (TR=UA=PL=IN)
     next.regions.UA.sub = next.regions.TR.sub;
+    next.regions.PL.sub = next.regions.TR.sub;
+    next.regions.IN.sub = next.regions.TR.sub;
 
     // Basic safety: id stays immutable
     next.id = cur.id;
@@ -4207,6 +5026,52 @@ app.delete("/api/admin/games", requireAdmin, (req, res) => {
 });
 
 // Admin: list/add/update/delete ALL GAMES (library without discounts)
+
+app.post("/api/admin/allgames/update-pl-in-prices", requireAdmin, async (req, res) => {
+  try{
+    const stats = await updatePlInRegularPricesForAllGames();
+    res.json({ ok:true, stats });
+  }catch(e){
+    res.status(500).json({ ok:false, error:String(e && e.message || e) });
+  }
+});
+
+app.post("/api/admin/newreleases/update-pl-in-prices", requireAdmin, async (req, res) => {
+  try{
+    const stats = await updatePlInRegularPricesForNewReleases();
+    res.json({ ok:true, stats });
+  }catch(e){
+    res.status(500).json({ ok:false, error:String(e && e.message || e) });
+  }
+});
+
+app.post("/api/admin/preorders/update-pl-in-prices", requireAdmin, async (req, res) => {
+  try{
+    const stats = await updatePlInRegularPricesForPreorders();
+    res.json({ ok:true, stats });
+  }catch(e){
+    res.status(500).json({ ok:false, error:String(e && e.message || e) });
+  }
+});
+
+app.post("/api/admin/prices/update-pl", requireAdmin, async (req, res) => {
+  try{
+    const stats = await updateRegularPricesForRegion('PL');
+    res.json({ ok:true, stats });
+  }catch(e){
+    res.status(500).json({ ok:false, error:String(e && e.message || e) });
+  }
+});
+
+app.post("/api/admin/prices/update-in", requireAdmin, async (req, res) => {
+  try{
+    const stats = await updateRegularPricesForRegion('IN');
+    res.json({ ok:true, stats });
+  }catch(e){
+    res.status(500).json({ ok:false, error:String(e && e.message || e) });
+  }
+});
+
 app.get("/api/admin/allgames/list", requireAdmin, (req, res) => {
   const doc = readJson(ALL_GAMES_PATH, { updatedAt:null, items:[] });
   const items = Array.isArray(doc.items) ? doc.items : [];
@@ -4818,9 +5683,7 @@ app.get("/api/subgames", async (req, res) => {
     const items = all.map(g => {
       const reg = (g.regions && g.regions[region]) ? g.regions[region] : null;
       const storePrice = reg ? Number(reg.salePrice || 0) : 0;
-      const rate = pickRate(rules, storePrice);
-      let rub = roundUp(storePrice * rate, step);
-      rub = clampMinGamePriceRub(store, rub);
+      const rub = calcRegionRub(store, region, storePrice);
 
       return {
         id: g.id,
@@ -4873,9 +5736,7 @@ function buildPublicAllGamesItems(region){
       }
     }
 
-    const rate = pickRate(rules, storePrice);
-    let rub = roundUp(storePrice * rate, step);
-    rub = clampMinGamePriceRub(store, rub);
+    const rub = calcRegionRub(store, R, storePrice);
     const trSub = (g.regions && g.regions.TR && g.regions.TR.sub) ? String(g.regions.TR.sub) : "";
     const uaSub = (g.regions && g.regions.UA && g.regions.UA.sub) ? String(g.regions.UA.sub) : "";
     const anySub = trSub || uaSub;
@@ -4884,7 +5745,7 @@ function buildPublicAllGamesItems(region){
       id: g.id,
       name: g.name,
       edition: anySub ? "Standard Edition" : (g.edition || "Standard Edition"),
-      ru: normalizeRuVal(reg && (reg.ru ?? reg.ruLang ?? reg.russian ?? reg.rus ?? reg.langRu ?? reg.languageRu)),
+      ru: gameRuStatus(g, (typeof R !== 'undefined' ? R : (typeof region !== 'undefined' ? region : 'TR'))),
       sub: anySub,
       platform: g.platform || "PS4 / PS5",
       players: g.players || null,
@@ -4896,7 +5757,7 @@ function buildPublicAllGamesItems(region){
       discountedUntil,
       storePrice,
       finalPriceRub: rub,
-      oldPriceRub: (discPerc > 0 ? clampMinGamePriceRub(store, roundUp(baseStorePrice * pickRate(rules, baseStorePrice), step)) : 0),
+      oldPriceRub: (discPerc > 0 ? calcRegionRub(store, R, baseStorePrice) : 0),
       conceptId: conceptForGame(g, conceptIndex),
       popRank: g.popRank || 999999
     };
@@ -4964,9 +5825,7 @@ function buildPublicItemsFromDocForBestsellers(region, filePath, sourceTab){
       }
     }
 
-    const rate = pickRate(rules, storePrice);
-    let rub = roundUp(storePrice * rate, step);
-    rub = clampMinGamePriceRub(store, rub);
+    const rub = calcRegionRub(store, R, storePrice);
     const trSub = (g.regions && g.regions.TR && g.regions.TR.sub) ? String(g.regions.TR.sub) : "";
     const uaSub = (g.regions && g.regions.UA && g.regions.UA.sub) ? String(g.regions.UA.sub) : "";
     const anySub = trSub || uaSub;
@@ -4976,7 +5835,7 @@ function buildPublicItemsFromDocForBestsellers(region, filePath, sourceTab){
       id: g.id,
       name: g.name,
       edition: anySub ? "Standard Edition" : (g.edition || "Standard Edition"),
-      ru: normalizeRuVal(reg && (reg.ru ?? reg.ruLang ?? reg.russian ?? reg.rus ?? reg.langRu ?? reg.languageRu)),
+      ru: gameRuStatus(g, (typeof R !== 'undefined' ? R : (typeof region !== 'undefined' ? region : 'TR'))),
       sub: anySub,
       platform: g.platform || "PS4 / PS5",
       players: g.players || null,
@@ -4988,7 +5847,7 @@ function buildPublicItemsFromDocForBestsellers(region, filePath, sourceTab){
       discountedUntil,
       storePrice,
       finalPriceRub: rub,
-      oldPriceRub: (discPerc > 0 ? clampMinGamePriceRub(store, roundUp(baseStorePrice * pickRate(rules, baseStorePrice), step)) : 0),
+      oldPriceRub: (discPerc > 0 ? calcRegionRub(store, R, baseStorePrice) : 0),
       conceptId: cid,
       popRank: g.popRank || 999999,
       releaseDate: g.releaseDate || null,
@@ -5182,9 +6041,7 @@ app.get("/api/allgames", async (req, res) => {
         }
       }
 
-      const rate = pickRate(rules, storePrice);
-      let rub = roundUp(storePrice * rate, step);
-      rub = clampMinGamePriceRub(store, rub);
+      const rub = calcRegionRub(store, region, storePrice);
       const trSub = (g.regions && g.regions.TR && g.regions.TR.sub) ? String(g.regions.TR.sub) : "";
       const uaSub = (g.regions && g.regions.UA && g.regions.UA.sub) ? String(g.regions.UA.sub) : "";
       const anySub = trSub || uaSub;
@@ -5193,7 +6050,7 @@ app.get("/api/allgames", async (req, res) => {
         id: g.id,
         name: g.name,
         edition: anySub ? "Standard Edition" : (g.edition || "Standard Edition"),
-        ru: normalizeRuVal(reg && (reg.ru ?? reg.ruLang ?? reg.russian ?? reg.rus ?? reg.langRu ?? reg.languageRu)),
+        ru: gameRuStatus(g, (typeof R !== 'undefined' ? R : (typeof region !== 'undefined' ? region : 'TR'))),
         sub: anySub,
         platform: g.platform || "PS4 / PS5",
         genres: g.genres || "",
@@ -5206,7 +6063,7 @@ app.get("/api/allgames", async (req, res) => {
         discountedUntil,
         storePrice: storePrice,
         finalPriceRub: rub,
-        oldPriceRub: (discPerc > 0 ? clampMinGamePriceRub(store, roundUp(baseStorePrice * pickRate(rules, baseStorePrice), step)) : 0),
+        oldPriceRub: (discPerc > 0 ? calcRegionRub(store, region, baseStorePrice) : 0),
         conceptId: conceptForGame(g, conceptIndex),
         popRank: g.popRank || 999999,
         // Prefer PS browse rank by id; fallback to title match.
@@ -5399,9 +6256,7 @@ app.get("/api/newreleases", async (req, res) => {
       const storePrice = reg ? Number(reg.salePrice || 0) : 0;
       if(!Number.isFinite(storePrice) || storePrice <= 0) return null;
 
-      const rate = pickRate(rules, storePrice);
-      let rub = roundUp(storePrice * rate, step);
-      rub = clampMinGamePriceRub(store, rub);
+      const rub = calcRegionRub(store, region, storePrice);
       const trSub = (g.regions && g.regions.TR && g.regions.TR.sub) ? String(g.regions.TR.sub) : "";
       const uaSub = (g.regions && g.regions.UA && g.regions.UA.sub) ? String(g.regions.UA.sub) : "";
       const anySub = trSub || uaSub;
@@ -5411,7 +6266,7 @@ app.get("/api/newreleases", async (req, res) => {
         id: g.id,
         name: g.name,
         edition: anySub ? "Standard Edition" : (g.edition || "Standard Edition"),
-        ru: normalizeRuVal(reg && (reg.ru ?? reg.ruLang ?? reg.russian ?? reg.rus ?? reg.langRu ?? reg.languageRu)),
+        ru: gameRuStatus(g, (typeof R !== 'undefined' ? R : (typeof region !== 'undefined' ? region : 'TR'))),
         sub: anySub,
         platform: g.platform || "PS4 / PS5",
         genres: g.genres || "",
@@ -5531,9 +6386,7 @@ app.get("/api/preorders", async (req, res) => {
       const storePrice = reg ? Number(reg.salePrice || 0) : 0;
       if (!Number.isFinite(storePrice) || storePrice <= 0) return null;
 
-      const rate = pickRate(rules, storePrice);
-      let rub = roundUp(storePrice * rate, step);
-      rub = clampMinGamePriceRub(store, rub);
+      const rub = calcRegionRub(store, region, storePrice);
 
       const trSub = (g.regions && g.regions.TR && g.regions.TR.sub) ? String(g.regions.TR.sub) : "";
       const uaSub = (g.regions && g.regions.UA && g.regions.UA.sub) ? String(g.regions.UA.sub) : "";
@@ -5543,7 +6396,7 @@ app.get("/api/preorders", async (req, res) => {
         id: g.id,
         name: g.name,
         edition: anySub ? "Standard Edition" : (g.edition || "Standard Edition"),
-        ru: normalizeRuVal(reg && (reg.ru ?? reg.ruLang ?? reg.russian ?? reg.rus ?? reg.langRu ?? reg.languageRu)),
+        ru: gameRuStatus(g, (typeof R !== 'undefined' ? R : (typeof region !== 'undefined' ? region : 'TR'))),
         sub: anySub,
         platform: g.platform || "PS4 / PS5",
         genres: g.genres || "",
@@ -5759,9 +6612,13 @@ app.post("/api/admin/allgames/add", requireAdmin, (req, res) => {
       next.productIds = (g.productIds && typeof g.productIds === 'object') ? g.productIds : {};
       const pidTR = next.productIds.TR ? String(next.productIds.TR).trim() : '';
       const pidUA = next.productIds.UA ? String(next.productIds.UA).trim() : '';
+      const pidPL = next.productIds.PL ? String(next.productIds.PL).trim() : '';
+      const pidIN = next.productIds.IN ? String(next.productIds.IN).trim() : '';
       next.productIds = {
         TR: pidTR || null,
         UA: pidUA || null,
+        PL: pidPL || pidTR || pidUA || null,
+        IN: pidIN || pidTR || pidUA || null,
       };
       next.regions = (g.regions && typeof g.regions === 'object') ? g.regions : {};
       const mkRegion = (code) => {
@@ -5774,6 +6631,8 @@ app.post("/api/admin/allgames/add", requireAdmin, (req, res) => {
       };
       next.regions.TR = mkRegion('TR');
       next.regions.UA = mkRegion('UA');
+      next.regions.PL = mkRegion('PL');
+      next.regions.IN = mkRegion('IN');
       // unify subscription like скидки
       next.regions.UA.sub = next.regions.TR.sub;
       return next;
@@ -5822,6 +6681,10 @@ app.put("/api/admin/allgames/:id", requireAdmin, (req, res) => {
       next.productIds = next.productIds && typeof next.productIds === 'object' ? next.productIds : {};
       if(typeof p.TR !== 'undefined') next.productIds.TR = p.TR ? String(p.TR).trim() : null;
       if(typeof p.UA !== 'undefined') next.productIds.UA = p.UA ? String(p.UA).trim() : null;
+      if(typeof p.PL !== 'undefined') next.productIds.PL = p.PL ? String(p.PL).trim() : null;
+      if(typeof p.IN !== 'undefined') next.productIds.IN = p.IN ? String(p.IN).trim() : null;
+      if(typeof p.PL !== 'undefined') next.productIds.PL = p.PL ? String(p.PL).trim() : null;
+      if(typeof p.IN !== 'undefined') next.productIds.IN = p.IN ? String(p.IN).trim() : null;
     }
 
     next.regions = next.regions && typeof next.regions === 'object' ? next.regions : {};
@@ -5842,13 +6705,21 @@ app.put("/api/admin/allgames/:id", requireAdmin, (req, res) => {
     };
     updRegion('TR');
     updRegion('UA');
+    updRegion('PL');
+    updRegion('IN');
     if(!next.regions.TR) next.regions.TR = { salePrice:0, ru:'none', sub:'' };
     if(!next.regions.UA) next.regions.UA = { salePrice:0, ru:'none', sub:'' };
+    if(!next.regions.PL) next.regions.PL = { salePrice:0, ru:'none', sub:'' };
+    if(!next.regions.IN) next.regions.IN = { salePrice:0, ru:'none', sub:'' };
 
     // normalize
     try{ next.regions.TR.ru = normalizeRuVal(next.regions.TR.ru); }catch(_e){}
     try{ next.regions.UA.ru = normalizeRuVal(next.regions.UA.ru); }catch(_e){}
+    try{ next.regions.PL.ru = normalizeRuVal(next.regions.PL.ru || next.regions.TR.ru); }catch(_e){}
+    try{ next.regions.IN.ru = normalizeRuVal(next.regions.IN.ru || next.regions.TR.ru); }catch(_e){}
     next.regions.UA.sub = next.regions.TR.sub;
+    next.regions.PL.sub = next.regions.TR.sub;
+    next.regions.IN.sub = next.regions.TR.sub;
 
     next.id = cur.id;
 
@@ -5943,7 +6814,9 @@ app.post("/api/admin/preorders/add", requireAdmin, (req, res) => {
       next.productIds = (g.productIds && typeof g.productIds === 'object') ? g.productIds : {};
       const pidTR = next.productIds.TR ? String(next.productIds.TR).trim() : '';
       const pidUA = next.productIds.UA ? String(next.productIds.UA).trim() : '';
-      next.productIds = { TR: pidTR || null, UA: pidUA || null };
+      const pidPL = next.productIds.PL ? String(next.productIds.PL).trim() : '';
+      const pidIN = next.productIds.IN ? String(next.productIds.IN).trim() : '';
+      next.productIds = { TR: pidTR || null, UA: pidUA || null, PL: pidPL || null, IN: pidIN || null };
 
       next.regions = (g.regions && typeof g.regions === 'object') ? g.regions : {};
       const mkRegion = (code) => {
@@ -5956,6 +6829,8 @@ app.post("/api/admin/preorders/add", requireAdmin, (req, res) => {
       };
       next.regions.TR = mkRegion('TR');
       next.regions.UA = mkRegion('UA');
+      next.regions.PL = mkRegion('PL');
+      next.regions.IN = mkRegion('IN');
       // unify subscription like other lists
       next.regions.UA.sub = next.regions.TR.sub;
       return next;
@@ -6033,12 +6908,20 @@ app.put("/api/admin/preorders/:id", requireAdmin, (req, res) => {
     };
     updRegion('TR');
     updRegion('UA');
+    updRegion('PL');
+    updRegion('IN');
     if(!next.regions.TR) next.regions.TR = { salePrice:0, ru:'none', sub:'' };
     if(!next.regions.UA) next.regions.UA = { salePrice:0, ru:'none', sub:'' };
+    if(!next.regions.PL) next.regions.PL = { salePrice:0, ru:'none', sub:'' };
+    if(!next.regions.IN) next.regions.IN = { salePrice:0, ru:'none', sub:'' };
 
     try{ next.regions.TR.ru = normalizeRuVal(next.regions.TR.ru); }catch(_e){}
     try{ next.regions.UA.ru = normalizeRuVal(next.regions.UA.ru); }catch(_e){}
+    try{ next.regions.PL.ru = normalizeRuVal(next.regions.PL.ru || next.regions.TR.ru); }catch(_e){}
+    try{ next.regions.IN.ru = normalizeRuVal(next.regions.IN.ru || next.regions.TR.ru); }catch(_e){}
     next.regions.UA.sub = next.regions.TR.sub;
+    next.regions.PL.sub = next.regions.TR.sub;
+    next.regions.IN.sub = next.regions.TR.sub;
 
     next.id = cur.id;
     items[idx] = next;
@@ -6655,7 +7538,9 @@ app.post("/api/admin/games/add", requireAdmin, async (req, res) => {
       popRank: Number.isFinite(psRank) ? psRank : 1000000000,
       regions: {
         TR: g.regions && g.regions.TR ? g.regions.TR : { discPerc:0, discountedUntil:null, salePrice:0, ru:"none", sub:"" },
-        UA: g.regions && g.regions.UA ? g.regions.UA : { discPerc:0, discountedUntil:null, salePrice:0, ru:"none", sub:"" }
+        UA: g.regions && g.regions.UA ? g.regions.UA : { discPerc:0, discountedUntil:null, salePrice:0, ru:"none", sub:"" },
+        PL: g.regions && g.regions.PL ? g.regions.PL : { discPerc:0, discountedUntil:null, salePrice:0, ru:"none", sub:"" },
+        IN: g.regions && g.regions.IN ? g.regions.IN : { discPerc:0, discountedUntil:null, salePrice:0, ru:"none", sub:"" }
       }
     };
     
@@ -6663,17 +7548,27 @@ app.post("/api/admin/games/add", requireAdmin, async (req, res) => {
     try{
       if(next.regions && next.regions.TR) next.regions.TR.ru = normalizeRuVal(next.regions.TR.ru);
       if(next.regions && next.regions.UA) next.regions.UA.ru = normalizeRuVal(next.regions.UA.ru);
+      if(next.regions && next.regions.PL) next.regions.PL.ru = normalizeRuVal(next.regions.PL.ru || next.regions.TR.ru);
+      if(next.regions && next.regions.IN) next.regions.IN.ru = normalizeRuVal(next.regions.IN.ru || next.regions.TR.ru);
     }catch(e){}
 
     // Ensure subscription fields exist (editable per-region)
     if(!next.regions.TR) next.regions.TR = { discPerc:0, discountedUntil:null, salePrice:0, ru:"none", sub:"" };
     if(!next.regions.UA) next.regions.UA = { discPerc:0, discountedUntil:null, salePrice:0, ru:"none", sub:"" };
+    if(!next.regions.PL) next.regions.PL = { discPerc:0, discountedUntil:null, salePrice:0, ru:"none", sub:"" };
+    if(!next.regions.IN) next.regions.IN = { discPerc:0, discountedUntil:null, salePrice:0, ru:"none", sub:"" };
     if(typeof next.regions.TR.sub !== "string") next.regions.TR.sub = next.regions.TR.sub ? String(next.regions.TR.sub) : "";
     if(typeof next.regions.UA.sub !== "string") next.regions.UA.sub = next.regions.UA.sub ? String(next.regions.UA.sub) : "";
+    if(typeof next.regions.PL.sub !== "string") next.regions.PL.sub = next.regions.PL.sub ? String(next.regions.PL.sub) : "";
+    if(typeof next.regions.IN.sub !== "string") next.regions.IN.sub = next.regions.IN.sub ? String(next.regions.IN.sub) : "";
 
     // Subscription is not регион-зависимая в нашем проекте:
     // если игра в подписке в Турции, то она же в подписке и в Украине.
     next.regions.UA.sub = next.regions.TR.sub;
+    next.regions.PL.ru = next.regions.TR.ru;
+    next.regions.IN.ru = next.regions.TR.ru;
+    next.regions.PL.sub = next.regions.TR.sub;
+    next.regions.IN.sub = next.regions.TR.sub;
     items.push(next);
 
     // Also (re)apply any known PS browse ranks to existing items using the cache.
@@ -6795,9 +7690,7 @@ app.get("/api/search", async (req, res) => {
         }
       }
 
-      const rate = pickRate(rules, storePrice);
-      let rub = roundUp(storePrice * rate, step);
-      rub = clampMinGamePriceRub(store, rub);
+      const rub = calcRegionRub(store, region, storePrice);
       const trSub = (g.regions && g.regions.TR && g.regions.TR.sub) ? String(g.regions.TR.sub) : "";
       const uaSub = (g.regions && g.regions.UA && g.regions.UA.sub) ? String(g.regions.UA.sub) : "";
       const anySub = trSub || uaSub;
@@ -6806,7 +7699,7 @@ app.get("/api/search", async (req, res) => {
         id: g.id,
         name: g.name,
         edition: anySub ? "Standard Edition" : (g.edition || "Standard Edition"),
-        ru: normalizeRuVal(reg && (reg.ru ?? reg.ruLang ?? reg.russian ?? reg.rus ?? reg.langRu ?? reg.languageRu)),
+        ru: gameRuStatus(g, (typeof R !== 'undefined' ? R : (typeof region !== 'undefined' ? region : 'TR'))),
         sub: anySub,
         platform: g.platform || "PS4 / PS5",
         genres: g.genres || "",
