@@ -6013,6 +6013,7 @@ app.get("/api/allgames", async (req, res) => {
     const discountsIndex = readActiveDiscountsIndex();
     const descIndex = buildDescriptionIndex();
     const conceptIndex = buildConceptIndex();
+    const regionBaseIndex = (region === "PL" || region === "IN") ? buildAllGamesRegionPriceIndex(region) : null;
 
     let computed = all.map(g => {
       const reg = (g.regions && g.regions[region]) ? g.regions[region] : null;
@@ -6024,20 +6025,36 @@ app.get("/api/allgames", async (req, res) => {
       // Find matching discounted entry by exact product/version id only.
       const dg = (g.id && discountsIndex.byId.get(String(g.id))) || null;
 
-      // If discounted entry exists and is active for this region — override price + discount meta
+      // If discounted entry exists and is active for this region — override price + discount meta.
+      // For PL/IN there is no separate PS Store discount feed: use the TR discount percent
+      // from data/games.json and apply it to the PL/IN regular price from all_games.json,
+      // exactly like the public Discounts page does.
       let discPerc = 0;
       let discountedUntil = null;
       let storePrice = baseStorePrice;
-      if(dg && dg.regions && dg.regions[region] && isDiscountActiveForRegion(dg.regions[region])){
-        const dreg = dg.regions[region];
-        discPerc = Number(dreg.discPerc || 0) || 0;
-        discountedUntil = dreg.discountedUntil || null;
-        const dPrice = Number(dreg.salePrice || 0);
-        if(Number.isFinite(dPrice) && dPrice > 0){
-          storePrice = dPrice;
-        }else if(discPerc > 0){
-          // Fallback: compute discounted price from base price if missing
-          storePrice = Math.max(0, baseStorePrice * (1 - (discPerc/100)));
+      if(dg){
+        if(region === "PL" || region === "IN"){
+          const trDiscountReg = dg.regions && dg.regions.TR ? dg.regions.TR : null;
+          if(isDiscountActiveForRegion(trDiscountReg)){
+            const dreg = publicDiscountRegionFor(dg, region, regionBaseIndex);
+            const dPrice = Number(dreg && dreg.salePrice || 0);
+            if(Number.isFinite(dPrice) && dPrice > 0){
+              storePrice = dPrice;
+              discPerc = Number(dreg.discPerc || trDiscountReg.discPerc || 0) || 0;
+              discountedUntil = dreg.discountedUntil || trDiscountReg.discountedUntil || null;
+            }
+          }
+        }else if(dg.regions && dg.regions[region] && isDiscountActiveForRegion(dg.regions[region])){
+          const dreg = dg.regions[region];
+          discPerc = Number(dreg.discPerc || 0) || 0;
+          discountedUntil = dreg.discountedUntil || null;
+          const dPrice = Number(dreg.salePrice || 0);
+          if(Number.isFinite(dPrice) && dPrice > 0){
+            storePrice = dPrice;
+          }else if(discPerc > 0){
+            // Fallback: compute discounted price from base price if missing
+            storePrice = Math.max(0, baseStorePrice * (1 - (discPerc/100)));
+          }
         }
       }
 
