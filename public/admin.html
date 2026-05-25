@@ -229,7 +229,7 @@ button{ color:#0f172a !important; }
           </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+        <div style="display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:12px;margin-top:12px;">
           <div style="border:1px solid #e5e7eb;border-radius:12px;padding:10px;">
             <div style="font-weight:900;">TR</div>
             <div class="small">Цена (TL)</div>
@@ -239,10 +239,32 @@ button{ color:#0f172a !important; }
           </div>
           <div style="border:1px solid #e5e7eb;border-radius:12px;padding:10px;">
             <div style="font-weight:900;">UA</div>
-            <div class="small">Цена</div>
+            <div class="small">Цена (UAH)</div>
 <input id="impUaPrice" class="input" type="number" step="0.01"/>
             <div class="small" style="margin-top:8px;">Скидка %</div><input id="impUaDisc" class="input" type="number" step="1"/>
             <div class="small" style="margin-top:8px;">Дата конца</div><input id="impUaUntil" class="input" type="text" placeholder="YYYY-MM-DD"/>
+          </div>
+          <div style="border:1px solid #e5e7eb;border-radius:12px;padding:10px;">
+            <div style="font-weight:900;">PL</div>
+            <div class="small">Цена (PLN)</div>
+            <input id="impPlPrice" class="input" type="number" step="0.01"/>
+            <div class="small" style="margin-top:8px;">Русский</div>
+            <select id="impRuPLCard" class="select" style="width:100%;">
+              <option value="none" selected>🇷🇺 Отсутствует</option>
+              <option value="text">🇷🇺 Текст</option>
+              <option value="voice">🇷🇺 Озвучка</option>
+            </select>
+          </div>
+          <div style="border:1px solid #e5e7eb;border-radius:12px;padding:10px;">
+            <div style="font-weight:900;">IN</div>
+            <div class="small">Цена (INR)</div>
+            <input id="impInPrice" class="input" type="number" step="0.01"/>
+            <div class="small" style="margin-top:8px;">Русский</div>
+            <select id="impRuINCard" class="select" style="width:100%;">
+              <option value="none" selected>🇷🇺 Отсутствует</option>
+              <option value="text">🇷🇺 Текст</option>
+              <option value="voice">🇷🇺 Озвучка</option>
+            </select>
           </div>
         </div>
 
@@ -368,7 +390,7 @@ button{ color:#0f172a !important; }
           <option value="eaplay">EA Play</option>
         </select>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+        <div style="display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:12px;margin-top:12px;">
           <div style="border:1px solid #e5e7eb;border-radius:12px;padding:10px;">
             <div style="font-weight:900;">TR</div>
             <div class="small">Цена (TL)</div>
@@ -378,6 +400,30 @@ button{ color:#0f172a !important; }
             <div style="font-weight:900;">UA</div>
             <div class="small">Цена (UAH)</div>
             <input id="preUaPrice" class="input" type="number" step="0.01"/>
+          </div>
+          <div style="border:1px solid #e5e7eb;border-radius:12px;padding:10px;">
+            <div style="font-weight:900;">PL</div>
+            <div class="small">Цена (ZL)</div>
+            <input id="prePlPrice" class="input" type="number" step="0.01"/>
+            <div class="small" style="margin-top:8px;">Русский</div>
+            <select id="preRuPLCard" class="select" style="width:100%;">
+              <option value="unknown" selected>❓ Неизвестно</option>
+              <option value="none">🇷🇺 Отсутствует</option>
+              <option value="text">🇷🇺 Текст</option>
+              <option value="voice">🇷🇺 Озвучка</option>
+            </select>
+          </div>
+          <div style="border:1px solid #e5e7eb;border-radius:12px;padding:10px;">
+            <div style="font-weight:900;">IN</div>
+            <div class="small">Цена (INR)</div>
+            <input id="preInPrice" class="input" type="number" step="0.01"/>
+            <div class="small" style="margin-top:8px;">Русский</div>
+            <select id="preRuINCard" class="select" style="width:100%;">
+              <option value="unknown" selected>❓ Неизвестно</option>
+              <option value="none">🇷🇺 Отсутствует</option>
+              <option value="text">🇷🇺 Текст</option>
+              <option value="voice">🇷🇺 Озвучка</option>
+            </select>
           </div>
         </div>
 
@@ -488,7 +534,7 @@ button{ color:#0f172a !important; }
             <option value="eaplay">EA Play</option>
           </select>
 
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+          <div style="display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:12px;margin-top:12px;">
             <div style="border:1px solid #e5e7eb;border-radius:12px;padding:10px;">
               <div style="font-weight:900;">TR</div>
               <div class="small">Цена (TL)</div>
@@ -498,6 +544,28 @@ button{ color:#0f172a !important; }
               <div style="font-weight:900;">UA</div>
               <div class="small">Цена (UAH)</div>
               <input id="allUaPrice" class="input" type="number" step="0.01"/>
+            </div>
+            <div style="border:1px solid #e5e7eb;border-radius:12px;padding:10px;">
+              <div style="font-weight:900;">PL</div>
+              <div class="small">Цена (PLN)</div>
+              <input id="allPlPrice" class="input" type="number" step="0.01"/>
+              <div class="small" style="margin-top:8px;">Русский</div>
+              <select id="allRuPLCard" class="select" style="width:100%;">
+                <option value="none" selected>🇷🇺 Отсутствует</option>
+                <option value="text">🇷🇺 Текст</option>
+                <option value="voice">🇷🇺 Озвучка</option>
+              </select>
+            </div>
+            <div style="border:1px solid #e5e7eb;border-radius:12px;padding:10px;">
+              <div style="font-weight:900;">IN</div>
+              <div class="small">Цена (INR)</div>
+              <input id="allInPrice" class="input" type="number" step="0.01"/>
+              <div class="small" style="margin-top:8px;">Русский</div>
+              <select id="allRuINCard" class="select" style="width:100%;">
+                <option value="none" selected>🇷🇺 Отсутствует</option>
+                <option value="text">🇷🇺 Текст</option>
+                <option value="voice">🇷🇺 Озвучка</option>
+              </select>
             </div>
           </div>
 
@@ -524,6 +592,8 @@ button{ color:#0f172a !important; }
     <button class="btnGhost" id="refreshNewReleases">Обновить «Новинки»</button>
     <button class="btnGhost" id="backfillGenres">Заполнить жанры</button>
     <button class="btnGhost" id="backfillDescriptions">Обновить описание</button>
+    <button class="btnGhost" id="updatePlPrices">Обновить цены PL</button>
+    <button class="btnGhost" id="updateInPrices">Обновить цены IN</button>
     <button class="btnGhost" id="cleanDescriptions">Очистить мусор описаний</button>
     <span class="small" id="newReleasesStatus"></span>
     <span class="small" id="gamesCount"></span>
@@ -563,10 +633,10 @@ button{ color:#0f172a !important; }
 
 <div class="adminCard" id="rates">
 <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-<div><div style="font-weight:950;font-size:16px;">Курсы по диапазонам</div><div class="small">TR/UA • Округление вверх.</div></div>
+<div><div style="font-weight:950;font-size:16px;">Курсы по диапазонам</div><div class="small">Обычный курс • Округление вверх.</div></div>
 <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-<select id="regionSel" class="select"><option value="TR">Турция (TR)</option><option value="UA">Украина (UA)</option></select>
-<button class="btnGhost" id="addRow">+ Диапазон</button><button class="btnDark" id="saveRates">Сохранить</button>
+<select id="regionSel" class="select"><option value="TR">Турция (TR)</option><option value="UA">Украина (UA)</option><option value="PL">Польша (PL)</option><option value="IN">Индия (IN)</option></select>
+<button class="btnGhost" id="addRow" type="button">+ Диапазон</button><button class="btnDark" id="saveRates" type="button">Сохранить</button>
 </div></div>
 <div style="margin-top:12px;overflow:auto;">
 <table><thead><tr><th>От</th><th>До</th><th>Курс</th><th>Действия</th></tr></thead><tbody id="ratesBody"></tbody></table></div></div>
@@ -575,11 +645,30 @@ button{ color:#0f172a !important; }
 <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
 <div><div style="font-weight:950;font-size:16px;">Курсы скидок по диапазонам</div><div class="small">TR/UA • Для скидки в корзине 2+ игры.</div></div>
 <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-<select id="discountRegionSel" class="select"><option value="TR">Турция (TR)</option><option value="UA">Украина (UA)</option></select>
-<button class="btnGhost" id="addDiscountRow">+ Диапазон</button><button class="btnDark" id="saveDiscountRates">Сохранить</button>
+<select id="discountRegionSel" class="select"><option value="TR">Турция (TR)</option><option value="UA">Украина (UA)</option><option value="PL">Польша (PL)</option><option value="IN">Индия (IN)</option></select>
+<button class="btnGhost" id="addDiscountRow" type="button">+ Диапазон</button><button class="btnDark" id="saveDiscountRates" type="button">Сохранить</button>
 </div></div>
 <div style="margin-top:12px;overflow:auto;">
 <table><thead><tr><th>От</th><th>До</th><th>Курс скидки</th><th>Действия</th></tr></thead><tbody id="discountRatesBody"></tbody></table></div></div>
+
+<div class="adminCard" id="topupTurkeyToggle">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+<label style="display:flex;align-items:center;gap:8px;font-weight:900;"><input id="useTurkeyTopupCards" type="checkbox"/> Турцию считать по картам</label>
+<button class="btnDark" id="saveTopupSettings" type="button">Сохранить</button>
+</div>
+<div class="small" style="margin-top:6px;">Если галочка выключена, Турция считается по обычному курсу. Если включена — по картам пополнения.</div>
+</div>
+
+<div class="adminCard" id="topupCards">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+<div><div style="font-weight:950;font-size:16px;">Карты пополнения</div><div class="small">TR/PL/IN • Сайт подбирает комбинацию карт, чтобы сумма покрывала цену игры.</div></div>
+<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+<select id="topupRegionSel" class="select"><option value="TR">Турция (TR)</option><option value="PL">Польша (PL)</option><option value="IN">Индия (IN)</option></select>
+<button class="btnGhost" id="addTopupCardRow" type="button">+ Карта</button><button class="btnDark" id="saveTopupCards" type="button">Сохранить</button>
+</div></div>
+<div id="topupCardsStatus" class="small" style="margin-top:8px;"></div>
+<div style="margin-top:12px;overflow:auto;">
+<table><thead><tr><th>Номинал</th><th>Цена в ₽</th><th>Действия</th></tr></thead><tbody id="topupCardsBody"></tbody></table></div></div>
 
 <!-- Prices: subscriptions (under exchange rates) -->
 <div class="adminCard" id="subsPrices">
@@ -614,7 +703,7 @@ button{ color:#0f172a !important; }
 <div style="flex:1;min-width:220px;"><div class="small">Округление</div>
 <select id="roundStep" class="selecColor" style="width:100%;"><option value="50">до 50 ₽ (вверх)</option><option value="100">до 100 ₽ (вверх)</option></select></div>
 <div style="flex:2;min-width:260px;"><div class="small">WhatsApp ссылка</div><input id="wa" class="input" type="text" placeholder="https://wa.me/..."/></div>
-<div style="align-self:flex-end;"><button class="btnDark" id="saveSettings">Сохранить</button></div>
+<div style="align-self:flex-end;"><button class="btnDark" id="saveSettings" type="button">Сохранить</button></div>
 </div></div>
 
 <div class="adminCard" id="visitors">
@@ -775,6 +864,43 @@ alert(j.ok?"Сохранено":"Ошибка");}
 function loadDiscountRates(region){return loadRates(region,"discount","discountRatesBody");}
 function saveDiscountRates(){return saveRates("discount","discountRegionSel","discountRatesBody");}
 
+function topupCardRow(amount="", rub=""){
+  const tr=document.createElement("tr");
+  tr.innerHTML=`<td><input class="input" type="number" step="1" min="0" value="${amount}"></td>
+<td><input class="input" type="number" step="1" min="0" value="${rub}"></td>
+<td><button class="btnGhost" type="button">Удалить</button></td>`;
+  tr.querySelector("button").onclick=()=>tr.remove();
+  return tr;
+}
+async function loadTopupCards(region){
+  const j=await fetch(`/api/admin/topup-cards?region=${encodeURIComponent(region)}`).then(r=>r.json());
+  const body=document.getElementById("topupCardsBody");
+  if(!body) return;
+  body.innerHTML="";
+  (j.cards||[]).forEach(card=>body.appendChild(topupCardRow(card.amount, card.rub)));
+}
+async function saveTopupCards(e){
+  if(e && typeof e.preventDefault === "function") e.preventDefault();
+  const status=document.getElementById("topupCardsStatus");
+  try{
+    const region=document.getElementById("topupRegionSel").value;
+    const cards=[...document.querySelectorAll(`#topupCardsBody tr`)].map(tr=>{
+      const i=tr.querySelectorAll("input");
+      return {amount:Number(i[0].value), rub:Number(i[1].value)};
+    }).filter(c=>Number.isFinite(c.amount)&&c.amount>0&&Number.isFinite(c.rub)&&c.rub>0);
+    if(status) status.textContent="Сохраняю...";
+    const r=await fetch(`/api/admin/topup-cards`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({region,cards})});
+    const j=await r.json().catch(()=>null);
+    if(!r.ok || !j || !j.ok) throw new Error((j&&j.error)||`HTTP ${r.status}`);
+    if(status) status.textContent="Сохранено";
+    alert("Сохранено");
+    await loadTopupCards(region);
+  }catch(err){
+    if(status) status.textContent="Ошибка сохранения: "+String(err.message||err);
+    alert("Ошибка сохранения карт пополнения: "+String(err.message||err));
+  }
+}
+
 // --- Subscription prices (PS Plus + EA Play) ---
 function subsRow(region, label, key){
   const tr=document.createElement("tr");
@@ -805,6 +931,12 @@ function buildSubsPricesTable(){
     ["UA", "PS Plus • Экстра", "psplus.extra"],
     ["UA", "PS Plus • Люкс", "psplus.deluxe"],
     ["UA", "EA Play", "eaplay"],
+    ["PL", "PS Plus • Основной", "psplus.essential"],
+    ["PL", "PS Plus • Экстра", "psplus.extra"],
+    ["PL", "PS Plus • Люкс", "psplus.deluxe"],
+    ["IN", "PS Plus • Основной", "psplus.essential"],
+    ["IN", "PS Plus • Экстра", "psplus.extra"],
+    ["IN", "PS Plus • Люкс", "psplus.deluxe"],
   ];
   rows.forEach(([r,l,k])=>body.appendChild(subsRow(r,l,k)));
 }
@@ -849,7 +981,7 @@ async function loadSubsPrices(){
 
 async function saveSubsPrices(){
   const rows = [...document.querySelectorAll("#subsPricesBody tr")];
-  const prices = { TR:{ psplus:{}, eaplay:{} }, UA:{ psplus:{}, eaplay:{} } };
+  const prices = { TR:{ psplus:{}, eaplay:{} }, UA:{ psplus:{}, eaplay:{} }, PL:{ psplus:{}, eaplay:{} }, IN:{ psplus:{}, eaplay:{} } };
   const readVal = (tr, m) => {
     const el = tr.querySelector(`[data-m="${m}"]`);
     if(!el) return 0;
@@ -891,10 +1023,12 @@ async function saveSubsPrices(){
 }
 
 async function loadSettings(){const j=await fetch(`/api/admin/settings`).then(r=>r.json());
-document.getElementById("roundStep").value=String(j.roundStep||50);document.getElementById("wa").value=j.whatsappLink||"";}
+document.getElementById("roundStep").value=String(j.roundStep||50);document.getElementById("wa").value=j.whatsappLink||"";const cb=document.getElementById("useTurkeyTopupCards");if(cb) cb.checked=!!j.useTurkeyTopupCards;}
 async function saveSettings(){const roundStep=document.getElementById("roundStep").value;
 const whatsappLink=document.getElementById("wa").value.trim();
-const j=await fetch(`/api/admin/settings`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({roundStep,whatsappLink})}).then(r=>r.json());
+const cb=document.getElementById("useTurkeyTopupCards");
+const useTurkeyTopupCards=cb?!!cb.checked:false;
+const j=await fetch(`/api/admin/settings`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({roundStep,whatsappLink,useTurkeyTopupCards})}).then(r=>r.json());
 alert(j.ok?"Сохранено":"Ошибка");}
 
 // --- Visitors counter ---
@@ -1242,6 +1376,12 @@ function _ruSelectHtml(id, val){
   `;
 }
 
+function setRegionRuDefault(targetId, sourceId){
+  const target = document.getElementById(targetId);
+  const source = document.getElementById(sourceId);
+  if(target && source && !target.value) target.value = source.value || 'none';
+}
+
 async function openDiscountEdit(id, anchorTr){
   closeInlineEditor();
   const gameId = String(id||"").trim();
@@ -1257,6 +1397,8 @@ async function openDiscountEdit(id, anchorTr){
   const g = j.item || {};
   const tr = g.regions?.TR || {};
   const ua = g.regions?.UA || {};
+  const pl = g.regions?.PL || {};
+  const ind = g.regions?.IN || {};
 
   const row = document.createElement('tr');
   row.className = 'inlineEditRow';
@@ -1307,7 +1449,7 @@ async function openDiscountEdit(id, anchorTr){
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+      <div style="display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:12px;margin-top:12px;">
         <div style="border:1px solid #e5e7eb;border-radius:12px;padding:10px;">
           <div style="font-weight:900;">TR</div>
           <div class="small">Цена (TL)</div>
@@ -1336,6 +1478,20 @@ async function openDiscountEdit(id, anchorTr){
           <input class="input" data-f="uaUntil" type="text" value="${ua.discountedUntil ?? ''}" placeholder="YYYY-MM-DD" />
           <div class="small" style="margin-top:8px;">Русский</div>
           ${_ruSelectHtml('inl_ru_ua', ua.ru || 'none')}
+        </div>
+        <div style="border:1px solid #e5e7eb;border-radius:12px;padding:10px;">
+          <div style="font-weight:900;">PL</div>
+          <div class="small">Цена (PLN)</div>
+          <input class="input" data-f="plPrice" type="number" step="0.01" value="${pl.salePrice ?? ''}" />
+          <div class="small" style="margin-top:8px;">Русский</div>
+          ${_ruSelectHtml('inl_ru_pl', pl.ru || tr.ru || 'none')}
+        </div>
+        <div style="border:1px solid #e5e7eb;border-radius:12px;padding:10px;">
+          <div style="font-weight:900;">IN</div>
+          <div class="small">Цена (INR)</div>
+          <input class="input" data-f="inPrice" type="number" step="0.01" value="${ind.salePrice ?? ''}" />
+          <div class="small" style="margin-top:8px;">Русский</div>
+          ${_ruSelectHtml('inl_ru_in', ind.ru || tr.ru || 'none')}
         </div>
       </div>
     </td>
@@ -1377,7 +1533,9 @@ async function openDiscountEdit(id, anchorTr){
           discountedUntil: (row.querySelector('[data-f="uaUntil"]').value||'').trim() || null,
           sub: row.querySelector('select[data-f="sub"]').value || '',
           ru: row.querySelector('#inl_ru_ua').value || 'none'
-        }
+        },
+        PL: { salePrice: Number(row.querySelector('[data-f="plPrice"]')?.value||0), discPerc: 0, discountedUntil: null, ru: row.querySelector('#inl_ru_pl')?.value || row.querySelector('#inl_ru_tr').value || 'none', sub: row.querySelector('select[data-f="sub"]').value || '' },
+        IN: { salePrice: Number(row.querySelector('[data-f="inPrice"]')?.value||0), discPerc: 0, discountedUntil: null, ru: row.querySelector('#inl_ru_in')?.value || row.querySelector('#inl_ru_tr').value || 'none', sub: row.querySelector('select[data-f="sub"]').value || '' }
       }
     };
 
@@ -1615,6 +1773,14 @@ async function doImport(){
   const ruUaEl = document.getElementById("impRuUA");
   if(ruTrEl) ruTrEl.value = ruTR;
   if(ruUaEl) ruUaEl.value = ruUA;
+  const ruPlEl = document.getElementById("impRuPL");
+  const ruInEl = document.getElementById("impRuIN");
+  const ruPlCardEl = document.getElementById("impRuPLCard");
+  const ruInCardEl = document.getElementById("impRuINCard");
+  if(ruPlEl) ruPlEl.value = ruTR;
+  if(ruInEl) ruInEl.value = ruTR;
+  if(ruPlCardEl) ruPlCardEl.value = ruTR;
+  if(ruInCardEl) ruInCardEl.value = ruTR;
 
   // Подписка единая для TR/UA: если игра в подписке в Турции, то и в Украине.
   const subTR = (tr.sub || "");
@@ -1669,6 +1835,20 @@ async function addGame(){
         discPerc:Number(document.getElementById("impUaDisc").value||0),
         discountedUntil: manualUntil,
         ru: (document.getElementById("impRuUA")?.value || "none"),
+        sub: (document.getElementById("impSubTR")?.value || "")
+      },
+      PL:{
+        salePrice:Number(document.getElementById("impPlPrice")?.value||0),
+        discPerc:0,
+        discountedUntil:null,
+        ru: (document.getElementById("impRuPLCard")?.value || document.getElementById("impRuPL")?.value || document.getElementById("impRuTR")?.value || "none"),
+        sub: (document.getElementById("impSubTR")?.value || "")
+      },
+      IN:{
+        salePrice:Number(document.getElementById("impInPrice")?.value||0),
+        discPerc:0,
+        discountedUntil:null,
+        ru: (document.getElementById("impRuINCard")?.value || document.getElementById("impRuIN")?.value || document.getElementById("impRuTR")?.value || "none"),
         sub: (document.getElementById("impSubTR")?.value || "")
       }
     }
@@ -1733,6 +1913,10 @@ async function doImportPreorder(){
   // RU default: unknown (until release)
   document.getElementById("preRuTR").value = (tr.ru || "unknown");
   document.getElementById("preRuUA").value = (ua.ru || "unknown");
+  if(document.getElementById("preRuPL")) document.getElementById("preRuPL").value = (tr.ru || "unknown");
+  if(document.getElementById("preRuIN")) document.getElementById("preRuIN").value = (tr.ru || "unknown");
+  if(document.getElementById("preRuPLCard")) document.getElementById("preRuPLCard").value = (tr.ru || "unknown");
+  if(document.getElementById("preRuINCard")) document.getElementById("preRuINCard").value = (tr.ru || "unknown");
 
   // subscription unified
   document.getElementById("preSub").value = (tr.sub || "");
@@ -1753,6 +1937,10 @@ async function doImportPreorder(){
 
   document.getElementById("preTrPrice").value = tr.salePrice ?? "";
   document.getElementById("preUaPrice").value = ua.salePrice ?? "";
+  const pl = j.parsed?.PL || {};
+  const ind = j.parsed?.IN || {};
+  if(document.getElementById("prePlPrice")) document.getElementById("prePlPrice").value = pl.salePrice ?? "";
+  if(document.getElementById("preInPrice")) document.getElementById("preInPrice").value = ind.salePrice ?? "";
 
   document.getElementById("preImportResult").style.display="block";
   document.getElementById("preImportStatus").textContent="Готово. Проверь и нажми 'Добавить'.";
@@ -1780,7 +1968,9 @@ async function addPreorder(){
     description: (document.getElementById("preDescription")?.value||"").trim(),
     regions:{
       TR:{ salePrice: Number(document.getElementById("preTrPrice").value||0), ru: (document.getElementById("preRuTR").value||"unknown"), sub: (document.getElementById("preSub").value||"") },
-      UA:{ salePrice: Number(document.getElementById("preUaPrice").value||0), ru: (document.getElementById("preRuUA").value||"unknown"), sub: (document.getElementById("preSub").value||"") }
+      UA:{ salePrice: Number(document.getElementById("preUaPrice").value||0), ru: (document.getElementById("preRuUA").value||"unknown"), sub: (document.getElementById("preSub").value||"") },
+      PL:{ salePrice: Number(document.getElementById("prePlPrice")?.value||0), ru: (document.getElementById("preRuPLCard")?.value || document.getElementById("preRuPL")?.value || document.getElementById("preRuTR").value || "unknown"), sub: (document.getElementById("preSub").value||"") },
+      IN:{ salePrice: Number(document.getElementById("preInPrice")?.value||0), ru: (document.getElementById("preRuINCard")?.value || document.getElementById("preRuIN")?.value || document.getElementById("preRuTR").value || "unknown"), sub: (document.getElementById("preSub").value||"") }
     }
   };
 
@@ -1853,11 +2043,19 @@ function beginPreorderEdit(id){
 
   const rTR = (g.regions && g.regions.TR) ? g.regions.TR : {};
   const rUA = (g.regions && g.regions.UA) ? g.regions.UA : {};
+  const rPL = (g.regions && g.regions.PL) ? g.regions.PL : {};
+  const rIN = (g.regions && g.regions.IN) ? g.regions.IN : {};
   document.getElementById("preRuTR").value = rTR.ru || 'unknown';
   document.getElementById("preRuUA").value = rUA.ru || 'unknown';
+  if(document.getElementById("preRuPL")) document.getElementById("preRuPL").value = (rPL.ru || rTR.ru || 'unknown');
+  if(document.getElementById("preRuIN")) document.getElementById("preRuIN").value = (rIN.ru || rTR.ru || 'unknown');
+  if(document.getElementById("preRuPLCard")) document.getElementById("preRuPLCard").value = (rPL.ru || rTR.ru || 'unknown');
+  if(document.getElementById("preRuINCard")) document.getElementById("preRuINCard").value = (rIN.ru || rTR.ru || 'unknown');
   document.getElementById("preSub").value = (rTR.sub || '');
   document.getElementById("preTrPrice").value = (typeof rTR.salePrice !== 'undefined') ? rTR.salePrice : '';
   document.getElementById("preUaPrice").value = (typeof rUA.salePrice !== 'undefined') ? rUA.salePrice : '';
+  if(document.getElementById("prePlPrice")) document.getElementById("prePlPrice").value = (typeof rPL.salePrice !== 'undefined') ? rPL.salePrice : '';
+  if(document.getElementById("preInPrice")) document.getElementById("preInPrice").value = (typeof rIN.salePrice !== 'undefined') ? rIN.salePrice : '';
 
   document.getElementById("preImportStatus").textContent = "Режим редактирования: " + (g.name||'');
   document.getElementById("btnAddPreorder").textContent = "Сохранить изменения";
@@ -2006,8 +2204,12 @@ async function openPreorderEdit(id, anchorTr){
   const g = j.item || {};
   const tr = g.regions?.TR || {};
   const ua = g.regions?.UA || {};
+  const pl = g.regions?.PL || {};
+  const ind = g.regions?.IN || {};
   const pidTR = g.productIds?.TR || '';
   const pidUA = g.productIds?.UA || '';
+  const pidPL = g.productIds?.PL || '';
+  const pidIN = g.productIds?.IN || '';
   const rel = g.releaseDate ? String(g.releaseDate).slice(0,10) : '';
 
   const row = document.createElement('tr');
@@ -2068,6 +2270,14 @@ async function openPreorderEdit(id, anchorTr){
           <div class="small">ID UA</div>
           <input class="input" data-f="idUA" type="text" value="${String(pidUA).replace(/"/g,'&quot;')}" />
         </div>
+        <div>
+          <div class="small">ID PL</div>
+          <input class="input" data-f="idPL" type="text" value="${String(pidPL).replace(/"/g,'&quot;')}" />
+        </div>
+        <div>
+          <div class="small">ID IN</div>
+          <input class="input" data-f="idIN" type="text" value="${String(pidIN).replace(/"/g,'&quot;')}" />
+        </div>
         <div style="grid-column:1 / span 2;">
           <div class="small">Concept ID</div>
           <input class="input" data-f="conceptId" type="text" value="${String(g.conceptId||'').replace(/"/g,'&quot;')}" placeholder="например: 209441" />
@@ -2092,7 +2302,7 @@ async function openPreorderEdit(id, anchorTr){
         <option value="eaplay" ${(tr.sub||'')==='eaplay'?'selected':''}>EA Play</option>
       </select>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+      <div style="display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:12px;margin-top:12px;">
         <div style="border:1px solid #e5e7eb;border-radius:12px;padding:10px;">
           <div style="font-weight:900;">TR</div>
           <div class="small">Цена (TL)</div>
@@ -2106,6 +2316,20 @@ async function openPreorderEdit(id, anchorTr){
           <input class="input" data-f="uaPrice" type="number" step="0.01" value="${ua.salePrice ?? ''}" />
           <div class="small" style="margin-top:8px;">Русский</div>
           ${_ruSelectHtml('inl_pre_ru_ua', ua.ru || 'unknown')}
+        </div>
+        <div style="border:1px solid #e5e7eb;border-radius:12px;padding:10px;">
+          <div style="font-weight:900;">PL</div>
+          <div class="small">Цена (ZL)</div>
+          <input class="input" data-f="plPrice" type="number" step="0.01" value="${pl.salePrice ?? ''}" />
+          <div class="small" style="margin-top:8px;">Русский</div>
+          ${_ruSelectHtml('inl_pre_ru_pl', pl.ru || tr.ru || 'unknown')}
+        </div>
+        <div style="border:1px solid #e5e7eb;border-radius:12px;padding:10px;">
+          <div style="font-weight:900;">IN</div>
+          <div class="small">Цена (INR)</div>
+          <input class="input" data-f="inPrice" type="number" step="0.01" value="${ind.salePrice ?? ''}" />
+          <div class="small" style="margin-top:8px;">Русский</div>
+          ${_ruSelectHtml('inl_pre_ru_in', ind.ru || tr.ru || 'unknown')}
         </div>
       </div>
     </td>
@@ -2125,6 +2349,8 @@ async function openPreorderEdit(id, anchorTr){
     setStatus('Сохранение...');
     const newIdTR = (row.querySelector('[data-f="idTR"]').value||'').trim();
     const newIdUA = (row.querySelector('[data-f="idUA"]').value||'').trim();
+    const newIdPL = (row.querySelector('[data-f="idPL"]')?.value||'').trim();
+    const newIdIN = (row.querySelector('[data-f="idIN"]')?.value||'').trim();
     const rd = (row.querySelector('[data-f="releaseDate"]').value||'').trim();
 
     const payload = {
@@ -2137,10 +2363,12 @@ async function openPreorderEdit(id, anchorTr){
       vr2: !!row.querySelector('[data-f="vr2"]')?.checked,
       cover: (row.querySelector('[data-f="cover"]').value||'').trim() || null,
       releaseDate: rd || null,
-      productIds: { TR: newIdTR || null, UA: newIdUA || null },
+      productIds: { TR: newIdTR || null, UA: newIdUA || null, PL: newIdPL || null, IN: newIdIN || null },
       regions: {
         TR: { salePrice: Number(row.querySelector('[data-f="trPrice"]').value||0), ru: row.querySelector('#inl_pre_ru_tr').value||'unknown', sub: row.querySelector('select[data-f="sub"]').value||'' },
-        UA: { salePrice: Number(row.querySelector('[data-f="uaPrice"]').value||0), ru: row.querySelector('#inl_pre_ru_ua').value||'unknown', sub: row.querySelector('select[data-f="sub"]').value||'' }
+        UA: { salePrice: Number(row.querySelector('[data-f="uaPrice"]').value||0), ru: row.querySelector('#inl_pre_ru_ua').value||'unknown', sub: row.querySelector('select[data-f="sub"]').value||'' },
+        PL: { salePrice: Number(row.querySelector('[data-f="plPrice"]')?.value||0), ru: row.querySelector('#inl_pre_ru_pl')?.value || row.querySelector('#inl_pre_ru_tr').value||'unknown', sub: row.querySelector('select[data-f="sub"]').value||'' },
+        IN: { salePrice: Number(row.querySelector('[data-f="inPrice"]')?.value||0), ru: row.querySelector('#inl_pre_ru_in')?.value || row.querySelector('#inl_pre_ru_tr').value||'unknown', sub: row.querySelector('select[data-f="sub"]').value||'' }
       }
     };
 
@@ -2210,6 +2438,10 @@ async function doImportAllGames(){
   // RU per region
   document.getElementById("allRuTR").value = (tr.ru || "none");
   document.getElementById("allRuUA").value = (ua.ru || "none");
+  if(document.getElementById("allRuPL")) document.getElementById("allRuPL").value = (tr.ru || "none");
+  if(document.getElementById("allRuIN")) document.getElementById("allRuIN").value = (tr.ru || "none");
+  if(document.getElementById("allRuPLCard")) document.getElementById("allRuPLCard").value = (tr.ru || "none");
+  if(document.getElementById("allRuINCard")) document.getElementById("allRuINCard").value = (tr.ru || "none");
 
   // subscription unified
   document.getElementById("allSub").value = (tr.sub || "");
@@ -2241,6 +2473,8 @@ async function addAllGame(){
     productIds: {
       TR: idTR || null,
       UA: idUA || null,
+      PL: idTR || idUA || null,
+      IN: idTR || idUA || null,
     },
     name: (document.getElementById("allName").value||"").trim(),
     cover: (document.getElementById("allCover").style.display==="block") ? document.getElementById("allCover").src : null,
@@ -2260,6 +2494,16 @@ async function addAllGame(){
       UA:{
         salePrice: Number(document.getElementById("allUaPrice").value||0),
         ru: (document.getElementById("allRuUA").value||"none"),
+        sub: (document.getElementById("allSub").value||"")
+      },
+      PL:{
+        salePrice: Number(document.getElementById("allPlPrice")?.value||0),
+        ru: (document.getElementById("allRuPLCard")?.value || document.getElementById("allRuPL")?.value || document.getElementById("allRuTR").value || "none"),
+        sub: (document.getElementById("allSub").value||"")
+      },
+      IN:{
+        salePrice: Number(document.getElementById("allInPrice")?.value||0),
+        ru: (document.getElementById("allRuINCard")?.value || document.getElementById("allRuIN")?.value || document.getElementById("allRuTR").value || "none"),
         sub: (document.getElementById("allSub").value||"")
       }
     }
@@ -2405,6 +2649,8 @@ async function openAllGameEdit(id, anchorTr){
   const g = j.item || {};
   const tr = g.regions?.TR || {};
   const ua = g.regions?.UA || {};
+  const pl = g.regions?.PL || {};
+  const ind = g.regions?.IN || {};
   const pidTR = g.productIds?.TR || '';
   const pidUA = g.productIds?.UA || '';
 
@@ -2490,7 +2736,7 @@ async function openAllGameEdit(id, anchorTr){
         <option value="eaplay" ${(tr.sub||'')==='eaplay'?'selected':''}>EA Play</option>
       </select>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+      <div style="display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:12px;margin-top:12px;">
         <div style="border:1px solid #e5e7eb;border-radius:12px;padding:10px;">
           <div style="font-weight:900;">TR</div>
           <div class="small">Цена (TL)</div>
@@ -2504,6 +2750,20 @@ async function openAllGameEdit(id, anchorTr){
           <input class="input" data-f="uaPrice" type="number" step="0.01" value="${ua.salePrice ?? ''}" />
           <div class="small" style="margin-top:8px;">Русский</div>
           ${_ruSelectHtml('inl_all_ru_ua', ua.ru || 'none')}
+        </div>
+        <div style="border:1px solid #e5e7eb;border-radius:12px;padding:10px;">
+          <div style="font-weight:900;">PL</div>
+          <div class="small">Цена (PLN)</div>
+          <input class="input" data-f="plPrice" type="number" step="0.01" value="${pl.salePrice ?? ''}" />
+          <div class="small" style="margin-top:8px;">Русский</div>
+          ${_ruSelectHtml('inl_all_ru_pl', pl.ru || tr.ru || 'none')}
+        </div>
+        <div style="border:1px solid #e5e7eb;border-radius:12px;padding:10px;">
+          <div style="font-weight:900;">IN</div>
+          <div class="small">Цена (INR)</div>
+          <input class="input" data-f="inPrice" type="number" step="0.01" value="${ind.salePrice ?? ''}" />
+          <div class="small" style="margin-top:8px;">Русский</div>
+          ${_ruSelectHtml('inl_all_ru_in', ind.ru || tr.ru || 'none')}
         </div>
       </div>
     </td>
@@ -2522,6 +2782,8 @@ async function openAllGameEdit(id, anchorTr){
     setStatus('Сохранение...');
     const newIdTR = (row.querySelector('[data-f="idTR"]').value||'').trim();
     const newIdUA = (row.querySelector('[data-f="idUA"]').value||'').trim();
+    const newIdPL = (row.querySelector('[data-f="idPL"]')?.value||'').trim();
+    const newIdIN = (row.querySelector('[data-f="idIN"]')?.value||'').trim();
 
     const payload = {
       name: (row.querySelector('[data-f="name"]').value||'').trim(),
@@ -2537,10 +2799,14 @@ async function openAllGameEdit(id, anchorTr){
       productIds: {
         TR: newIdTR || null,
         UA: newIdUA || null,
+        PL: newIdPL || newIdTR || newIdUA || null,
+        IN: newIdIN || newIdTR || newIdUA || null,
       },
       regions: {
         TR: { salePrice: Number(row.querySelector('[data-f="trPrice"]').value||0), ru: row.querySelector('#inl_all_ru_tr').value||'none', sub: row.querySelector('select[data-f="sub"]').value||'' },
-        UA: { salePrice: Number(row.querySelector('[data-f="uaPrice"]').value||0), ru: row.querySelector('#inl_all_ru_ua').value||'none', sub: row.querySelector('select[data-f="sub"]').value||'' }
+        UA: { salePrice: Number(row.querySelector('[data-f="uaPrice"]').value||0), ru: row.querySelector('#inl_all_ru_ua').value||'none', sub: row.querySelector('select[data-f="sub"]').value||'' },
+        PL: { salePrice: Number(row.querySelector('[data-f="plPrice"]')?.value||0), ru: row.querySelector('#inl_all_ru_pl')?.value || row.querySelector('#inl_all_ru_tr').value||'none', sub: row.querySelector('select[data-f="sub"]').value||'' },
+        IN: { salePrice: Number(row.querySelector('[data-f="inPrice"]')?.value||0), ru: row.querySelector('#inl_all_ru_in')?.value || row.querySelector('#inl_all_ru_tr').value||'none', sub: row.querySelector('select[data-f="sub"]').value||'' }
       }
     };
 
@@ -2565,6 +2831,43 @@ async function openAllGameEdit(id, anchorTr){
 }
 
 document.getElementById("btnImport").onclick=doImport;
+
+async function runRegionalPriceUpdate(buttonId, url, regionCode){
+  const btn = document.getElementById(buttonId);
+  if(!btn) return;
+  if(!confirm(`Обновить обычные цены без скидки для региона ${regionCode}? Будут проверены все игры, новинки и предзаказы. Уже заполненные цены тоже будут обновлены.`)) return;
+  const status = document.getElementById("gamesCount");
+  if(status) status.textContent = `Обновляю ${regionCode}: все игры, новинки, предзаказы...`;
+  btn.disabled = true;
+  try{
+    const r = await fetch(url, { method:"POST" });
+    const j = await r.json().catch(()=>({ok:false,error:"bad_json"}));
+    if(!r.ok || !j.ok){
+      if(status) status.textContent = `Ошибка ${regionCode}: ` + (j.error || r.status);
+      return;
+    }
+    const st = j.stats || {};
+    const a = st.allGames || {};
+    const n = st.newReleases || {};
+    const p = st.preorders || {};
+    if(status) status.textContent = `${regionCode}: Все игры ${a.updated||0}, Новинки ${n.updated||0}, Предзаказы ${p.updated||0}; пропущено ${((a.skipped||0)+(n.skipped||0)+(p.skipped||0))}, не найдено ${((a.failed||0)+(n.failed||0)+(p.failed||0))}`;
+    await Promise.all([loadAllGamesList?.(), loadNewReleasesStatus?.(), loadPreordersList?.()].filter(Boolean));
+  }catch(e){
+    if(status) status.textContent = `Ошибка ${regionCode}: ` + String(e);
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+const _btnUpdatePl = document.getElementById("updatePlPrices");
+if(_btnUpdatePl){
+  _btnUpdatePl.onclick = ()=>runRegionalPriceUpdate("updatePlPrices", "/api/admin/prices/update-pl", "PL");
+}
+const _btnUpdateIn = document.getElementById("updateInPrices");
+if(_btnUpdateIn){
+  _btnUpdateIn.onclick = ()=>runRegionalPriceUpdate("updateInPrices", "/api/admin/prices/update-in", "IN");
+}
+
 document.getElementById("btnAddGame").onclick=addGame;
 
 document.getElementById("btnPreImport").onclick=doImportPreorder;
@@ -2573,9 +2876,43 @@ document.getElementById("btnCancelPreorderEdit").onclick=()=>endPreorderEdit(fal
 
 document.getElementById("btnAllImport").onclick=doImportAllGames;
 document.getElementById("btnAddAllGame").onclick=addAllGame;
+
+(function wireRuMirrors(){
+  const pairs = [
+    ['impRuPL','impRuPLCard'], ['impRuIN','impRuINCard'],
+    ['preRuPL','preRuPLCard'], ['preRuIN','preRuINCard'],
+    ['allRuPL','allRuPLCard'], ['allRuIN','allRuINCard']
+  ];
+  for(const [a,b] of pairs){
+    const x = document.getElementById(a), y = document.getElementById(b);
+    if(x && y){
+      x.addEventListener('change', ()=>{ y.value = x.value; });
+      y.addEventListener('change', ()=>{ x.value = y.value; });
+    }
+  }
+  const srcs = [
+    ['impRuTR','impRuPL','impRuIN','impRuPLCard','impRuINCard'],
+    ['preRuTR','preRuPL','preRuIN','preRuPLCard','preRuINCard'],
+    ['allRuTR','allRuPL','allRuIN','allRuPLCard','allRuINCard']
+  ];
+  for(const [src,...targets] of srcs){
+    const sEl = document.getElementById(src);
+    if(sEl){
+      sEl.addEventListener('change', ()=>{
+        for(const tid of targets){ const t = document.getElementById(tid); if(t) t.value = sEl.value; }
+      });
+    }
+  }
+})();
+
 document.getElementById("regionSel").onchange=e=>loadRates(e.target.value);
 document.getElementById("addRow").onclick=()=>document.getElementById("ratesBody").appendChild(rowTemplate());
 document.getElementById("saveRates").onclick=()=>saveRates();
+document.getElementById("topupRegionSel").onchange=e=>loadTopupCards(e.target.value);
+document.getElementById("addTopupCardRow").onclick=()=>document.getElementById("topupCardsBody").appendChild(topupCardRow());
+document.getElementById("saveTopupCards").onclick=saveTopupCards;
+const _saveTopupSettings=document.getElementById("saveTopupSettings");
+if(_saveTopupSettings) _saveTopupSettings.onclick=saveSettings;
 document.getElementById("discountRegionSel").onchange=e=>loadDiscountRates(e.target.value);
 document.getElementById("addDiscountRow").onclick=()=>document.getElementById("discountRatesBody").appendChild(rowTemplate());
 document.getElementById("saveDiscountRates").onclick=saveDiscountRates;
@@ -2583,7 +2920,7 @@ document.getElementById("saveSubsPrices").onclick=saveSubsPrices;
 document.getElementById("saveSettings").onclick=saveSettings;
 const _btnVis = document.getElementById("btnReloadVisitors");
 if(_btnVis) _btnVis.onclick = loadVisitors;
-loadRates("TR");loadDiscountRates("TR");loadSubsPrices();loadSettings();loadVisitors();loadGamesList();loadPreordersList();loadAllGamesList();loadNewReleasesStatus();
+loadRates("TR");loadTopupCards("TR");loadDiscountRates("TR");loadSubsPrices();loadSettings();loadVisitors();loadGamesList();loadPreordersList();loadAllGamesList();loadNewReleasesStatus();
 
 loadVisitors();
 
