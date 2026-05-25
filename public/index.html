@@ -44,7 +44,20 @@
   </div>
   <div class="filters">
     <div class="colorA">Регион:</div>
-    <select id="region" class="selecColor1"><option value="TR" class="colValue">TR</option><option value="UA" class="colValue">UA</option></select>
+    <div class="regionPicker" id="regionPicker">
+      <button class="regionPickerBtn" id="regionPickerBtn" type="button" aria-haspopup="listbox" aria-expanded="false">
+        <span class="regionPickerFlag" id="regionPickerFlag"><span class="regionFlagIcon regionFlagTR" aria-hidden="true"></span></span>
+        <span class="regionPickerText" id="regionPickerText">Турция</span>
+        <svg class="regionPickerArrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="regionPickerMenu" id="regionPickerMenu" role="listbox" aria-hidden="true">
+        <button class="regionPickerOption" type="button" role="option" data-region="TR"><span class="regionFlagIcon regionFlagTR" aria-hidden="true"></span><span>TR</span></button>
+        <button class="regionPickerOption" type="button" role="option" data-region="UA"><span class="regionFlagIcon regionFlagCIS" aria-hidden="true"></span><span>UA</span></button>
+        <button class="regionPickerOption" type="button" role="option" data-region="PL"><span class="regionFlagIcon regionFlagPL" aria-hidden="true"></span><span>PL</span></button>
+        <button class="regionPickerOption" type="button" role="option" data-region="IN"><span class="regionFlagIcon regionFlagIN" aria-hidden="true"></span><span>IN</span></button>
+      </div>
+    </div>
+    <select id="region" class="selecColor1 regionNativeSelect" aria-hidden="true" tabindex="-1"><option value="TR" class="colValue">TR</option><option value="UA" class="colValue">UA</option><option value="PL" class="colValue">PL</option><option value="IN" class="colValue">IN</option></select>
     <button class="wishToggle wishToggle--filters" id="wishToggle" type="button" aria-label="Список желаемого">
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z"></path></svg>
       <span class="wishCount" id="wishCount" aria-hidden="true">0</span>
@@ -141,7 +154,7 @@
 
 <script>
 
-const state={tab:"home",region:"TR",sort:"pop",platform:"",players:"",language:"",genres:[],search:"",page:1,until:"",subPage:"",allDeals:false,discountRates:{TR:[],UA:[]},roundStep:50};
+const state={tab:"home",region:"TR",sort:"pop",platform:"",players:"",language:"",genres:[],search:"",page:1,until:"",subPage:"",allDeals:false,discountRates:{TR:[],UA:[],PL:[],IN:[]},topupCards:{TR:[],PL:[],IN:[]},useTurkeyTopupCards:false,roundStep:50};
 
 function shouldScrollToSubsGames(){
   return !!(state.scrollToSubsGames || window.location.hash === "#subs-games");
@@ -577,6 +590,7 @@ function enableHomeDragScroll(scroller){
 
   scroller.addEventListener("pointerdown", (e)=>{
     if(e.button !== undefined && e.button !== 0) return;
+    if(e.target && e.target.closest && e.target.closest('button, a, input, select, textarea, [role="button"]')) return;
     stopMomentum();
     dragging=true; moved=false;
     startX=lastX=e.clientX;
@@ -1458,9 +1472,12 @@ ${subsInfoList([
         const months = Number(String(id).split("_").pop()) || 1;
         const price = getSubFinalPrice(prices, region, "psplus", "deluxe", months);
         btn.addEventListener("click", ()=>{
-          const wa = state.whatsapp || "https://wa.me/+79659556300";
-          const msg = `Подписка PlayStation Plus Deluxe на ${months} мес. Регион: ${region}. Цена: ${price ? fmtRub(price) : "—"}.`;
-          openWhatsApp(wa, msg);
+          buySubscriptionWhatsApp({
+            name: "PlayStation Plus Deluxe",
+            months,
+            region,
+            price
+          });
         });
       });
 
@@ -1865,6 +1882,59 @@ try{
   if(savedRegion && !urlQS.get("region")) state.region = savedRegion;
 }catch(e){}
 
+
+const REGION_LABELS={TR:"TR",UA:"UA",PL:"PL",IN:"IN"};
+const REGION_FLAG_CLASSES={TR:"regionFlagTR",UA:"regionFlagCIS",PL:"regionFlagPL",IN:"regionFlagIN"};
+function regionFlagHtml(region){
+  const R=String(region||"TR").toUpperCase();
+  const cls=REGION_FLAG_CLASSES[R]||REGION_FLAG_CLASSES.TR;
+  return `<span class="regionFlagIcon ${cls}" aria-hidden="true"></span>`;
+}
+function updateRegionPicker(){
+  const R=String(state.region||"TR").toUpperCase();
+  const select=document.getElementById("region");
+  if(select) select.value=R;
+  const flag=document.getElementById("regionPickerFlag");
+  const text=document.getElementById("regionPickerText");
+  if(flag) flag.innerHTML=regionFlagHtml(R);
+  if(text) text.textContent=REGION_LABELS[R]||R;
+  document.querySelectorAll(".regionPickerOption").forEach(btn=>{
+    const active=String(btn.dataset.region||"").toUpperCase()===R;
+    btn.classList.toggle("active", active);
+    btn.setAttribute("aria-selected", active ? "true" : "false");
+  });
+}
+function closeRegionPicker(){
+  const picker=document.getElementById("regionPicker");
+  const btn=document.getElementById("regionPickerBtn");
+  const menu=document.getElementById("regionPickerMenu");
+  if(picker) picker.classList.remove("open");
+  if(btn) btn.setAttribute("aria-expanded","false");
+  if(menu) menu.setAttribute("aria-hidden","true");
+}
+function openRegionPicker(){
+  const picker=document.getElementById("regionPicker");
+  const btn=document.getElementById("regionPickerBtn");
+  const menu=document.getElementById("regionPickerMenu");
+  if(picker) picker.classList.add("open");
+  if(btn) btn.setAttribute("aria-expanded","true");
+  if(menu) menu.setAttribute("aria-hidden","false");
+}
+function setRegionValue(region){
+  const R=String(region||"TR").toUpperCase();
+  if(!REGION_LABELS[R]) return;
+  state.region=R;
+  try{localStorage.setItem("ps95_region",state.region);}catch(_){}
+  updateRegionPicker();
+  closeRegionPicker();
+  updateCartCount();
+  updateWishCount();
+  refreshAllWishButtons();
+  if(isCartOpen()) renderCart();
+  if(isWishOpen()) renderWishlist();
+  load();
+}
+
 function fmtRub(n){try{return new Intl.NumberFormat("ru-RU").format(n)+" ₽";}catch(e){return n+" ₽";}}
 function formatDateDMY(dateStr) {
   if (!dateStr) return "";
@@ -1947,6 +2017,176 @@ function calcCartDiscount(items){
   return {oldTotal, discount:Math.max(0, oldTotal-total), total};
 }
 
+function shouldUseTopupCartCheckout(region){
+  const R=String(region||state.region||"TR").toUpperCase();
+  if(R==="PL" || R==="IN") return true;
+  if(R==="TR") return !!state.useTurkeyTopupCards;
+  return false;
+}
+function cartCurrencyCode(region){
+  const R=String(region||state.region||"TR").toUpperCase();
+  if(R==="PL") return "ZL";
+  if(R==="IN") return "INR";
+  if(R==="TR") return "TL";
+  return R;
+}
+function formatStoreCurrency(value, region){
+  const n=Number(value||0);
+  const rounded=Math.round(n*100)/100;
+  const hasKop=Math.abs(rounded-Math.round(rounded))>0.001;
+  const formatted=new Intl.NumberFormat("ru-RU", {minimumFractionDigits:hasKop?2:0, maximumFractionDigits:hasKop?2:0}).format(rounded);
+  return `${formatted} ${cartCurrencyCode(region)}`;
+}
+function formatTopupLeftoverCurrency(value, region){
+  const R=String(region||state.region||"TR").toUpperCase();
+  const n=Number(value||0);
+  const rounded=Math.round(n*100)/100;
+  const hasFraction=Math.abs(rounded-Math.round(rounded))>0.001;
+  const formatted=new Intl.NumberFormat("ru-RU", {minimumFractionDigits:hasFraction?2:0, maximumFractionDigits:hasFraction?2:0}).format(rounded);
+  const code=R==="IN" ? "Rs" : cartCurrencyCode(R);
+  return `${formatted} ${code}`;
+}
+function calcTopupCartDetails(cards, price){
+  const rawPrice=Number(price||0);
+  const target=Math.ceil(rawPrice);
+  const list=(Array.isArray(cards)?cards:[])
+    .map(c=>({amount:Math.round(Number(c.amount)||0), rub:Number(c.rub)||0}))
+    .filter(c=>c.amount>0 && c.rub>0)
+    .sort((a,b)=>a.amount-b.amount || a.rub-b.rub);
+  if(!target || !list.length) return {nominal:0, rub:0, price:rawPrice, left:0, cards:[]};
+
+  const maxAmount=Math.max(...list.map(c=>c.amount));
+  const limit=target+maxAmount;
+  const inf=Number.POSITIVE_INFINITY;
+  const dp=Array(limit+1).fill(inf);
+  const cnt=Array(limit+1).fill(inf);
+  const prev=Array(limit+1).fill(null);
+  dp[0]=0;
+  cnt[0]=0;
+
+  for(let sum=0; sum<=limit; sum++){
+    if(!Number.isFinite(dp[sum])) continue;
+    for(let i=0;i<list.length;i++){
+      const card=list[i];
+      const next=sum+card.amount;
+      if(next>limit) continue;
+      const nextRub=dp[sum]+card.rub;
+      const nextCnt=cnt[sum]+1;
+      if(
+        nextRub<dp[next] ||
+        (nextRub===dp[next] && nextCnt<cnt[next])
+      ){
+        dp[next]=nextRub;
+        cnt[next]=nextCnt;
+        prev[next]={sum, idx:i};
+      }
+    }
+  }
+
+  let bestRub=inf, bestSum=inf, bestCnt=inf;
+  for(let sum=target; sum<=limit; sum++){
+    if(
+      dp[sum]<bestRub ||
+      (dp[sum]===bestRub && sum<bestSum) ||
+      (dp[sum]===bestRub && sum===bestSum && cnt[sum]<bestCnt)
+    ){
+      bestRub=dp[sum];
+      bestSum=sum;
+      bestCnt=cnt[sum];
+    }
+  }
+  if(!Number.isFinite(bestRub) || !Number.isFinite(bestSum)) return {nominal:0, rub:0, price:rawPrice, left:0, cards:[]};
+
+  const byAmount=new Map();
+  let cur=bestSum;
+  while(cur>0 && prev[cur]){
+    const step=prev[cur];
+    const card=list[step.idx];
+    const key=String(card.amount);
+    const existing=byAmount.get(key) || {amount:card.amount, rub:card.rub, qty:0};
+    existing.qty += 1;
+    byAmount.set(key, existing);
+    cur=step.sum;
+  }
+  const combo=Array.from(byAmount.values())
+    .sort((a,b)=>a.amount-b.amount)
+    .map(c=>({amount:c.amount, rub:c.rub, qty:c.qty, totalRub:c.rub*c.qty}));
+
+  return {nominal:bestSum, rub:bestRub, price:rawPrice, left:Math.max(0,bestSum-rawPrice), cards:combo};
+}
+function topupCardImage(region, nominal){
+  const R=String(region||state.region||"TR").toUpperCase();
+  const amount=Math.round(Number(nominal)||0);
+  const base="/img/topup-cards/";
+  const maps={
+    TR:new Set([250,500,750,1000,1500,2000,2500,3000,4000,5000]),
+    PL:new Set([50,100,200,500]),
+    IN:new Set([1000,2000,3000,4000,5000])
+  };
+  const key=R==="IN"?"in":R.toLowerCase();
+  if(maps[R] && maps[R].has(amount)) return `${base}${key}-${amount}.png`;
+  const available=maps[R] ? Array.from(maps[R]).sort((a,b)=>Math.abs(a-amount)-Math.abs(b-amount) || b-a) : [];
+  if(available.length) return `${base}${key}-${available[0]}.png`;
+  return "";
+}
+function topupAccordionHtml(){
+  return `
+    <button class="cartTopupInfoToggle" type="button" aria-expanded="false">
+      <span class="cartTopupInfoIcon">i</span>
+      <span>Что за карты для пополнения?</span>
+      <span class="cartTopupInfoArrow">⌄</span>
+    </button>
+    <div class="cartTopupInfoText" hidden>
+      Это коды, которые нужно активировать в своём аккаунте Play Station, чтобы на него зачислились средства. С помощью этих средств вы сможете купить выбранные товары в PS Store.
+    </div>`;
+}
+function bindTopupAccordions(root){
+  (root||document).querySelectorAll('.cartTopupInfoToggle').forEach(btn=>{
+    btn.onclick=()=>{
+      const text=btn.nextElementSibling;
+      const open=btn.getAttribute('aria-expanded')==='true';
+      btn.setAttribute('aria-expanded', String(!open));
+      if(text) text.hidden=open;
+    };
+  });
+}
+function renderTopupCartSection(items, details){
+  const region=state.region;
+  const nominal=Number(details.nominal||0);
+  const cards=(Array.isArray(details.cards)&&details.cards.length)
+    ? details.cards
+    : (nominal>0 ? [{amount:nominal, rub:Number(details.rub||0), qty:1, totalRub:Number(details.rub||0)}] : []);
+  const rowsHtml=cards.map(card=>{
+    const amount=Number(card.amount||0);
+    const qty=Math.max(1, Math.round(Number(card.qty||1)));
+    const rowRub=Number(card.totalRub || (Number(card.rub||0)*qty) || 0);
+    const img=topupCardImage(region, amount);
+    return `
+      <div class="cartTopupCardRow">
+        <div class="cartTopupImageWrap">${img ? `<img class="cartTopupImage" src="${img}" alt="Карта пополнения ${escapeHtml(formatStoreCurrency(amount, region))}" loading="lazy" decoding="async"/>` : ''}</div>
+        <div class="cartTopupCardInfo">
+          <div class="cartTopupRub">${fmtRub(rowRub)}</div>
+          <div class="cartTopupNominal">Номинал ${formatStoreCurrency(amount, region)}</div>
+        </div>
+        <div class="cartTopupQty">${qty}</div>
+      </div>`;
+  }).join("");
+  const section=document.createElement('div');
+  section.className='cartTopupSection';
+  section.innerHTML=`
+    <div class="cartTopupHead">
+      <div class="cartTopupTitle">Карты для пополнения</div>
+      <div class="cartTopupNominalTotal">${formatStoreCurrency(nominal, region)}</div>
+    </div>
+    <div class="cartTopupCardsList">${rowsHtml}</div>
+    <div class="cartTopupInfoBox">${topupAccordionHtml()}</div>
+    ${Number(details.left||0)>0 ? `<div class="cartTopupLeftover">${escapeHtml(formatTopupLeftoverCurrency(details.left, region))} останутся на вашем аккаунте.</div>` : ''}
+  `;
+  bindTopupAccordions(section);
+  return section;
+}
+
+
 function getCartKey(region){
   return CART_LS_PREFIX + String(region || "TR").toUpperCase();
 }
@@ -1966,6 +2206,31 @@ function saveCart(region, items){
   try{
     localStorage.setItem(getCartKey(region), JSON.stringify(items || []));
   }catch(_){}
+}
+async function refreshCartItemsFromServer(region){
+  const R = String(region || state.region || "TR").toUpperCase();
+  const stored = loadCart(R);
+  if(!stored.length) return stored;
+  const ids = stored.map(x=>String(x && x.id || "").trim()).filter(Boolean);
+  if(!ids.length) return stored;
+  try{
+    const r = await fetch(`/api/cart-items?region=${encodeURIComponent(R)}&ids=${encodeURIComponent(ids.join(","))}`, { cache:"no-store" });
+    const j = await r.json().catch(()=>null);
+    if(!r.ok || !j || !j.ok || !Array.isArray(j.items)) return stored;
+    const freshById = new Map(j.items.map(x=>[String(x.id), x]));
+    let changed = false;
+    const merged = stored.map(oldItem=>{
+      const fresh = freshById.get(String(oldItem && oldItem.id));
+      if(!fresh) return oldItem;
+      const normalized = normalizeGameForCart(Object.assign({}, oldItem, fresh));
+      if(JSON.stringify(normalized) !== JSON.stringify(oldItem)) changed = true;
+      return normalized;
+    });
+    if(changed) saveCart(R, merged);
+    return merged;
+  }catch(_e){
+    return stored;
+  }
 }
 function getWishKey(region){ return WISH_LS_PREFIX + String(region || "TR").toUpperCase(); }
 function loadWishlist(region){
@@ -2106,7 +2371,7 @@ function subBadgeHtml(subVal){
   return `<div class="cartSub"><img class="subIcon" src="${icon}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.style.display='none'"/><span>${text}</span></div>`;
 }
 
-function renderCart(){
+async function renderCart(){
   const body = document.getElementById("cartBody");
   const totalEl = document.getElementById("cartTotal");
   const regionEl = document.getElementById("cartRegion");
@@ -2116,8 +2381,14 @@ function renderCart(){
 
   if(regionEl) regionEl.textContent = `(${state.region})`;
 
-  const items = loadCart(state.region);
-  const totals = calcCartDiscount(items);
+  let items = loadCart(state.region);
+  items = await refreshCartItemsFromServer(state.region);
+  updateCartCount();
+  refreshAllBuyButtons();
+  const usesTopup = shouldUseTopupCartCheckout(state.region);
+  const storeTotal = items.reduce((s,x)=>s+(Number(x.storePrice)||0),0);
+  const topupDetails = usesTopup ? calcTopupCartDetails((state.topupCards&&state.topupCards[state.region])||[], storeTotal) : null;
+  const totals = usesTopup ? {oldTotal:0, discount:0, total:Number(topupDetails&&topupDetails.rub||0)} : calcCartDiscount(items);
 
   const oldTotalEl = document.getElementById("cartOldTotal");
   const discountEl = document.getElementById("cartDiscount");
@@ -2126,8 +2397,8 @@ function renderCart(){
   if(totalEl) totalEl.textContent = fmtRub(totals.total);
   if(oldTotalEl) oldTotalEl.textContent = fmtRub(totals.oldTotal);
   if(discountEl) discountEl.textContent = `- ${fmtRub(totals.discount)}`;
-  if(oldTotalRowEl) oldTotalRowEl.style.display = totals.discount > 0 ? "flex" : "none";
-  if(discountRowEl) discountRowEl.style.display = totals.discount > 0 ? "flex" : "none";
+  if(oldTotalRowEl) oldTotalRowEl.style.display = (!usesTopup && totals.discount > 0) ? "flex" : "none";
+  if(discountRowEl) discountRowEl.style.display = (!usesTopup && totals.discount > 0) ? "flex" : "none";
 
   if(clearBtn) clearBtn.disabled = items.length === 0;
   if(buyBtn) buyBtn.disabled = items.length === 0;
@@ -2144,6 +2415,12 @@ function renderCart(){
   items.forEach(item=>{
     const row = document.createElement("div");
     row.className = "cartItem";
+    const priceHtml = usesTopup ? formatStoreCurrency(item.storePrice || 0, state.region) : fmtRub(item.finalPriceRub || 0);
+    const metaHtml = usesTopup ? "" : `
+        <div class="cartMeta">
+          <div class="cartDisc">${item.discPerc ? `-${item.discPerc}%` : ""}</div>
+          <div class="cartUntil">${item.discountedUntil ? escapeHtml(formatDateRuLong(item.discountedUntil)) : ""}</div>
+        </div>`;
     row.innerHTML = `
       <div class="cartItemLeft">
         <div class="cartCover">
@@ -2153,23 +2430,25 @@ function renderCart(){
       </div>
       <div class="cartItemRight">
         <div class="cartItemTop">
-          <div class="cartItemTitle">${item.name || ""}</div>
+          <div class="cartItemTitle">${escapeHtml(item.name || "")}</div>
           <button class="cartRemove" type="button" aria-label="Удалить">×</button>
         </div>
-        <div class="cartEdition">${item.edition || "Standard Edition"}</div>
-        ${subBadgeHtml(item.sub)}
-        <div class="cartMeta">
-          <div class="cartDisc">${item.discPerc ? `-${item.discPerc}%` : ""}</div>
-          <div class="cartUntil">${item.discountedUntil ? escapeHtml(formatDateRuLong(item.discountedUntil)) : ""}</div>
-        </div>
+        <div class="cartEdition">${escapeHtml(item.edition || "Standard Edition")}</div>
+        ${usesTopup ? "" : subBadgeHtml(item.sub)}
+        ${metaHtml}
         <div class="cartPriceRow">
-          <div class="cartPrice">${fmtRub(item.finalPriceRub || 0)}</div>
+          <div class="cartPrice">${priceHtml}</div>
         </div>
       </div>
     `;
     row.querySelector(".cartRemove").onclick = ()=>removeFromCart(item.id);
     body.appendChild(row);
   });
+
+  if(usesTopup && topupDetails && Number(topupDetails.nominal||0)>0){
+    body.appendChild(renderTopupCartSection(items, topupDetails));
+  }
+  if(hintEl) hintEl.textContent = "";
 }
 
 function renderWishlist(){
@@ -2205,11 +2484,33 @@ function showWishlistDiscountToast(){
   document.body.appendChild(el); requestAnimationFrame(()=>el.classList.add("show")); setTimeout(()=>{ el.classList.remove("show"); setTimeout(()=>el.remove(),350); },3600);
 }
 
-function buyCartWhatsApp(){
-  const items = loadCart(state.region);
+
+function normalizeWhatsAppBase(link){
+  let base = String(link || "").trim();
+  if(!base) return "https://wa.me/+79659556300";
+  if(/^\+?\d[\d\s().-]*$/.test(base)){
+    const phone = base.replace(/\D/g, "");
+    return phone ? `https://wa.me/${phone}` : "https://wa.me/+79659556300";
+  }
+  if(/^https?:\/\//i.test(base)) return base;
+  return "https://" + base.replace(/^\/+/, "");
+}
+function openWhatsAppMessage(message, baseLink){
+  const base = normalizeWhatsAppBase(baseLink || state.whatsapp);
+  const sep = base.includes("?") ? "&" : "?";
+  window.open(base + sep + "text=" + encodeURIComponent(String(message || "")), "_blank");
+}
+
+async function buyCartWhatsApp(){
+  const items = await refreshCartItemsFromServer(state.region);
+  updateCartCount();
+  refreshAllBuyButtons();
   if(!items.length) return;
 
-  const totals = calcCartDiscount(items);
+  const usesTopup = shouldUseTopupCartCheckout(state.region);
+  const storeTotal = items.reduce((s,x)=>s+(Number(x.storePrice)||0),0);
+  const topupDetails = usesTopup ? calcTopupCartDetails((state.topupCards&&state.topupCards[state.region])||[], storeTotal) : null;
+  const totals = usesTopup ? {oldTotal:0, discount:0, total:Number(topupDetails&&topupDetails.rub||0)} : calcCartDiscount(items);
 
   const lines = [];
   lines.push("Хочу купить игры:");
@@ -2220,22 +2521,33 @@ function buyCartWhatsApp(){
     parts.push(`${i+1}) ${g.name}`);
     if(g.edition) parts.push(`Издание: ${g.edition}`);
     if(g.platform) parts.push(`Платформа: ${g.platform}`);
-    if(g.discPerc) parts.push(`Скидка: -${g.discPerc}%`);
-    if(g.discountedUntil) parts.push(String(formatDateRuLong(g.discountedUntil)).replace(/^До:\s*/,"Дата конца скидки: "));
-    parts.push(`Цена: ${fmtRub(g.finalPriceRub || 0)}`);
+    if(!usesTopup && g.discPerc) parts.push(`Скидка: -${g.discPerc}%`);
+    if(!usesTopup && g.discountedUntil) parts.push(String(formatDateRuLong(g.discountedUntil)).replace(/^До:\s*/,"Дата конца скидки: "));
+    parts.push(`Цена: ${usesTopup ? formatStoreCurrency(g.storePrice || 0, state.region) : fmtRub(g.finalPriceRub || 0)}`);
     lines.push(parts.join("\n"));
     lines.push("");
   });
-  if(totals.discount > 0){
+  if(usesTopup && topupDetails){
+    lines.push(`Сумма игр в PS Store: ${formatStoreCurrency(storeTotal, state.region)}`);
+    lines.push(`Карты для пополнения: ${formatStoreCurrency(topupDetails.nominal, state.region)}`);
+    if(Array.isArray(topupDetails.cards) && topupDetails.cards.length){
+      topupDetails.cards.forEach(card=>{
+        const qty=Math.max(1, Math.round(Number(card.qty||1)));
+        const rowRub=Number(card.totalRub || (Number(card.rub||0)*qty) || 0);
+        lines.push(`- ${formatStoreCurrency(card.amount, state.region)} × ${qty}: ${fmtRub(rowRub)}`);
+      });
+    }
+    lines.push(`Стоимость карт: ${fmtRub(topupDetails.rub)}`);
+    if(Number(topupDetails.left||0)>0) lines.push(`${formatTopupLeftoverCurrency(topupDetails.left, state.region)} останутся на вашем аккаунте.`);
+  }else if(totals.discount > 0){
     lines.push(`Старая цена: ${fmtRub(totals.oldTotal)}`);
     lines.push(`Скидка за 2+ игры: - ${fmtRub(totals.discount)}`);
   }
   lines.push(`Итого: ${fmtRub(totals.total)}`);
 
-  const msg = encodeURIComponent(lines.join("\n"));
-  const base = state.whatsapp || "https://wa.me/+79659556300";
-  window.open(base + (base.includes("?") ? "&" : "?") + "text=" + msg, "_blank");
+  openWhatsAppMessage(lines.join("\n"));
 }
+
 // ---------------- end Cart ----------------
 
 // ---------------- Subscriptions WhatsApp ----------------
@@ -2254,9 +2566,7 @@ function buySubscriptionWhatsApp(p){
   lines.push(`Регион: ${region}`);
   if(price) lines.push(`Цена: ${fmtRub(price)}`);
 
-  const msg = encodeURIComponent(lines.join("\n"));
-  const base = state.whatsapp || "https://wa.me/+79659556300";
-  window.open(base + (base.includes("?") ? "&" : "?") + "text=" + msg, "_blank");
+  openWhatsAppMessage(lines.join("\n"));
 }
 
 
@@ -2784,6 +3094,7 @@ async function renderDiscountOverview(){
 async function load(){
   // keep filters selected across pagination
   document.getElementById("region").value=state.region;
+  updateRegionPicker();
   // sort select options depend on active tab; value is set in setActiveTab/setSortOptionsForTab
   if(document.getElementById("platform")) document.getElementById("platform").value=state.platform||"";
   const searchEl=document.getElementById("search");
@@ -2807,7 +3118,9 @@ async function load(){
 
   if(meta){
     state.whatsapp = meta.settings?.whatsappLink || state.whatsapp || "https://wa.me/+79659556300";
-    state.discountRates = meta.discountRates || state.discountRates || {TR:[],UA:[]};
+    state.discountRates = meta.discountRates || state.discountRates || {TR:[],UA:[],PL:[],IN:[]};
+    state.topupCards = meta.topupCards || state.topupCards || {TR:[],PL:[],IN:[]};
+    state.useTurkeyTopupCards = !!meta.settings?.useTurkeyTopupCards;
     state.roundStep = Number(meta.settings?.roundStep || state.roundStep || 50);
   }
 
@@ -2841,7 +3154,9 @@ async function load(){
   }
   const whatsapp=meta.settings?.whatsappLink||"https://wa.me/+79659556300";
   state.whatsapp = whatsapp;
-  state.discountRates = meta.discountRates || {TR:[],UA:[]};
+  state.discountRates = meta.discountRates || {TR:[],UA:[],PL:[],IN:[]};
+  state.topupCards = meta.topupCards || state.topupCards || {TR:[],PL:[],IN:[]};
+  state.useTurkeyTopupCards = !!meta.settings?.useTurkeyTopupCards;
   state.roundStep = Number(meta.settings?.roundStep || 50);
   const showUntil=!!(state.tab==="discounts" && meta.hasAnyUntil && meta.hasAnyUntil[state.region]);
 
@@ -3004,18 +3319,28 @@ async function load(){
     pager.appendChild(mk("›", Math.min(totalPages, state.page+1), state.page===totalPages));
   }
 }
-document.getElementById("region").onchange=e=>{
-  state.region=e.target.value;
-  // Не сбрасываем платформу/поиск/дату при смене региона. Если выбранной даты нет в новом регионе,
-  // она будет автоматически заменена на ближайшую внутри loadDiscountTabs().
-  try{localStorage.setItem("ps95_region",state.region);}catch(_){}
-  updateCartCount();
-  updateWishCount();
-  refreshAllWishButtons();
-  if(isCartOpen()) renderCart();
-  if(isWishOpen()) renderWishlist();
-  load();
-};
+document.getElementById("region").onchange=e=>setRegionValue(e.target.value);
+const regionPickerBtn=document.getElementById("regionPickerBtn");
+const regionPickerMenu=document.getElementById("regionPickerMenu");
+if(regionPickerBtn){
+  regionPickerBtn.addEventListener("click",()=>{
+    const picker=document.getElementById("regionPicker");
+    if(picker && picker.classList.contains("open")) closeRegionPicker(); else openRegionPicker();
+  });
+}
+if(regionPickerMenu){
+  regionPickerMenu.addEventListener("click",e=>{
+    const opt=e.target.closest(".regionPickerOption[data-region]");
+    if(!opt) return;
+    setRegionValue(opt.dataset.region);
+  });
+}
+document.addEventListener("click",e=>{
+  const picker=document.getElementById("regionPicker");
+  if(picker && !picker.contains(e.target)) closeRegionPicker();
+});
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeRegionPicker(); });
+updateRegionPicker();
 document.getElementById("sort").onchange=e=>{state.sort=e.target.value;state.page=1;load();};
 let __searchTimer=null;
 document.getElementById("search").addEventListener("input",()=>{
