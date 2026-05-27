@@ -4442,7 +4442,7 @@ body[data-tab="topup"] #pager{
   line-height:1;
   cursor:pointer;
 }
-.regionCompareHead{padding-right:38px;margin-bottom:14px;display:flex;align-items:flex-start;gap:16px;}
+.regionCompareHead{padding-right:20px;margin-bottom:14px;display:flex;align-items:flex-start;gap:16px;}
 .regionCompareCover{width:112px;height:112px;flex:0 0 112px;border-radius:14px;overflow:hidden;background:#eef3fb;border:1px solid #e7ecf4;}
 .regionCompareCover img{width:100%;height:100%;object-fit:cover;display:block;}
 .regionCompareNoCover{width:100%;height:100%;background:linear-gradient(135deg,#eef3fb,#dfe8f5);}
