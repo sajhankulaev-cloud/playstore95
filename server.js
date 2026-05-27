@@ -6317,6 +6317,10 @@ app.get("/api/game-regions", (req, res) => {
     const pick = same[0] || target;
     const g = pick.raw || raw;
     const order = ['UA','TR','PL','IN'];
+    const regionBaseIndexes = {
+      PL: buildAllGamesRegionPriceIndex('PL'),
+      IN: buildAllGamesRegionPriceIndex('IN')
+    };
     const items=[];
     for(const R of order){
       const reg = (g.regions && g.regions[R]) ? g.regions[R] : null;
@@ -6326,13 +6330,25 @@ app.get("/api/game-regions", (req, res) => {
       let discPerc = 0;
       let discountedUntil = null;
       const dg = (g.id && discountsIndex.byId.get(String(g.id))) || null;
-      if(dg && dg.regions && dg.regions[R] && isDiscountActiveForRegion(dg.regions[R])){
-        const dreg = dg.regions[R];
-        discPerc = Number(dreg.discPerc || 0) || 0;
-        discountedUntil = dreg.discountedUntil || null;
-        const dPrice = Number(dreg.salePrice || 0);
-        if(Number.isFinite(dPrice) && dPrice > 0) storePrice = dPrice;
-        else if(discPerc > 0) storePrice = Math.max(0, baseStorePrice * (1 - discPerc/100));
+      if(dg){
+        if(R === 'PL' || R === 'IN'){
+          const dreg = publicDiscountRegionFor(dg, R, regionBaseIndexes[R]);
+          const trDiscountReg = (dg.regions && dg.regions.TR) ? dg.regions.TR : dreg;
+          if(dreg && isDiscountActiveForRegion(trDiscountReg)){
+            const dPrice = Number(dreg.salePrice || 0);
+            discPerc = Number(dreg.discPerc || 0) || 0;
+            discountedUntil = dreg.discountedUntil || trDiscountReg.discountedUntil || null;
+            if(Number.isFinite(dPrice) && dPrice > 0) storePrice = dPrice;
+            else if(discPerc > 0) storePrice = Math.max(0, baseStorePrice * (1 - discPerc/100));
+          }
+        }else if(dg.regions && dg.regions[R] && isDiscountActiveForRegion(dg.regions[R])){
+          const dreg = dg.regions[R];
+          discPerc = Number(dreg.discPerc || 0) || 0;
+          discountedUntil = dreg.discountedUntil || null;
+          const dPrice = Number(dreg.salePrice || 0);
+          if(Number.isFinite(dPrice) && dPrice > 0) storePrice = dPrice;
+          else if(discPerc > 0) storePrice = Math.max(0, baseStorePrice * (1 - discPerc/100));
+        }
       }
       items.push({
         region:R,
