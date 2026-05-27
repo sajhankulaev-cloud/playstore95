@@ -5722,6 +5722,26 @@ app.get("/api/subgames", async (req, res) => {
 });
 
 
+
+function buildNewReleaseKeySet(){
+  const doc = readJson(NEW_RELEASES_PATH, {items:[]});
+  const items = Array.isArray(doc.items) ? doc.items : [];
+  const set = new Set();
+  for(const g of items){
+    if(g && g.id) set.add('id:'+String(g.id));
+    if(g && g.conceptId) set.add('concept:'+String(g.conceptId));
+    if(g && g.name) set.add('name:'+normText(String(g.name))+'|'+normText(String(g.edition||'')));
+  }
+  return set;
+}
+function isGameInNewReleases(g, keySet, conceptIndex){
+  if(!g || !keySet) return false;
+  if(g.id && keySet.has('id:'+String(g.id))) return true;
+  const cid = String(g.conceptId || conceptForGame(g, conceptIndex) || '').trim();
+  if(cid && keySet.has('concept:'+cid)) return true;
+  return !!(g.name && keySet.has('name:'+normText(String(g.name))+'|'+normText(String(g.edition||''))));
+}
+
 function buildPublicAllGamesItems(region){
   const store = readStore();
   const R = String(region || "TR").toUpperCase();
@@ -5732,6 +5752,7 @@ function buildPublicAllGamesItems(region){
   const discountsIndex = readActiveDiscountsIndex();
   const descIndex = buildDescriptionIndex();
   const conceptIndex = buildConceptIndex();
+  const newReleaseKeys = buildNewReleaseKeySet();
 
   let computed = all.map(g => {
     const reg = (g.regions && g.regions[R]) ? g.regions[R] : null;
@@ -5777,7 +5798,8 @@ function buildPublicAllGamesItems(region){
       finalPriceRub: rub,
       oldPriceRub: (discPerc > 0 ? calcRegionRub(store, R, baseStorePrice) : 0),
       conceptId: conceptForGame(g, conceptIndex),
-      popRank: g.popRank || 999999
+      popRank: g.popRank || 999999,
+      isNewRelease: isGameInNewReleases(g, newReleaseKeys, conceptIndex)
     };
   }).filter(Boolean);
 
@@ -5819,6 +5841,7 @@ function buildPublicItemsFromDocForBestsellers(region, filePath, sourceTab){
   const discountsIndex = readActiveDiscountsIndex();
   const descIndex = buildDescriptionIndex();
   const conceptIndex = buildConceptIndex();
+  const newReleaseKeys = buildNewReleaseKeySet();
 
   const computed = all.map(g => {
     const reg = (g.regions && g.regions[R]) ? g.regions[R] : null;
@@ -5870,6 +5893,7 @@ function buildPublicItemsFromDocForBestsellers(region, filePath, sourceTab){
       popRank: g.popRank || 999999,
       releaseDate: g.releaseDate || null,
       isPreorder: sourceTab === "preorders" || isFutureReleaseDateYMD(g.releaseDate),
+      isNewRelease: sourceTab === "new" || isGameInNewReleases(g, newReleaseKeys, conceptIndex),
       sourceTab
     };
   }).filter(Boolean);
@@ -6031,6 +6055,7 @@ app.get("/api/allgames", async (req, res) => {
     const discountsIndex = readActiveDiscountsIndex();
     const descIndex = buildDescriptionIndex();
     const conceptIndex = buildConceptIndex();
+    const newReleaseKeys = buildNewReleaseKeySet();
     const regionBaseIndex = (region === "PL" || region === "IN") ? buildAllGamesRegionPriceIndex(region) : null;
 
     let computed = all.map(g => {
@@ -6101,6 +6126,8 @@ app.get("/api/allgames", async (req, res) => {
         oldPriceRub: (discPerc > 0 ? calcRegionRub(store, region, baseStorePrice) : 0),
         conceptId: conceptForGame(g, conceptIndex),
         popRank: g.popRank || 999999,
+        isNewRelease: isGameInNewReleases(g, newReleaseKeys, conceptIndex),
+        sourceTab: "allgames",
         // Prefer PS browse rank by id; fallback to title match.
         // IMPORTANT: match by base title too, because PS Browse often shows a single tile
         // for the game (e.g. "EA SPORTS FC™ 26") while our library stores per-edition items
@@ -6245,6 +6272,91 @@ app.get("/api/allgames", async (req, res) => {
 // Public: list NEW RELEASES ("Новинки")
 // Source of truth for ordering is PS Store category (TR) cached weekly.
 // We only show games that exist in our "Всё игры" library and have conceptId.
+
+app.get("/api/game-regions", (req, res) => {
+  try{
+    const store = readStore();
+    const requestedId = String(req.query.id || '').trim();
+    const requestedConcept = String(req.query.conceptId || '').trim();
+    const activeRegion = String(req.query.region || 'TR').toUpperCase();
+    const conceptIndex = buildConceptIndex();
+    const discountsIndex = readActiveDiscountsIndex();
+    const docs = [
+      {file: ALL_GAMES_PATH, source:'all'},
+      {file: NEW_RELEASES_PATH, source:'new'},
+      {file: PREORDERS_PATH, source:'preorder'},
+      {file: GAMES_PATH, source:'discount'}
+    ];
+    const collect=[];
+    for(const d of docs){
+      const doc = readJson(d.file, {items:[]});
+      const arr = Array.isArray(doc) ? doc : (Array.isArray(doc.items) ? doc.items : []);
+      for(const raw of arr) collect.push({raw, source:d.source});
+    }
+    let target = null;
+    for(const x of collect){
+      const g=x.raw||{};
+      if(requestedId && String(g.id||'').trim() === requestedId){ target=x; break; }
+      if(requestedId && g.productIds && Object.values(g.productIds).some(v=>String(v||'').trim()===requestedId)){ target=x; break; }
+    }
+    if(!target && requestedConcept){
+      target = collect.find(x=>String(conceptForGame(x.raw, conceptIndex)||'').trim() === requestedConcept) || null;
+    }
+    if(!target) return res.json({ ok:true, items:[] });
+    const raw = target.raw || {};
+    const baseConcept = String(conceptForGame(raw, conceptIndex)||'').trim();
+    const editionKey = normText(String(raw.edition || 'Standard Edition'));
+    const same = collect.filter(x=>{
+      const g=x.raw||{};
+      const cid=String(conceptForGame(g, conceptIndex)||'').trim();
+      if(baseConcept && cid !== baseConcept) return false;
+      return normText(String(g.edition || 'Standard Edition')) === editionKey || String(g.id||'')===String(raw.id||'');
+    });
+    const sourcePriority = {all:0, preorder:1, discount:2};
+    same.sort((a,b)=>(sourcePriority[a.source]??9)-(sourcePriority[b.source]??9));
+    const pick = same[0] || target;
+    const g = pick.raw || raw;
+    const order = ['UA','TR','PL','IN'];
+    const items=[];
+    for(const R of order){
+      const reg = (g.regions && g.regions[R]) ? g.regions[R] : null;
+      const baseStorePrice = reg ? Number(reg.salePrice || 0) : 0;
+      if(!Number.isFinite(baseStorePrice) || baseStorePrice <= 0) continue;
+      let storePrice = baseStorePrice;
+      let discPerc = 0;
+      let discountedUntil = null;
+      const dg = (g.id && discountsIndex.byId.get(String(g.id))) || null;
+      if(dg && dg.regions && dg.regions[R] && isDiscountActiveForRegion(dg.regions[R])){
+        const dreg = dg.regions[R];
+        discPerc = Number(dreg.discPerc || 0) || 0;
+        discountedUntil = dreg.discountedUntil || null;
+        const dPrice = Number(dreg.salePrice || 0);
+        if(Number.isFinite(dPrice) && dPrice > 0) storePrice = dPrice;
+        else if(discPerc > 0) storePrice = Math.max(0, baseStorePrice * (1 - discPerc/100));
+      }
+      items.push({
+        region:R,
+        active:R===activeRegion,
+        id:g.id,
+        name:g.name || '',
+        edition:g.edition || 'Standard Edition',
+        platform:g.platform || 'PS4 / PS5',
+        cover:g.cover || '',
+        ru: gameRuStatus(g, R),
+        discPerc,
+        discountedUntil,
+        storePrice,
+        finalPriceRub: calcRegionRub(store, R, storePrice),
+        oldPriceRub: discPerc > 0 ? calcRegionRub(store, R, baseStorePrice) : 0,
+        conceptId: baseConcept
+      });
+    }
+    res.json({ ok:true, region:activeRegion, items });
+  }catch(e){
+    res.status(500).json({ ok:false, error:String(e && e.message || e) });
+  }
+});
+
 app.get("/api/newreleases", async (req, res) => {
   try{
     pruneExpiredNewReleases();
@@ -6316,6 +6428,8 @@ app.get("/api/newreleases", async (req, res) => {
         finalPriceRub: rub,
         oldPriceRub: 0,
         conceptId: conceptForGame(g, conceptIndex),
+        isNewRelease: true,
+        sourceTab: "new",
         popRank: g.popRank || 999999,
         psRank,
         releaseDate: g.releaseDate || null
@@ -7658,9 +7772,11 @@ app.get("/api/search", async (req, res) => {
     // Base sources: all games + preorders (search must be global).
     // Keep a source marker so the UI can show "Предзаказ" badge in search results.
     const allDoc = readJson(ALL_GAMES_PATH, { updatedAt:null, items:[] });
+    const newDoc = readJson(NEW_RELEASES_PATH, { updatedAt:null, items:[] });
     const preDoc = readJson(PREORDERS_PATH, { updatedAt:null, items:[] });
     let items = [];
     if(Array.isArray(allDoc.items)) items = items.concat(allDoc.items.map(x=>Object.assign({_src:"all"}, x)));
+    if(Array.isArray(newDoc.items)) items = items.concat(newDoc.items.map(x=>Object.assign({_src:"new"}, x)));
     if(Array.isArray(preDoc.items)) items = items.concat(preDoc.items.map(x=>Object.assign({_src:"pre"}, x)));
 
     // NOTE: Search must be truly global.
@@ -7702,6 +7818,8 @@ app.get("/api/search", async (req, res) => {
     const rules = (store.rates && store.rates[region]) ? store.rates[region] : [];
     const step = Number(store.settings?.roundStep || 50);
     const discountsIndex = readActiveDiscountsIndex();
+    const conceptIndex = buildConceptIndex();
+    const newReleaseKeys = buildNewReleaseKeySet();
 
     let computed = items.map(g => {
       const reg = (g.regions && g.regions[region]) ? g.regions[region] : null;
@@ -7746,7 +7864,10 @@ app.get("/api/search", async (req, res) => {
         discountedUntil,
         storePrice,
         finalPriceRub: rub,
+        conceptId: conceptForGame(g, conceptIndex),
         popRank: g.popRank || 999999,
+        isNewRelease: (g._src === "new") || isGameInNewReleases(g, newReleaseKeys, conceptIndex),
+        sourceTab: (g._src === "new") ? "new" : ((g._src === "pre") ? "preorders" : "allgames"),
         releaseDate: g.releaseDate || null,
         isPreorder: ((g._src === "pre") || !!g.isPreorder) && isFutureReleaseDateYMD(g.releaseDate)
       };
