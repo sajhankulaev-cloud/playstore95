@@ -18,6 +18,7 @@ try{ fs.mkdirSync(IMAGE_CACHE_DIR, { recursive:true }); }catch(_e){}
 const PS_BROWSE_CACHE_PATH = path.join(__dirname, "data", "ps_browse_rank_cache.json");
 const PS_BROWSE_PAGE_SIZE_GUESS = 24; // PS Store browse commonly shows 24 tiles per page
 const PS_BROWSE_MAX_PAGES_HARD_LIMIT = 500; // safety
+const PS_BROWSE_CANONICAL_LOCALE = "en-in"; // Default public order follows https://store.playstation.com/en-in/pages/browse
 
 // --- PlayStation Pre-orders category rank helpers ---
 // Category page example (TR):
@@ -1569,7 +1570,18 @@ async function rebuildPsBrowseRankCacheForTargets(targetGames, locale, opts = {}
     for(const nm of keys.names) remainingNames.add(String(nm));
   }
 
-  const cache = { updatedAt: new Date().toISOString(), locale: loc, ranksByName: {}, ranksById: {} };
+  // Keep any already known ranks for this locale. Discount refreshes must not
+  // replace the full browse cache with only discount-game ranks, otherwise the
+  // public "Все игры" order changes after every discount update.
+  const existing = readPsBrowseCache();
+  const cache = (existing && existing.locale === loc)
+    ? {
+        updatedAt: existing.updatedAt || null,
+        locale: loc,
+        ranksByName: (existing.ranksByName && typeof existing.ranksByName === "object") ? existing.ranksByName : {},
+        ranksById: (existing.ranksById && typeof existing.ranksById === "object") ? existing.ranksById : {}
+      }
+    : { updatedAt: null, locale: loc, ranksByName: {}, ranksById: {} };
   let fetchedPages = 0;
   let entriesTotal = 0;
 
@@ -1602,6 +1614,7 @@ async function rebuildPsBrowseRankCacheForTargets(targetGames, locale, opts = {}
     if(targetList.length && remainingIds.size === 0 && remainingNames.size === 0) break;
   }
 
+  cache.updatedAt = new Date().toISOString();
   writePsBrowseCache(cache);
   return { cache, fetchedPages, entriesTotal };
 }
@@ -1627,9 +1640,15 @@ async function warmupPsBrowseCache(locale, pagesToFetch = 3){
   const loc = String(locale || "en-tr").trim();
   const today = new Date().toISOString();
   const cache = readPsBrowseCache();
+  const n = Math.max(1, Math.min(25, Number(pagesToFetch) || 3));
   if(cache.locale === loc && cache.updatedAt && sameDayIso(cache.updatedAt, today)){
-    // If we already have some ids, don't refetch.
-    if(cache.ranksById && Object.keys(cache.ranksById).length) return;
+    // Do not trust a tiny cache: discount updates may have found only several
+    // products. For stable default sorting, make sure the first browse pages
+    // for the canonical locale are present.
+    const idCount = cache.ranksById ? Object.keys(cache.ranksById).length : 0;
+    const nameCount = cache.ranksByName ? Object.keys(cache.ranksByName).length : 0;
+    const minEntries = Math.max(12, Math.floor(n * PS_BROWSE_PAGE_SIZE_GUESS * 0.75));
+    if(Math.max(idCount, nameCount) >= minEntries) return;
   }
   if(cache.locale !== loc){
     cache.locale = loc;
@@ -1637,7 +1656,6 @@ async function warmupPsBrowseCache(locale, pagesToFetch = 3){
     cache.ranksById = {};
     cache.updatedAt = null;
   }
-  const n = Math.max(1, Math.min(25, Number(pagesToFetch) || 3));
   for(let page=1; page<=n; page++){
     let html;
     try{
@@ -4312,8 +4330,8 @@ app.get("/api/games", async (req, res) => {
     const store = readStore();
     const region = String(req.query.region || "TR").toUpperCase();
     // Default sorting on Discounts must match the public "Все игры" page.
-    // Use TR Browse order as the canonical source for both regions.
-    const locale = "en-tr";
+    // Use India Browse order as the canonical source while TR ordering is unstable on PS Store.
+    const locale = PS_BROWSE_CANONICAL_LOCALE;
     const sort = String(req.query.sort || "pop");
     const page = Math.max(1, parseInt(String(req.query.page || "1"), 10));
     let perPage = 24;
@@ -5224,7 +5242,7 @@ app.post("/api/admin/discounts/refresh_from_ps", requireAdmin, async (req, res) 
       });
     }
 
-    const browseRankInfo = await rebuildPsBrowseRankCacheForTargets(matched, "en-tr", {
+    const browseRankInfo = await rebuildPsBrowseRankCacheForTargets(matched, PS_BROWSE_CANONICAL_LOCALE, {
       maxPages: Number(req.body && (req.body.browsePages || req.body.rankPages)) || 420,
       timeoutMs: Math.min(Math.max(3000, timeoutMs), 8000)
     });
@@ -5963,9 +5981,9 @@ app.get("/api/allgames", async (req, res) => {
   try {
     const store = readStore();
     const region = String(req.query.region || "TR").toUpperCase();
-    // Sorting for TR and UA must be identical. We use the TR Browse order as the
-    // canonical ranking source for both regions.
-    const locale = "en-tr";
+    // Sorting for all regions must be identical. We use India Browse order as the
+    // canonical ranking source while TR ordering is unstable on PS Store.
+    const locale = PS_BROWSE_CANONICAL_LOCALE;
     const sort = String(req.query.sort || "pop");
     const page = Math.max(1, parseInt(String(req.query.page || "1"), 10));
     const perPage = 24;
@@ -5975,8 +5993,8 @@ app.get("/api/allgames", async (req, res) => {
     const genres = String(req.query.genres || req.query.genre || "").split(",").map(x=>x.trim()).filter(Boolean);
     const language = String(req.query.language || req.query.lang || "").trim();
 
-    // For TR browse-like ordering, prefill ranks for the first pages so the order matches
-    // https://store.playstation.com/en-tr/pages/browse immediately.
+    // For PS browse-like ordering, prefill ranks for the first pages so the order matches
+    // https://store.playstation.com/en-in/pages/browse immediately.
     if(!q && (sort === "pop" || !sort)){
       try{ await withTimeout(warmupPsBrowseCache(locale, 6), 2500); }catch(_e){}
     }
