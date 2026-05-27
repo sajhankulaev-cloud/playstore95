@@ -227,6 +227,7 @@ function subsIcon(name){
     demo:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 9h10a4 4 0 0 1 3.7 2.5l.9 2.4a3.1 3.1 0 0 1-5.2 3.2L15 16H9l-1.4 1.1a3.1 3.1 0 0 1-5.2-3.2l.9-2.4A4 4 0 0 1 7 9Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M7 14h4M9 12v4M16.5 13.5h.1M18.5 15.5h.1M19 6v3M17.5 7.5h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
     stream:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7.5 17.5H17a3.7 3.7 0 0 0 .5-7.4A5.5 5.5 0 0 0 7 11.4a3.1 3.1 0 0 0 .5 6.1Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16.5 13v5M14 15.5h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
     clockgame:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5.5 10.5h7a3 3 0 0 1 2.8 1.9l.7 1.9a2.4 2.4 0 0 1-4 2.5l-1-1H7l-1 1a2.4 2.4 0 0 1-4-2.5l.7-1.9a3 3 0 0 1 2.8-1.9Z" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="17" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M17 6v2.2l1.6 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+    compare:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 8h12M17 8l-3-3M17 8l-3 3M19 16H7M7 16l3-3M7 16l3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     library:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="5" width="4" height="14" rx="1" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="10" y="5" width="4" height="14" rx="1" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16 6.5 20 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
     trial:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 8h10v4a5 5 0 0 1-10 0V8Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 4h6M10 8V4M14 8V4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M10 13h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'
   };
@@ -510,7 +511,7 @@ function homeSubCardHtml(id, img, title, price, features=[]){
   return `<button class="homeSubCard" type="button" data-home-sub="${escapeHtml(id)}">
     <img src="${escapeHtml(img)}" alt="${escapeHtml(title)}" loading="lazy" decoding="async">
     <div class="homeSubText">
-      <div class="homeSubPrice">${price ? fmtRub(price) : ""}</div>
+      <div class="homeSubPrice">${price ? price : ""}</div>
       <div class="homeSubName">${escapeHtml(title)}</div>
       ${feats ? `<ul class="homeSubFeatures">${feats}</ul>` : ""}
     </div>
@@ -884,9 +885,9 @@ async function renderHome(){
     if(!list) return;
     const R=state.region;
     list.innerHTML = [
-      homeSubCardHtml("essential", `/img/essential_${months}${Number(months)===1?'.jpg':(Number(months)===12?'.jpg':'.png')}`, "PS Plus Essential", getSubPrice(prices,R,"psplus","essential",months), HOME_PSPLUS_FEATURES.essential),
-      homeSubCardHtml("extra", `/img/extra_${months}.png`, "PS Plus Extra", getSubPrice(prices,R,"psplus","extra",months), HOME_PSPLUS_FEATURES.extra),
-      homeSubCardHtml("deluxe", `/img/deluxe_${months}.png`, "PS Plus Deluxe", getSubPrice(prices,R,"psplus","deluxe",months), HOME_PSPLUS_FEATURES.deluxe),
+      homeSubCardHtml("essential", `/img/essential_${months}${Number(months)===1?'.jpg':(Number(months)===12?'.jpg':'.png')}`, "PS Plus Essential", renderSubOfferPrice(prices,R,"psplus","essential",months), HOME_PSPLUS_FEATURES.essential),
+      homeSubCardHtml("extra", `/img/extra_${months}.png`, "PS Plus Extra", renderSubOfferPrice(prices,R,"psplus","extra",months), HOME_PSPLUS_FEATURES.extra),
+      homeSubCardHtml("deluxe", `/img/deluxe_${months}.png`, "PS Plus Deluxe", renderSubOfferPrice(prices,R,"psplus","deluxe",months), HOME_PSPLUS_FEATURES.deluxe),
     ].join("");
     list.querySelectorAll('[data-home-sub]').forEach(btn=>btn.addEventListener('click',()=>openSubPage(btn.getAttribute('data-home-sub')||'')));
   };
@@ -894,7 +895,7 @@ async function renderHome(){
     const list=document.getElementById("homeEaList");
     if(!list) return;
     const R=state.region;
-    list.innerHTML = homeSubCardHtml("eaplay", `/img/eaplay_${months}.png`, "EA Play", getSubPrice(prices,R,"eaplay","",months), HOME_EAPLAY_FEATURES);
+    list.innerHTML = homeSubCardHtml("eaplay", `/img/eaplay_${months}.png`, "EA Play", renderSubOfferPrice(prices,R,"eaplay","",months), HOME_EAPLAY_FEATURES);
     list.querySelectorAll('[data-home-sub]').forEach(btn=>btn.addEventListener('click',()=>openSubPage(btn.getAttribute('data-home-sub')||'', true)));
   };
   renderHomeSubs(1);
@@ -2601,12 +2602,15 @@ function buildCard(game, whatsapp, showUntil){
   const cardTab = game && game.__cardTab ? String(game.__cardTab) : state.tab;
   const isSearchMode = !!String(state.search || "").trim();
   const isPreorder = (cardTab === "preorders" && !isSearchMode) || !!game.isPreorder;
+  const isNewRelease = !isPreorder && (cardTab === "new" || !!game.isNewRelease || game.sourceTab === "new");
   const div=document.createElement("div");
-  div.className = isPreorder ? "card card--preorder" : "card";
+  div.className = (isPreorder ? "card card--preorder" : "card") + (isNewRelease ? " card--new" : "");
   const until = (showUntil && game.discountedUntil) ? formatDateDMY(game.discountedUntil) : "";
   const inCart = isInCart(game.id, state.region);
   const inWish = isInWishlist(game.id, state.region);
   const preorderBadge = isPreorder ? `<div class="preorderBadge" aria-label="Предзаказ">Предзаказ</div>` : "";
+  const newBadge = isNewRelease ? `<div class="newBadge" aria-label="Новинка">Новинка</div>` : "";
+  const compareButton = `<button class="compareBtn" type="button" aria-label="Сравнить регионы" title="Сравнить регионы">${subsIcon('compare')}</button>`;
   const showEdition = !!game.__forceShowEdition || cardTab !== "allgames" || !!String(state.search||"").trim();
   const editionHtml = showEdition && game.edition
     ? `<div class="cardEdition">${escapeHtml(game.edition)}</div>`
@@ -2625,6 +2629,8 @@ function buildCard(game, whatsapp, showUntil){
     <div class="coverWrap">
       <div class="platformStrip">${game.platform||"PS4 / PS5"}</div>
       ${preorderBadge}
+      ${newBadge}
+      ${compareButton}
       ${game.cover?gameCoverImg(game.cover, `onerror="this.style.display='none'"`):"<div style='font-weight:900;font-size:12px;opacity:.9'>NO COVER</div>"}
     </div>
     <div class="body-bar1">
@@ -2643,18 +2649,88 @@ function buildCard(game, whatsapp, showUntil){
     if(nowInCart) removeFromCart(game.id);
     else addToCart(game);
   };
+  const compareBtn = div.querySelector(".compareBtn");
+  if(compareBtn){ compareBtn.onclick=(e)=>{ e.preventDefault(); e.stopPropagation(); openRegionCompare(game); }; }
   const wishBtn = div.querySelector(".wishBtn");
   if(wishBtn){ wishBtn.onclick=(e)=>{ e.preventDefault(); e.stopPropagation(); toggleWishlist(game); setWishBtnState(wishBtn, isInWishlist(game.id, state.region)); }; }
   return div;
 }
 
 
+const REGION_COMPARE_LABELS={UA:"СНГ",TR:"Турция",PL:"Польша",IN:"Индия"};
+function regionComparePriceHtml(g){
+  const disc = Number(g && g.discPerc || 0);
+  const old = Number(g && g.oldPriceRub || 0);
+  const price = Number(g && g.finalPriceRub || 0);
+  return `<div class="regionComparePriceLine">${disc ? `<span class="regionCompareDiscount">-${disc}%</span>` : ``}<div class="regionComparePrices">${old ? `<span class="regionCompareOld">${escapeHtml(fmtRub(old))}</span>` : ``}<span class="regionComparePrice">${price ? escapeHtml(fmtRub(price)) : '—'}</span></div></div>`;
+}
+function renderRegionCompareItems(items, activeRegion){
+  const order=["UA","TR","PL","IN"];
+  return order.map(R=>{
+    const g = (items||[]).find(x=>String(x.region||'').toUpperCase()===R);
+    if(!g){
+      return `<div class="regionCompareItem isMissing"><div class="regionCompareRegion">${REGION_COMPARE_LABELS[R]}<span>${R}</span></div><div class="regionCompareMissing">Нет данных</div></div>`;
+    }
+    const active = String(activeRegion||'').toUpperCase()===R;
+    return `<div class="regionCompareItem ${active?'isActive':''}">
+      <div class="regionCompareRegion">${REGION_COMPARE_LABELS[R]}<span>${R}</span></div>
+      <div class="regionCompareEdition">${escapeHtml(gmRuLabel(g.ru))}</div>
+      ${regionComparePriceHtml(g)}
+    </div>`;
+  }).join('');
+}
+function openRegionCompare(game){
+  const overlay=document.getElementById("regionCompareModal");
+  const list=document.getElementById("regionCompareList");
+  const title=document.getElementById("regionCompareTitle");
+  const sub=document.getElementById("regionCompareSub");
+  const platform=document.getElementById("regionComparePlatform");
+  const discountDate=document.getElementById("regionCompareDiscountDate");
+  const cover=document.getElementById("regionCompareCover");
+  if(!overlay || !list) return;
+  if(title) title.textContent = game && game.name ? game.name : "Сравнение";
+  if(sub) sub.textContent = game ? gmEditionShortText(game) : "";
+  if(platform) platform.textContent = game && game.platform ? game.platform : "PS4 / PS5";
+  const setCompareDiscountDate = (until)=>{
+    if(!discountDate) return;
+    const v = String(until || "").trim();
+    discountDate.textContent = v ? `Скидка до ${formatDateDMY(v)}` : "";
+    discountDate.style.display = v ? "block" : "none";
+  };
+  setCompareDiscountDate(game && game.discountedUntil);
+  if(cover){
+    if(game && game.cover){ cover.innerHTML = `<img src="${escapeHtml(optimizedPsImageUrl(game.cover, 420))}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">`; }
+    else cover.innerHTML = `<div class="regionCompareNoCover"></div>`;
+  }
+  list.innerHTML = `<div class="regionCompareLoading">Загрузка...</div>`;
+  overlay.style.display="flex";
+  document.body.classList.add("modalOpen");
+  const qs=new URLSearchParams({id:String(game && game.id || ''), region:String(state.region||'TR')});
+  if(game && game.conceptId) qs.set('conceptId', String(game.conceptId));
+  fetch(`/api/game-regions?${qs.toString()}`, {cache:"no-store"})
+    .then(r=>r.json())
+    .then(j=>{
+      const items = (j && j.items) || [];
+      list.innerHTML = renderRegionCompareItems(items, state.region);
+      const active = items.find(x=>String(x.region||'').toUpperCase()===String(state.region||'TR').toUpperCase()) || items.find(x=>Number(x.discPerc||0)>0 && x.discountedUntil) || null;
+      if(active && active.discountedUntil) setCompareDiscountDate(active.discountedUntil);
+    })
+    .catch(()=>{ list.innerHTML = `<div class="regionCompareLoading">Не удалось загрузить сравнение</div>`; });
+}
+function closeRegionCompare(){
+  const overlay=document.getElementById("regionCompareModal");
+  if(!overlay) return;
+  overlay.style.display="none";
+  document.body.classList.remove("modalOpen");
+}
+
+
 function gmRuLabel(ru){
   const v = String(ru || 'none').toLowerCase();
-  if(v === 'voice') return 'RU Озвучка';
-  if(v === 'text') return 'RU Текст';
-  if(v === 'unknown') return 'RU Неизвестно';
-  return '🇷🇺 Отсутствует';
+  if(v === 'voice') return 'Русская озвучка и текст';
+  if(v === 'text') return 'Русские субтитры';
+  if(v === 'unknown') return 'Русский перевод: неизвестно';
+  return 'Без русского перевода';
 }
 function gmIsRuPositive(ru){ return String(ru||'').toLowerCase()==='voice' || String(ru||'').toLowerCase()==='text'; }
 function gmEditionShortText(g){
@@ -2913,7 +2989,7 @@ document.addEventListener("click",(e)=>{
   if(e.target===overlay) closeGameModal();
 });
 document.addEventListener("keydown",(e)=>{
-  if(e.key==="Escape") closeGameModal();
+  if(e.key==="Escape") { closeGameModal(); closeRegionCompare(); }
 });
 document.addEventListener("DOMContentLoaded",()=>{
   const btn=document.getElementById("gameModalClose");
@@ -3567,6 +3643,10 @@ document.addEventListener("DOMContentLoaded",()=>{
   if(wishClose) wishClose.onclick=(e)=>{ e.preventDefault(); closeWishlist(); };
   if(wishOverlay) wishOverlay.addEventListener("click",(e)=>{ if(e.target===wishOverlay) closeWishlist(); });
   if(wishClear) wishClear.onclick=(e)=>{ e.preventDefault(); clearWishlist(); };
+  const regionCompareModal=document.getElementById("regionCompareModal");
+  const regionCompareClose=document.getElementById("regionCompareClose");
+  if(regionCompareClose) regionCompareClose.onclick=(e)=>{ e.preventDefault(); closeRegionCompare(); };
+  if(regionCompareModal) regionCompareModal.addEventListener("click",(e)=>{ if(e.target===regionCompareModal) closeRegionCompare(); });
 
   const knownTabs2 = new Set(["home","preorders","new","discounts","allgames","subs","bestsellers","multiplayer","search"]);
   if(!knownTabs2.has(state.tab)) state.tab="home";
@@ -3586,7 +3666,7 @@ document.addEventListener("DOMContentLoaded",()=>{
 });
 
 document.addEventListener("keydown",(e)=>{
-  if(e.key==="Escape") { closeCart(); closeWishlist(); }
+  if(e.key==="Escape") { closeCart(); closeWishlist(); closeRegionCompare(); }
 });
 
 load();
@@ -3639,6 +3719,23 @@ load();
       </div>
       <div class="gmv2EditionsList" id="gmEditionsList"></div>
     </section>
+  </div>
+</div>
+
+<div id="regionCompareModal" class="modalOverlay regionCompareOverlay" style="display:none">
+  <div class="regionCompareCard" role="dialog" aria-modal="true" aria-label="Сравнение регионов">
+    <button class="regionCompareClose" id="regionCompareClose" aria-label="Закрыть" type="button">×</button>
+    <div class="regionCompareKicker">Сравнение регионов</div>
+    <div class="regionCompareHead">
+      <div class="regionCompareCover" id="regionCompareCover"></div>
+      <div class="regionCompareHeadText">
+        <div class="regionCompareTitle" id="regionCompareTitle"></div>
+        <div class="regionCompareSub" id="regionCompareSub"></div>
+        <div class="regionComparePlatform" id="regionComparePlatform"></div>
+        <div class="regionCompareDiscountDate" id="regionCompareDiscountDate"></div>
+      </div>
+    </div>
+    <div class="regionCompareList" id="regionCompareList"></div>
   </div>
 </div>
 
