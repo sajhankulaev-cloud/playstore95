@@ -2257,6 +2257,31 @@ async function refreshCartItemsFromServer(region){
     return stored;
   }
 }
+async function refreshWishlistItemsFromServer(region){
+  const R = String(region || state.region || "TR").toUpperCase();
+  const stored = loadWishlist(R);
+  if(!stored.length) return stored;
+  const ids = stored.map(x=>String(x && x.id || "").trim()).filter(Boolean);
+  if(!ids.length) return stored;
+  try{
+    const r = await fetch(`/api/cart-items?region=${encodeURIComponent(R)}&ids=${encodeURIComponent(ids.join(","))}`, { cache:"no-store" });
+    const j = await r.json().catch(()=>null);
+    if(!r.ok || !j || !j.ok || !Array.isArray(j.items)) return stored;
+    const freshById = new Map(j.items.map(x=>[String(x.id), x]));
+    let changed = false;
+    const merged = stored.map(oldItem=>{
+      const fresh = freshById.get(String(oldItem && oldItem.id));
+      if(!fresh) return oldItem;
+      const normalized = normalizeGameForCart(Object.assign({}, oldItem, fresh));
+      if(JSON.stringify(normalized) !== JSON.stringify(oldItem)) changed = true;
+      return normalized;
+    });
+    if(changed) saveWishlist(R, merged);
+    return merged;
+  }catch(_e){
+    return stored;
+  }
+}
 function getWishKey(region){ return WISH_LS_PREFIX + String(region || "TR").toUpperCase(); }
 function loadWishlist(region){
   try{ const arr=safeJsonParse(localStorage.getItem(getWishKey(region)), []); return Array.isArray(arr)?arr:[]; }catch(_){ return []; }
@@ -2476,10 +2501,13 @@ async function renderCart(){
   if(hintEl) hintEl.textContent = "";
 }
 
-function renderWishlist(){
+async function renderWishlist(){
   const body=document.getElementById("wishBody"); const regionEl=document.getElementById("wishRegion"); const clearBtn=document.getElementById("wishClearBtn");
   if(regionEl) regionEl.textContent=`(${state.region})`;
-  const items=loadWishlist(state.region);
+  let items=loadWishlist(state.region);
+  items = await refreshWishlistItemsFromServer(state.region);
+  updateWishCount();
+  refreshAllWishButtons();
   if(clearBtn) clearBtn.disabled=items.length===0;
   if(!body) return;
   if(!items.length){ body.innerHTML=`<div class="cartEmpty">Список желаемого пуст</div>`; return; }
@@ -2501,8 +2529,8 @@ function renderWishlist(){
   });
 }
 function clearWishlist(){ saveWishlist(state.region, []); updateWishCount(); refreshAllWishButtons(); if(isWishOpen()) renderWishlist(); }
-function showWishlistDiscountToast(){
-  const items=loadWishlist(state.region).filter(x=>Number(x.discPerc||0)>0); if(!items.length) return;
+async function showWishlistDiscountToast(){
+  const items=(await refreshWishlistItemsFromServer(state.region)).filter(x=>Number(x.discPerc||0)>0); if(!items.length) return;
   const old=document.getElementById("wishToast"); if(old) old.remove();
   const el=document.createElement("div"); el.id="wishToast"; el.className="wishToast";
   el.innerHTML=`<div class="wishToastTitle">В вашем списке желаемого есть игры со скидкой</div>`;
