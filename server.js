@@ -4198,6 +4198,7 @@ function gameRuStatus(game, region){
   const regs = game && game.regions ? game.regions : {};
   const tryRegs = [];
   const r = String(region||'').toUpperCase();
+  let hasUnknown = false;
   if(r === 'PL' || r === 'IN'){
     // PL/IN берут информацию о русском языке из турецкой карточки в нашей базе, а не из PS Store этих регионов.
     tryRegs.push('TR','UA');
@@ -4210,9 +4211,12 @@ function gameRuStatus(game, region){
     if(!reg) continue;
     const ru = normalizeRuVal(reg.ru ?? reg.ruLang ?? reg.russian ?? reg.rus ?? reg.langRu ?? reg.languageRu);
     if(ru && ru !== 'unknown') return ru;
+    if(ru === 'unknown') hasUnknown = true;
   }
   const own = normalizeRuVal(game && (game.ru ?? game.ruLang ?? game.russian ?? game.rus ?? game.langRu ?? game.languageRu));
-  return own || 'none';
+  if(own && own !== 'unknown') return own;
+  if(own === 'unknown') hasUnknown = true;
+  return hasUnknown ? 'unknown' : 'none';
 }
 function languagePass(game, filter, region){
   const f = normText(String(filter||''));
