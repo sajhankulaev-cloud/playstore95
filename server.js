@@ -3960,7 +3960,12 @@ function readActiveDiscountsIndex(){
     const tr = g.regions.TR;
     const ua = g.regions.UA;
     if(!isDiscountActiveForRegion(tr) && !isDiscountActiveForRegion(ua)) continue;
-    if(g.id) byId.set(String(g.id), g);
+    if(g.id) byId.set(String(g.id).trim(), g);
+    if(g.productIds && typeof g.productIds === 'object'){
+      for(const v of Object.values(g.productIds)){
+        if(v) byId.set(String(v).trim(), g);
+      }
+    }
   }
   return { byId, updatedAt: doc.updatedAt || null };
 }
@@ -6308,18 +6313,28 @@ app.get("/api/game-regions", (req, res) => {
     }
     if(!target) return res.json({ ok:true, items:[] });
     const raw = target.raw || {};
-    const baseConcept = String(conceptForGame(raw, conceptIndex)||'').trim();
-    const editionKey = normText(String(raw.edition || 'Standard Edition'));
-    const same = collect.filter(x=>{
-      const g=x.raw||{};
-      const cid=String(conceptForGame(g, conceptIndex)||'').trim();
-      if(baseConcept && cid !== baseConcept) return false;
-      return normText(String(g.edition || 'Standard Edition')) === editionKey || String(g.id||'')===String(raw.id||'');
-    });
-    const sourcePriority = {all:0, preorder:1, discount:2};
-    same.sort((a,b)=>(sourcePriority[a.source]??9)-(sourcePriority[b.source]??9));
-    const pick = same[0] || target;
-    const g = pick.raw || raw;
+
+    // Region compare must use the exact product that was clicked.
+    // Several PlayStation products/editions can share one conceptId, so using
+    // conceptId here can accidentally copy a discount from another product.
+    const g = raw;
+    const baseConcept = String(conceptForGame(g, conceptIndex)||'').trim();
+
+    // Match discounts only by exact product ids of this same product/version.
+    // Never use conceptId for discount lookup.
+    const exactDiscountIds = new Set();
+    if(g.id) exactDiscountIds.add(String(g.id).trim());
+    if(g.productIds && typeof g.productIds === 'object'){
+      for(const v of Object.values(g.productIds)){
+        if(v) exactDiscountIds.add(String(v).trim());
+      }
+    }
+    let exactDiscountGame = null;
+    for(const pid of exactDiscountIds){
+      const found = discountsIndex.byId.get(pid);
+      if(found){ exactDiscountGame = found; break; }
+    }
+
     const order = ['UA','TR','PL','IN'];
     const regionBaseIndexes = {
       PL: buildAllGamesRegionPriceIndex('PL'),
@@ -6333,7 +6348,7 @@ app.get("/api/game-regions", (req, res) => {
       let storePrice = baseStorePrice;
       let discPerc = 0;
       let discountedUntil = null;
-      const dg = (g.id && discountsIndex.byId.get(String(g.id))) || null;
+      const dg = exactDiscountGame;
       if(dg){
         if(R === 'PL' || R === 'IN'){
           const dreg = publicDiscountRegionFor(dg, R, regionBaseIndexes[R]);
