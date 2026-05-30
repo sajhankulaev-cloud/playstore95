@@ -4015,6 +4015,61 @@ function mergeDiscountItemsById(existingItems, newItems){
 
 
 
+
+function collectExactProductLookupKeys(g, region){
+  const keys = [];
+  const push = (v)=>{ const k = String(v || '').trim(); if(k && !keys.includes(k)) keys.push(k); };
+  const R = String(region || '').toUpperCase();
+  if(!g || typeof g !== 'object') return keys;
+  // Exact product/version identifiers only. Do not include conceptId here:
+  // different games/editions can share one conceptId (for example Call of Duty).
+  push(g.id);
+  if(g.productIds && typeof g.productIds === 'object'){
+    if(R) push(g.productIds[R]);
+    push(g.productIds.TR);
+    push(g.productIds.UA);
+    push(g.productIds.PL);
+    push(g.productIds.IN);
+  }
+  if(g.regions && typeof g.regions === 'object'){
+    for(const key of [R,'TR','UA','PL','IN']){
+      const rg = g.regions[key];
+      if(rg && typeof rg === 'object'){
+        push(rg.id);
+        push(rg.productId);
+        push(rg.storeId);
+      }
+    }
+  }
+  return keys;
+}
+
+function buildAllGamesRegionExactIndex(region){
+  const R = String(region || '').toUpperCase();
+  const doc = readJson(ALL_GAMES_PATH, {items:[]});
+  const items = Array.isArray(doc) ? doc : (Array.isArray(doc.items) ? doc.items : []);
+  const map = new Map();
+  for(const g of items){
+    const reg = g && g.regions && g.regions[R] ? g.regions[R] : null;
+    const price = reg ? Number(reg.salePrice || 0) : 0;
+    if(!Number.isFinite(price) || price <= 0) continue;
+    for(const key of collectExactProductLookupKeys(g, R)){
+      if(!key || map.has(key)) continue;
+      map.set(key, { game:g, reg:Object.assign({}, reg, { salePrice: price }) });
+    }
+  }
+  return map;
+}
+
+function findAllGamesExactRegionEntry(index, g, region){
+  if(!index || typeof index.get !== 'function') return null;
+  for(const key of collectExactProductLookupKeys(g, region)){
+    const found = index.get(key);
+    if(found) return found;
+  }
+  return null;
+}
+
 function collectRegionLookupKeys(g, region){
   const keys = [];
   const push = (v)=>{ const k = String(v || '').trim(); if(k && !keys.includes(k)) keys.push(k); };
@@ -4201,27 +4256,20 @@ function playersPass(gamePlayers, filter){
 
 function gameRuStatus(game, region){
   const regs = game && game.regions ? game.regions : {};
-  const tryRegs = [];
   const r = String(region||'').toUpperCase();
-  let hasUnknown = false;
-  if(r === 'PL' || r === 'IN'){
-    // PL/IN берут информацию о русском языке из турецкой карточки в нашей базе, а не из PS Store этих регионов.
-    tryRegs.push('TR','UA');
-  }else{
-    if(r) tryRegs.push(r);
-    tryRegs.push('TR','UA');
+  const hasRuValue = (v)=> v !== undefined && v !== null && String(v).trim() !== '';
+
+  // Для сравнения регионов и карточек берём русский язык только из базы сайта:
+  // regions.<REGION>.ru у конкретной записи игры в all_games/games/preorders/newreleases.
+  // Никаких подстановок из других регионов и никакого угадывания.
+  if(r && regs && regs[r]){
+    const reg = regs[r];
+    const rawRu = reg.ru ?? reg.ruLang ?? reg.russian ?? reg.rus ?? reg.langRu ?? reg.languageRu;
+    if(hasRuValue(rawRu)) return normalizeRuVal(rawRu);
   }
-  for(const key of tryRegs){
-    const reg = regs && regs[key];
-    if(!reg) continue;
-    const ru = normalizeRuVal(reg.ru ?? reg.ruLang ?? reg.russian ?? reg.rus ?? reg.langRu ?? reg.languageRu);
-    if(ru && ru !== 'unknown') return ru;
-    if(ru === 'unknown') hasUnknown = true;
-  }
-  const own = normalizeRuVal(game && (game.ru ?? game.ruLang ?? game.russian ?? game.rus ?? game.langRu ?? game.languageRu));
-  if(own && own !== 'unknown') return own;
-  if(own === 'unknown') hasUnknown = true;
-  return hasUnknown ? 'unknown' : 'none';
+
+  // Если для этого региона в записи игры нет значения — показываем "неизвестно".
+  return 'unknown';
 }
 function languagePass(game, filter, region){
   const f = normText(String(filter||''));
@@ -4381,7 +4429,6 @@ app.get("/api/games", async (req, res) => {
     const rules = store.rates[region] || [];
     const step = store.settings.roundStep || 50;
 
-    const discountsIndex = readActiveDiscountsIndex();
     const descIndex = buildDescriptionIndex();
     const conceptIndex = buildConceptIndex();
     const allGamesDocForPlayers = readJson(ALL_GAMES_PATH, { updatedAt:null, items:[] });
@@ -4389,14 +4436,9 @@ app.get("/api/games", async (req, res) => {
     for(const ag of (Array.isArray(allGamesDocForPlayers.items) ? allGamesDocForPlayers.items : [])){
       const playersVal = normalizeGameMetaField(ag.players);
       if(!playersVal) continue;
-      const keys = [ag.id, ag.conceptId];
-      if(ag.productIds && typeof ag.productIds === 'object') keys.push(ag.productIds.TR, ag.productIds.UA);
-      if(ag.regions && typeof ag.regions === 'object'){
-        for(const rg of Object.values(ag.regions)){
-          if(rg && typeof rg === 'object') keys.push(rg.id, rg.productId, rg.storeId);
-        }
-      }
-      for(const key of keys){
+      // Exact product/version identifiers only. Do not use conceptId for players:
+      // one conceptId can belong to several Call of Duty releases with different metadata.
+      for(const key of collectExactProductLookupKeys(ag, region)){
         const k = String(key || '').trim();
         if(k && !allGamesPlayersById.has(k)) allGamesPlayersById.set(k, playersVal);
       }
@@ -4404,18 +4446,13 @@ app.get("/api/games", async (req, res) => {
     const regionBaseIndex = (region === "PL" || region === "IN") ? buildAllGamesRegionPriceIndex(region) : null;
 
     const playersFromAllGames = (g) => {
-      const keys = [g.id, g.conceptId];
-      if(g.productIds && typeof g.productIds === 'object') keys.push(g.productIds.TR, g.productIds.UA);
-      if(g.regions && typeof g.regions === 'object'){
-        for(const rg of Object.values(g.regions)){
-          if(rg && typeof rg === 'object') keys.push(rg.id, rg.productId, rg.storeId);
-        }
-      }
-      for(const key of keys){
+      const own = normalizeGameMetaField(g && g.players);
+      if(own) return own;
+      for(const key of collectExactProductLookupKeys(g, region)){
         const k = String(key || '').trim();
         if(k && allGamesPlayersById.has(k)) return allGamesPlayersById.get(k);
       }
-      return normalizeGameMetaField(g.players);
+      return null;
     };
 
     let computed = all.map(g => {
@@ -4569,35 +4606,19 @@ app.get("/api/game-editions", (req, res) => {
       const ag = entry.raw || {};
       const val = normalizeGameMetaField(ag.players);
       if(!val) continue;
-      addPlayerKey(ag.id, val);
-      addPlayerKey(ag.conceptId, val);
-      if(ag.productIds && typeof ag.productIds === 'object'){
-        addPlayerKey(ag.productIds.TR, val);
-        addPlayerKey(ag.productIds.UA, val);
-      }
-      if(ag.regions && typeof ag.regions === 'object'){
-        for(const rg of Object.values(ag.regions)){
-          if(rg && typeof rg === 'object'){
-            addPlayerKey(rg.id, val);
-            addPlayerKey(rg.productId, val);
-            addPlayerKey(rg.storeId, val);
-          }
-        }
-      }
+      // Exact product/version identifiers only. Do not index by conceptId:
+      // several different Call of Duty products share conceptId and must keep
+      // their own players value from the database/admin panel.
+      for(const key of collectExactProductLookupKeys(ag, region)) addPlayerKey(key, val);
     }
     const playersForPublicEdition = (g)=>{
-      const keys = [g.id, g.conceptId];
-      if(g.productIds && typeof g.productIds === 'object') keys.push(g.productIds.TR, g.productIds.UA);
-      if(g.regions && typeof g.regions === 'object'){
-        for(const rg of Object.values(g.regions)){
-          if(rg && typeof rg === 'object') keys.push(rg.id, rg.productId, rg.storeId);
-        }
-      }
-      for(const key of keys){
+      const own = normalizeGameMetaField(g && g.players);
+      if(own) return own;
+      for(const key of collectExactProductLookupKeys(g, region)){
         const k = String(key || '').trim();
         if(k && allGamesPlayersByKey.has(k)) return allGamesPlayersByKey.get(k);
       }
-      return normalizeGameMetaField(g.players);
+      return null;
     };
 
     const byId = new Map();
@@ -6287,9 +6308,21 @@ app.get("/api/game-regions", (req, res) => {
     const store = readStore();
     const requestedId = String(req.query.id || '').trim();
     const requestedConcept = String(req.query.conceptId || '').trim();
+    const requestedSourceRaw = String(req.query.source || '').trim().toLowerCase();
+    const requestedSourceMap = {
+      allgames: 'all',
+      all: 'all',
+      newreleases: 'new',
+      new: 'new',
+      preorders: 'preorder',
+      preorder: 'preorder',
+      discounts: 'discount',
+      discount: 'discount',
+      games: 'discount'
+    };
+    const requestedSource = requestedSourceMap[requestedSourceRaw] || '';
     const activeRegion = String(req.query.region || 'TR').toUpperCase();
     const conceptIndex = buildConceptIndex();
-    const discountsIndex = readActiveDiscountsIndex();
     const docs = [
       {file: ALL_GAMES_PATH, source:'all'},
       {file: NEW_RELEASES_PATH, source:'new'},
@@ -6303,14 +6336,23 @@ app.get("/api/game-regions", (req, res) => {
       for(const raw of arr) collect.push({raw, source:d.source});
     }
     let target = null;
-    for(const x of collect){
-      const g=x.raw||{};
-      if(requestedId && String(g.id||'').trim() === requestedId){ target=x; break; }
-      if(requestedId && g.productIds && Object.values(g.productIds).some(v=>String(v||'').trim()===requestedId)){ target=x; break; }
+    const matchesRequestedId = (x)=>{
+      const g = x.raw || {};
+      if(requestedId && String(g.id||'').trim() === requestedId) return true;
+      if(requestedId && g.productIds && Object.values(g.productIds).some(v=>String(v||'').trim()===requestedId)) return true;
+      return false;
+    };
+    // Сначала ищем точную запись в том файле базы, из которого была открыта карточка.
+    // Это важно: один product/concept может встречаться в нескольких разделах сайта.
+    if(requestedSource){
+      target = collect.find(x=>x.source === requestedSource && matchesRequestedId(x)) || null;
     }
-    if(!target && requestedConcept){
-      target = collect.find(x=>String(conceptForGame(x.raw, conceptIndex)||'').trim() === requestedConcept) || null;
+    // Если source не передан старым фронтом — используем точный id без conceptId-подмен.
+    if(!target){
+      target = collect.find(matchesRequestedId) || null;
     }
+    // Do not fallback by conceptId here. One conceptId can represent several
+    // different products/versions, so region comparison must require exact id.
     if(!target) return res.json({ ok:true, items:[] });
     const raw = target.raw || {};
 
@@ -6320,26 +6362,10 @@ app.get("/api/game-regions", (req, res) => {
     const g = raw;
     const baseConcept = String(conceptForGame(g, conceptIndex)||'').trim();
 
-    // Match discounts only by exact product ids of this same product/version.
-    // Never use conceptId for discount lookup.
-    const exactDiscountIds = new Set();
-    if(g.id) exactDiscountIds.add(String(g.id).trim());
-    if(g.productIds && typeof g.productIds === 'object'){
-      for(const v of Object.values(g.productIds)){
-        if(v) exactDiscountIds.add(String(v).trim());
-      }
-    }
-    let exactDiscountGame = null;
-    for(const pid of exactDiscountIds){
-      const found = discountsIndex.byId.get(pid);
-      if(found){ exactDiscountGame = found; break; }
-    }
-
+    // Сравнение регионов должно брать цены, скидки и русский язык из той же
+    // конкретной записи базы, по карточке которой нажали кнопку.
+    // Не подтягиваем скидки из games.json для записей all_games/preorders/newreleases.
     const order = ['UA','TR','PL','IN'];
-    const regionBaseIndexes = {
-      PL: buildAllGamesRegionPriceIndex('PL'),
-      IN: buildAllGamesRegionPriceIndex('IN')
-    };
     const items=[];
     for(const R of order){
       const reg = (g.regions && g.regions[R]) ? g.regions[R] : null;
@@ -6348,26 +6374,9 @@ app.get("/api/game-regions", (req, res) => {
       let storePrice = baseStorePrice;
       let discPerc = 0;
       let discountedUntil = null;
-      const dg = exactDiscountGame;
-      if(dg){
-        if(R === 'PL' || R === 'IN'){
-          const dreg = publicDiscountRegionFor(dg, R, regionBaseIndexes[R]);
-          const trDiscountReg = (dg.regions && dg.regions.TR) ? dg.regions.TR : dreg;
-          if(dreg && isDiscountActiveForRegion(trDiscountReg)){
-            const dPrice = Number(dreg.salePrice || 0);
-            discPerc = Number(dreg.discPerc || 0) || 0;
-            discountedUntil = dreg.discountedUntil || trDiscountReg.discountedUntil || null;
-            if(Number.isFinite(dPrice) && dPrice > 0) storePrice = dPrice;
-            else if(discPerc > 0) storePrice = Math.max(0, baseStorePrice * (1 - discPerc/100));
-          }
-        }else if(dg.regions && dg.regions[R] && isDiscountActiveForRegion(dg.regions[R])){
-          const dreg = dg.regions[R];
-          discPerc = Number(dreg.discPerc || 0) || 0;
-          discountedUntil = dreg.discountedUntil || null;
-          const dPrice = Number(dreg.salePrice || 0);
-          if(Number.isFinite(dPrice) && dPrice > 0) storePrice = dPrice;
-          else if(discPerc > 0) storePrice = Math.max(0, baseStorePrice * (1 - discPerc/100));
-        }
+      if(reg && isDiscountActiveForRegion(reg)){
+        discPerc = Number(reg.discPerc || 0) || 0;
+        discountedUntil = reg.discountedUntil || null;
       }
       items.push({
         region:R,
@@ -6417,6 +6426,7 @@ app.get("/api/newreleases", async (req, res) => {
     const step = store.settings.roundStep || 50;
     const descIndex = buildDescriptionIndex();
     const conceptIndex = buildConceptIndex();
+    const allGamesRegionExactIndex = (region === "PL" || region === "IN") ? buildAllGamesRegionExactIndex(region) : null;
     const normKey = (s)=> normText(String(s||""));
     const baseTitle = (name)=> baseTitleForRank(name);
     const editionPriority = (name)=>{
@@ -6434,7 +6444,10 @@ app.get("/api/newreleases", async (req, res) => {
     };
 
     let computed = all.map((g, idx) => {
-      const reg = (g.regions && g.regions[region]) ? g.regions[region] : null;
+      const ownReg = (g.regions && g.regions[region]) ? g.regions[region] : null;
+      const exactAllGamesEntry = (!ownReg && (region === "PL" || region === "IN")) ? findAllGamesExactRegionEntry(allGamesRegionExactIndex, g, region) : null;
+      const reg = ownReg || (exactAllGamesEntry ? exactAllGamesEntry.reg : null);
+      const regionMetaGame = ownReg ? g : ((exactAllGamesEntry && exactAllGamesEntry.game) ? exactAllGamesEntry.game : g);
       const storePrice = reg ? Number(reg.salePrice || 0) : 0;
       if(!Number.isFinite(storePrice) || storePrice <= 0) return null;
 
@@ -6448,7 +6461,7 @@ app.get("/api/newreleases", async (req, res) => {
         id: g.id,
         name: g.name,
         edition: anySub ? "Standard Edition" : (g.edition || "Standard Edition"),
-        ru: gameRuStatus(g, (typeof R !== 'undefined' ? R : (typeof region !== 'undefined' ? region : 'TR'))),
+        ru: gameRuStatus(regionMetaGame, region),
         sub: anySub,
         platform: g.platform || "PS4 / PS5",
         genres: g.genres || "",
