@@ -6323,6 +6323,7 @@ app.get("/api/game-regions", (req, res) => {
     const requestedSource = requestedSourceMap[requestedSourceRaw] || '';
     const activeRegion = String(req.query.region || 'TR').toUpperCase();
     const conceptIndex = buildConceptIndex();
+    const discountsIndex = readActiveDiscountsIndex();
     const docs = [
       {file: ALL_GAMES_PATH, source:'all'},
       {file: NEW_RELEASES_PATH, source:'new'},
@@ -6362,22 +6363,64 @@ app.get("/api/game-regions", (req, res) => {
     const g = raw;
     const baseConcept = String(conceptForGame(g, conceptIndex)||'').trim();
 
-    // Сравнение регионов должно брать цены, скидки и русский язык из той же
-    // конкретной записи базы, по карточке которой нажали кнопку.
-    // Не подтягиваем скидки из games.json для записей all_games/preorders/newreleases.
+    // Сравнение регионов работает только по точному product id.
+    // ConceptId здесь не используем: у разных версий/игр он может совпадать.
     const order = ['UA','TR','PL','IN'];
+    const exactProductIds = new Set();
+    for(const key of collectExactProductLookupKeys(g, activeRegion)){
+      if(key) exactProductIds.add(String(key).trim());
+    }
+    let exactDiscountGame = null;
+    for(const pid of exactProductIds){
+      const found = discountsIndex.byId.get(pid);
+      if(found){ exactDiscountGame = found; break; }
+    }
+    const regionBaseIndexes = {
+      UA: buildAllGamesRegionExactIndex('UA'),
+      TR: buildAllGamesRegionExactIndex('TR'),
+      PL: buildAllGamesRegionPriceIndex('PL'),
+      IN: buildAllGamesRegionPriceIndex('IN')
+    };
     const items=[];
     for(const R of order){
-      const reg = (g.regions && g.regions[R]) ? g.regions[R] : null;
-      const baseStorePrice = reg ? Number(reg.salePrice || 0) : 0;
+      const dg = exactDiscountGame;
+      let reg = (g.regions && g.regions[R]) ? g.regions[R] : null;
+      if(!reg && dg && (R === 'PL' || R === 'IN')){
+        reg = findIndexedRegionBaseReg(regionBaseIndexes[R], dg, R) || null;
+      }
+      let baseStorePrice = reg ? Number(reg.salePrice || 0) : 0;
       if(!Number.isFinite(baseStorePrice) || baseStorePrice <= 0) continue;
       let storePrice = baseStorePrice;
       let discPerc = 0;
       let discountedUntil = null;
-      if(reg && isDiscountActiveForRegion(reg)){
-        discPerc = Number(reg.discPerc || 0) || 0;
-        discountedUntil = reg.discountedUntil || null;
+
+      if(dg){
+        if(R === 'PL' || R === 'IN'){
+          const dreg = publicDiscountRegionFor(dg, R, regionBaseIndexes[R]);
+          const trDiscountReg = (dg.regions && dg.regions.TR) ? dg.regions.TR : dreg;
+          const baseReg = findIndexedRegionBaseReg(regionBaseIndexes[R], dg, R);
+          const basePrice = baseReg ? Number(baseReg.salePrice || 0) : 0;
+          if(Number.isFinite(basePrice) && basePrice > 0) baseStorePrice = basePrice;
+          if(dreg && isDiscountActiveForRegion(trDiscountReg)){
+            const dPrice = Number(dreg.salePrice || 0);
+            discPerc = Number(dreg.discPerc || 0) || 0;
+            discountedUntil = dreg.discountedUntil || trDiscountReg.discountedUntil || null;
+            if(Number.isFinite(dPrice) && dPrice > 0) storePrice = dPrice;
+            else if(discPerc > 0) storePrice = Math.max(0, baseStorePrice * (1 - discPerc/100));
+          }
+        }else if(dg.regions && dg.regions[R] && isDiscountActiveForRegion(dg.regions[R])){
+          const dreg = dg.regions[R];
+          const exactBase = findAllGamesExactRegionEntry(regionBaseIndexes[R], dg, R);
+          const basePrice = exactBase && exactBase.reg ? Number(exactBase.reg.salePrice || 0) : 0;
+          if(Number.isFinite(basePrice) && basePrice > 0) baseStorePrice = basePrice;
+          discPerc = Number(dreg.discPerc || 0) || 0;
+          discountedUntil = dreg.discountedUntil || null;
+          const dPrice = Number(dreg.salePrice || 0);
+          if(Number.isFinite(dPrice) && dPrice > 0) storePrice = dPrice;
+          else if(discPerc > 0) storePrice = Math.max(0, baseStorePrice * (1 - discPerc/100));
+        }
       }
+
       items.push({
         region:R,
         active:R===activeRegion,
