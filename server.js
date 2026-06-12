@@ -2919,8 +2919,32 @@ function defaultDiscountRates(){
       {min:497,max:597,rate:3.10},{min:597,max:797,rate:2.95},{min:797,max:1197,rate:2.85},
       {min:1197,max:1597,rate:2.75},{min:1597,max:1897,rate:2.55},{min:1897,max:2097,rate:2.45},
       {min:2097,max:3397,rate:2.40},{min:3397,max:null,rate:2.25}
+    ],
+    IN:[
+      {min:0,max:600,rate:1.75},{min:600,max:800,rate:1.65},{min:800,max:1000,rate:1.55},
+      {min:1000,max:1200,rate:1.50},{min:1200,max:1600,rate:1.45},{min:1600,max:2400,rate:1.40},
+      {min:2400,max:3200,rate:1.30},{min:3200,max:4200,rate:1.25},{min:4200,max:6800,rate:1.20},
+      {min:6800,max:null,rate:1.10}
     ]
   };
+}
+
+function defaultIndiaRates(){
+  return [
+    {min:0,max:600,rate:1.80},{min:600,max:800,rate:1.70},{min:800,max:1000,rate:1.60},
+    {min:1000,max:1200,rate:1.55},{min:1200,max:1600,rate:1.50},{min:1600,max:2400,rate:1.45},
+    {min:2400,max:3200,rate:1.35},{min:3200,max:4200,rate:1.30},{min:4200,max:6800,rate:1.25},
+    {min:6800,max:null,rate:1.15}
+  ];
+}
+
+function defaultIndiaDiscountRates(){
+  return [
+    {min:0,max:600,rate:1.75},{min:600,max:800,rate:1.65},{min:800,max:1000,rate:1.55},
+    {min:1000,max:1200,rate:1.50},{min:1200,max:1600,rate:1.45},{min:1600,max:2400,rate:1.40},
+    {min:2400,max:3200,rate:1.30},{min:3200,max:4200,rate:1.25},{min:4200,max:6800,rate:1.20},
+    {min:6800,max:null,rate:1.10}
+  ];
 }
 
 
@@ -2962,7 +2986,9 @@ function readStore() {
   if(!Array.isArray(s.rates.UA)) s.rates.UA = [];
   if(!Array.isArray(s.rates.PL)) s.rates.PL = [];
   if(!Array.isArray(s.rates.IN)) s.rates.IN = [];
+  if(!s.rates.IN.length) s.rates.IN = defaultIndiaRates();
   if(typeof s.settings.useTurkeyTopupCards === "undefined") s.settings.useTurkeyTopupCards = false;
+  if(typeof s.settings.useIndiaTopupCards === "undefined") s.settings.useIndiaTopupCards = true;
   if(!s.topupCards || typeof s.topupCards !== "object") s.topupCards = defaultTopupCards();
   const _defaultTopupCards = defaultTopupCards();
   for(const _r of ["TR","PL","IN"]){
@@ -2978,6 +3004,7 @@ function readStore() {
   if(!Array.isArray(s.discountRates.UA)) s.discountRates.UA = defaultDiscountRates().UA;
   if(!Array.isArray(s.discountRates.PL)) s.discountRates.PL = [];
   if(!Array.isArray(s.discountRates.IN)) s.discountRates.IN = [];
+  if(!s.discountRates.IN.length) s.discountRates.IN = defaultIndiaDiscountRates();
   // Subscription prices live in the same store.json and are editable from admin.
   // If missing (older installs) – seed defaults.
   const _defaultSubscriptionsPrices = {
@@ -3050,7 +3077,8 @@ function roundDown(value, step) { const s = Number(step) || 50; return Math.floo
 
 function shouldUseTopupCards(store, region){
   const R = String(region || "TR").toUpperCase();
-  if(R === "PL" || R === "IN") return true;
+  if(R === "PL") return true;
+  if(R === "IN") return !!(store && store.settings && store.settings.useIndiaTopupCards);
   if(R === "TR") return !!(store && store.settings && store.settings.useTurkeyTopupCards);
   return false;
 }
@@ -4799,6 +4827,7 @@ app.put("/api/admin/settings", requireAdmin, (req, res) => {
   if (req.body.roundStep !== undefined) store.settings.roundStep = Number(req.body.roundStep) === 100 ? 100 : 50;
   if (req.body.whatsappLink !== undefined) store.settings.whatsappLink = String(req.body.whatsappLink);
   if (req.body.useTurkeyTopupCards !== undefined) store.settings.useTurkeyTopupCards = !!req.body.useTurkeyTopupCards;
+  if (req.body.useIndiaTopupCards !== undefined) store.settings.useIndiaTopupCards = !!req.body.useIndiaTopupCards;
   const dd = req.body.defaultDiscountUntil ?? req.body.defaultDate;
   if (dd !== undefined) store.settings.defaultDiscountUntil = dd ? String(dd) : null;
   writeJson(STORE_PATH, store);
