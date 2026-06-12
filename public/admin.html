@@ -643,7 +643,7 @@ button{ color:#0f172a !important; }
 
 <div class="adminCard" id="discountRates">
 <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-<div><div style="font-weight:950;font-size:16px;">Курсы скидок по диапазонам</div><div class="small">TR/UA • Для скидки в корзине 2+ игры.</div></div>
+<div><div style="font-weight:950;font-size:16px;">Курсы скидок по диапазонам</div><div class="small">TR/UA/IN • Для скидки в корзине 2+ игры.</div></div>
 <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
 <select id="discountRegionSel" class="select"><option value="TR">Турция (TR)</option><option value="UA">Украина (UA)</option><option value="PL">Польша (PL)</option><option value="IN">Индия (IN)</option></select>
 <button class="btnGhost" id="addDiscountRow" type="button">+ Диапазон</button><button class="btnDark" id="saveDiscountRates" type="button">Сохранить</button>
@@ -653,10 +653,13 @@ button{ color:#0f172a !important; }
 
 <div class="adminCard" id="topupTurkeyToggle">
 <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
 <label style="display:flex;align-items:center;gap:8px;font-weight:900;"><input id="useTurkeyTopupCards" type="checkbox"/> Турцию считать по картам</label>
+<label style="display:flex;align-items:center;gap:8px;font-weight:900;"><input id="useIndiaTopupCards" type="checkbox"/> Индию считать по картам</label>
+</div>
 <button class="btnDark" id="saveTopupSettings" type="button">Сохранить</button>
 </div>
-<div class="small" style="margin-top:6px;">Если галочка выключена, Турция считается по обычному курсу. Если включена — по картам пополнения.</div>
+<div class="small" style="margin-top:6px;">Если галочка выключена, регион считается по обычному курсу. Если включена — по картам пополнения.</div>
 </div>
 
 <div class="adminCard" id="topupCards">
@@ -1023,12 +1026,14 @@ async function saveSubsPrices(){
 }
 
 async function loadSettings(){const j=await fetch(`/api/admin/settings`).then(r=>r.json());
-document.getElementById("roundStep").value=String(j.roundStep||50);document.getElementById("wa").value=j.whatsappLink||"";const cb=document.getElementById("useTurkeyTopupCards");if(cb) cb.checked=!!j.useTurkeyTopupCards;}
+document.getElementById("roundStep").value=String(j.roundStep||50);document.getElementById("wa").value=j.whatsappLink||"";const cb=document.getElementById("useTurkeyTopupCards");if(cb) cb.checked=!!j.useTurkeyTopupCards;const cbIn=document.getElementById("useIndiaTopupCards");if(cbIn) cbIn.checked=!!j.useIndiaTopupCards;}
 async function saveSettings(){const roundStep=document.getElementById("roundStep").value;
 const whatsappLink=document.getElementById("wa").value.trim();
 const cb=document.getElementById("useTurkeyTopupCards");
 const useTurkeyTopupCards=cb?!!cb.checked:false;
-const j=await fetch(`/api/admin/settings`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({roundStep,whatsappLink,useTurkeyTopupCards})}).then(r=>r.json());
+const cbIn=document.getElementById("useIndiaTopupCards");
+const useIndiaTopupCards=cbIn?!!cbIn.checked:true;
+const j=await fetch(`/api/admin/settings`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({roundStep,whatsappLink,useTurkeyTopupCards,useIndiaTopupCards})}).then(r=>r.json());
 alert(j.ok?"Сохранено":"Ошибка");}
 
 // --- Visitors counter ---
