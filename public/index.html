@@ -154,7 +154,7 @@
 
 <script>
 
-const state={tab:"home",region:"TR",sort:"pop",platform:"",players:"",language:"",genres:[],search:"",page:1,until:"",subPage:"",allDeals:false,discountRates:{TR:[],UA:[],PL:[],IN:[]},topupCards:{TR:[],PL:[],IN:[]},useTurkeyTopupCards:false,roundStep:50};
+const state={tab:"home",region:"TR",sort:"pop",platform:"",players:"",language:"",genres:[],search:"",page:1,until:"",subPage:"",allDeals:false,discountRates:{TR:[],UA:[],PL:[],IN:[]},topupCards:{TR:[],PL:[],IN:[]},useTurkeyTopupCards:false,useIndiaTopupCards:true,roundStep:50};
 
 function shouldScrollToSubsGames(){
   return !!(state.scrollToSubsGames || window.location.hash === "#subs-games");
@@ -2044,7 +2044,8 @@ function calcCartDiscount(items){
 
 function shouldUseTopupCartCheckout(region){
   const R=String(region||state.region||"TR").toUpperCase();
-  if(R==="PL" || R==="IN") return true;
+  if(R==="PL") return true;
+  if(R==="IN") return !!state.useIndiaTopupCards;
   if(R==="TR") return !!state.useTurkeyTopupCards;
   return false;
 }
@@ -3325,6 +3326,7 @@ async function load(){
     state.discountRates = meta.discountRates || state.discountRates || {TR:[],UA:[],PL:[],IN:[]};
     state.topupCards = meta.topupCards || state.topupCards || {TR:[],PL:[],IN:[]};
     state.useTurkeyTopupCards = !!meta.settings?.useTurkeyTopupCards;
+    state.useIndiaTopupCards = meta.settings?.useIndiaTopupCards !== false;
     state.roundStep = Number(meta.settings?.roundStep || state.roundStep || 50);
   }
 
@@ -3366,6 +3368,7 @@ async function load(){
   state.discountRates = meta.discountRates || {TR:[],UA:[],PL:[],IN:[]};
   state.topupCards = meta.topupCards || state.topupCards || {TR:[],PL:[],IN:[]};
   state.useTurkeyTopupCards = !!meta.settings?.useTurkeyTopupCards;
+  state.useIndiaTopupCards = meta.settings?.useIndiaTopupCards !== false;
   state.roundStep = Number(meta.settings?.roundStep || 50);
   const showUntil=!!(state.tab==="discounts" && meta.hasAnyUntil && meta.hasAnyUntil[state.region]);
 
