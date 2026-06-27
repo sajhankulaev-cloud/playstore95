@@ -4510,7 +4510,7 @@ body[data-tab="topup"] #pager{
   align-items:center !important;
   gap:7px !important;
   flex-wrap:wrap !important;
-  margin-bottom:5px !important;
+  margin-bottom:7px !important;
 }
 #gameModal.gameModalOverlayV2 .gmv2RegionBadge{
   display:inline-flex !important;
