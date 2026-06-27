@@ -2855,7 +2855,8 @@ function openGameModal(game){
   if(edition){
     const platformText = escapeHtml(game.platform || "PS4 / PS5");
     const editionText = escapeHtml(gmEditionShortText(game));
-    edition.innerHTML = `<span class="gmv2InlinePlatform">${platformText}</span><span class="gmv2InlineEdition">${editionText}</span>`;
+    const regionCode = String(state.region || "TR").toUpperCase();
+    edition.innerHTML = `<div class="gmv2PlatformRegionRow"><span class="gmv2InlinePlatform">${platformText}</span><span class="gmv2RegionBadge">${regionFlagHtml(regionCode)}<span>${escapeHtml(regionCode)}</span></span></div><div class="gmv2InlineEdition">${editionText}</div>`;
   }
 
   const ruEl=document.getElementById("gmRu");
