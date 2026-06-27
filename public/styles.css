@@ -4497,3 +4497,42 @@ body[data-tab="topup"] #pager{
   .regionCompareCover{width:104px;height:114px;flex-basis:104px;}
   .regionCompareTitle{font-size:20px;}
 }
+
+
+/* Game modal: static region badge next to platform, edition below */
+#gameModal.gameModalOverlayV2 .gmv2EditionText{
+  display:block !important;
+  overflow:visible !important;
+  -webkit-line-clamp:unset !important;
+}
+#gameModal.gameModalOverlayV2 .gmv2PlatformRegionRow{
+  display:flex !important;
+  align-items:center !important;
+  gap:7px !important;
+  flex-wrap:wrap !important;
+  margin-bottom:5px !important;
+}
+#gameModal.gameModalOverlayV2 .gmv2RegionBadge{
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:5px !important;
+  min-height:22px !important;
+  padding:clamp(3px, .9vw, 8px) clamp(5px, 1.2vw, 12px) !important;
+  border-radius:5px !important;
+  background:#f6f8fb !important;
+  border:1px solid #d9dee8 !important;
+  color:#7a8293 !important;
+  font-size:clamp(12px, 2.3vw, 18px) !important;
+  line-height:1 !important;
+  font-weight:600 !important;
+}
+#gameModal.gameModalOverlayV2 .gmv2RegionBadge .regionFlagIcon{
+  width:22px !important;
+  height:15px !important;
+  flex-basis:22px !important;
+}
+#gameModal.gameModalOverlayV2 .gmv2InlineEdition{
+  display:block !important;
+  margin-top:0 !important;
+}
