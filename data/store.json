@@ -3,7 +3,8 @@
     "roundStep": 50,
     "whatsappLink": "https://wa.me/+79659556300",
     "minPriceRub": 450,
-    "useTurkeyTopupCards": true
+    "useTurkeyTopupCards": false,
+    "useIndiaTopupCards": false
   },
   "rates": {
     "TR": [
