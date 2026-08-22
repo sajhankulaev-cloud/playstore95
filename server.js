@@ -2362,6 +2362,34 @@ async function fetchRegularRegionalPrice(productId, locale){
   return null;
 }
 
+async function resolveRegionalRegularPrice(productId, title, locale){
+  const first = await fetchRegularRegionalPrice(productId, locale);
+  if(first) return first;
+  const loc = String(locale || '').trim().toLowerCase();
+  const q = String(title || '').trim();
+  if(!loc || !q) return null;
+  try{
+    const html = await fetchText(`https://store.playstation.com/${loc}/search/${encodeURIComponent(q)}`, { acceptLanguage: loc.replace('-', '_') });
+    if(!html || looksBlocked(html)) return null;
+    const ids=[];
+    const re = new RegExp(`/${loc}/product/([A-Z0-9_-]{10,})`, 'gi');
+    let m;
+    while((m=re.exec(html))){ const id=String(m[1]||'').toUpperCase(); if(id && !ids.includes(id)) ids.push(id); }
+    const src=String(productId||'').toUpperCase();
+    const tail=src.includes('_00-') ? src.split('_00-')[1] : '';
+    const prefix=src.includes('-') ? src.split('-')[0] : '';
+    ids.sort((a,b)=>{
+      const score=(id)=>(tail && id.includes('_00-'+tail)?500:0)+(prefix && id.startsWith(prefix+'-')?100:0);
+      return score(b)-score(a);
+    });
+    for(const id of ids.slice(0,8)){
+      const found=await fetchRegularRegionalPrice(id,loc);
+      if(found) return found;
+    }
+  }catch(_e){}
+  return null;
+}
+
 function regionalPriceProductCandidates(game, regionCode){
   const r = String(regionCode || '').toUpperCase();
   const ids = [];
@@ -2647,7 +2675,16 @@ app.get("/api/optimized-image", async (req, res)=>{
     res.setHeader("Content-Type", contentType);
     return res.send(output);
   }catch(e){
-    console.error("optimized image error:", e && e.message ? e.message : e);
+    const msg = e && e.message ? e.message : String(e || "");
+    console.error("optimized image error:", msg);
+    // Sony CDN can occasionally time out from the Node.js process even when
+    // the same image is reachable directly from the user's browser. In that
+    // case do not leave a broken thumbnail: fall back to the original CDN URL.
+    const remoteUrl = String(req.query.u || "");
+    if(isAllowedRemoteImageUrl(remoteUrl) && (msg === "remote_timeout" || msg === "ECONNRESET" || msg.startsWith("remote_status_"))){
+      res.setHeader("Cache-Control", "no-store");
+      return res.redirect(302, remoteUrl);
+    }
     return res.status(502).send("image optimize failed");
   }
 });
@@ -3473,6 +3510,262 @@ function extractGameMeta(html, jsonLd){
 
 // Extract release date in format yyyy-mm-dd.
 // Used for "Предзаказы" in admin.
+
+function _decodeJsonishUrl(v){
+  let s = String(v || '').replace(/\\u0026/g, '&').replace(/\\u002F/gi, '/').replace(/\\\//g, '/');
+  try{ s = JSON.parse('"' + s.replace(/"/g,'\\"') + '"'); }catch(_e){}
+  return s;
+}
+
+// PlayStation frequently exposes the same image several times with resize/thumbnail
+// query parameters. Keep one stable, full-size URL so the gallery does not contain
+// duplicate thumbnails or differently-sized copies of the same frame.
+function canonicalPsMediaUrl(raw, type){
+  let url = _decodeJsonishUrl(raw).replace(/&amp;/g,'&').trim();
+  if(!/^https:\/\//i.test(url)) return '';
+  try{
+    const u = new URL(url);
+    if(type === 'image'){
+      // PS image CDN transformation parameters. Removing these requests the original asset.
+      for(const k of ['w','h','width','height','thumb','thumbnail','resize','size','quality','q','format','fit','crop']){
+        u.searchParams.delete(k);
+      }
+    }
+    // Hashes never identify another media asset and only create duplicate keys.
+    u.hash = '';
+    url = u.toString();
+  }catch(_e){}
+  return url;
+}
+
+function psMediaIdentity(raw, type){
+  const url = canonicalPsMediaUrl(raw, type);
+  if(!url) return '';
+  try{
+    const u = new URL(url);
+    // Host + pathname is the actual Sony asset. Ignore transformation query strings.
+    return String(type||'') + '|' + u.hostname.toLowerCase() + u.pathname.toLowerCase();
+  }catch(_e){ return String(type||'') + '|' + url.split('?')[0].toLowerCase(); }
+}
+
+function _mediaContext(src, index, len){
+  const a=Math.max(0,index-500), b=Math.min(src.length,index+len+500);
+  return src.slice(a,b).toLowerCase();
+}
+
+function _scorePsImageContext(ctx, url){
+  let score=0;
+  // Strong positive markers used in PS Store media objects.
+  if(/screenshot|screen[_ -]?shot|gameplay[_ -]?image/.test(ctx)) score += 120;
+  if(/media[_ -]?gallery|mediagallery|gallery|mediaitems|media\"|media\\\"/.test(ctx)) score += 35;
+  if(/preview/.test(ctx)) score += 10;
+  // Things that are visually useful elsewhere, but are NOT screenshots.
+  if(/cover[_ -]?art|gamehub[_ -]?cover|master[_ -]?art|key[_ -]?art|hero[_ -]?image|background/.test(ctx)) score -= 100;
+  if(/logo|icon|avatar|badge|rating[_ -]?image|edition[_ -]?image|package|product[_ -]?image/.test(ctx)) score -= 120;
+  // Screenshots on modern PS Store are overwhelmingly jpg/jpeg and landscape assets.
+  if(/\.jpe?g(?:\?|$)/i.test(url)) score += 8;
+  if(/\.png(?:\?|$)/i.test(url)) score -= 3;
+  return score;
+}
+
+function extractPsMediaGallery(html){
+  const src = String(html || '');
+  const videosByKey = new Map();
+  const imagesByKey = new Map();
+
+  const videoRe = /https:\\?\/\\?\/vulcan\.dl\.playstation\.net[^"'<>\\\s]+?\.mp4(?:\?[^"'<>\\\s]*)?/gi;
+  const imageRe = /https:\\?\/\\?\/image\.api\.playstation\.com[^"'<>\\\s]+?\.(?:jpg|jpeg|png|webp)(?:\?[^"'<>\\\s]*)?/gi;
+
+  for(const m of src.matchAll(videoRe)){
+    const url=canonicalPsMediaUrl(m[0],'video');
+    if(!url || !/vulcan\.dl\.playstation\.net/i.test(url)) continue;
+    const key=psMediaIdentity(url,'video');
+    if(!key || videosByKey.has(key)) continue;
+    const ctx=_mediaContext(src,m.index||0,m[0].length);
+    let score=0;
+    if(/trailer|video|preview|media[_ -]?gallery|mediagallery/.test(ctx)) score+=30;
+    videosByKey.set(key,{type:'video',url,score,order:m.index||0});
+  }
+
+  for(const m of src.matchAll(imageRe)){
+    const url=canonicalPsMediaUrl(m[0],'image');
+    if(!url || !/image\.api\.playstation\.com/i.test(url) || !/\/vulcan\//i.test(url)) continue;
+    const key=psMediaIdentity(url,'image');
+    if(!key) continue;
+    const ctx=_mediaContext(src,m.index||0,m[0].length);
+    const score=_scorePsImageContext(ctx,url);
+    const prev=imagesByKey.get(key);
+    // Same Sony asset can occur many times. Keep the occurrence whose surrounding
+    // metadata most clearly identifies it as a screenshot.
+    if(!prev || score>prev.score) imagesByKey.set(key,{type:'image',url,score,order:m.index||0});
+  }
+
+  const videos=[...videosByKey.values()]
+    .sort((a,b)=>(b.score-a.score)||(a.order-b.order))
+    .slice(0,3)
+    .map(({type,url})=>({type,url}));
+
+  let candidates=[...imagesByKey.values()];
+  const stronglyTagged=candidates.filter(x=>x.score>=80);
+  if(stronglyTagged.length){
+    candidates=stronglyTagged;
+  }else{
+    // Older Store pages do not always expose an explicit SCREENSHOT role. In that
+    // case only accept neutral/positive gallery-looking assets, never covers/logos.
+    candidates=candidates.filter(x=>x.score>=0);
+  }
+  const images=candidates
+    .sort((a,b)=>(b.score-a.score)||(a.order-b.order))
+    .slice(0,6)
+    .map(({type,url})=>({type,url}));
+
+  return videos.concat(images);
+}
+
+function limitMediaGallery(list){
+  const src = Array.isArray(list) ? list : [];
+  const seenV=new Set(), seenI=new Set(), videos=[], images=[];
+  for(const x of src){
+    if(!x || !x.url) continue;
+    const type=String(x.type||'').toLowerCase();
+    if(type!=='video' && type!=='image') continue;
+    const url=canonicalPsMediaUrl(x.url,type);
+    const key=psMediaIdentity(url,type);
+    if(!url || !key) continue;
+    if(type==='video'){
+      if(seenV.has(key) || videos.length>=3) continue;
+      seenV.add(key); videos.push({type:'video',url});
+    }else{
+      if(seenI.has(key) || images.length>=6) continue;
+      seenI.add(key); images.push({type:'image',url});
+    }
+  }
+  return videos.concat(images);
+}
+function mergeMissingMediaGallery(current, incoming){
+  const existing = limitMediaGallery(current);
+  const add = limitMediaGallery(incoming);
+  const videos = existing.filter(x=>x.type==='video');
+  const images = existing.filter(x=>x.type==='image');
+  const seenV=new Set(videos.map(x=>psMediaIdentity(x.url,'video')));
+  const seenI=new Set(images.map(x=>psMediaIdentity(x.url,'image')));
+  for(const x of add){
+    if(x.type==='video'){
+      const key=psMediaIdentity(x.url,'video');
+      if(!key || seenV.has(key) || videos.length>=3) continue;
+      seenV.add(key); videos.push(x);
+    }else if(x.type==='image'){
+      const key=psMediaIdentity(x.url,'image');
+      if(!key || seenI.has(key) || images.length>=6) continue;
+      seenI.add(key); images.push(x);
+    }
+  }
+  return videos.slice(0,3).concat(images.slice(0,6));
+}
+function mediaGalleryNeedsFill(list){
+  const a=limitMediaGallery(list);
+  return a.filter(x=>x.type==='video').length<3 || a.filter(x=>x.type==='image').length<6;
+}
+async function fetchPsMediaForGame(game){
+  const data=await fetchPsMissingDataForGame(game);
+  return limitMediaGallery(data && data.mediaGallery);
+}
+function extractRatingCount(html){
+  const src=String(html||'');
+  const pats=[
+    /"ratingCount"\s*:\s*"?(\d{1,12})"?/i,
+    /"ratingsCount"\s*:\s*"?(\d{1,12})"?/i,
+    /"reviewCount"\s*:\s*"?(\d{1,12})"?/i,
+    /(\d[\d\s,.]{0,15})\s+(?:ratings|reviews|оцен(?:ок|ки)|відгук)/i
+  ];
+  for(const re of pats){
+    const m=src.match(re); if(!m) continue;
+    const n=Number(String(m[1]).replace(/[^0-9]/g,''));
+    if(Number.isFinite(n) && n>0) return n;
+  }
+  return null;
+}
+function extractPublisher(html, jsonLd){
+  let found='';
+  const walk=(node)=>{
+    if(!node || found) return;
+    if(Array.isArray(node)){ for(const x of node) walk(x); return; }
+    if(typeof node==='object'){
+      const p=node.publisher || node.author || node.brand;
+      if(typeof p==='string' && p.trim()) { found=p.trim(); return; }
+      if(p && typeof p==='object' && typeof p.name==='string' && p.name.trim()){ found=p.name.trim(); return; }
+      for(const v of Object.values(node)) walk(v);
+    }
+  };
+  try{ walk(jsonLd); }catch(_e){}
+  if(found) return found;
+  const txt=decodeHtml(String(html||'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' '));
+  const m=txt.match(/(?:Publisher|Издатель|Видавець)\s*[:：]?\s*([^|•]{2,80}?)(?=\s{2,}|Release|Дата|Genre|Жанр|$)/i);
+  return m ? m[1].trim() : '';
+}
+function mergeMissingGameData(target, incoming){
+  const isMissing=(v)=>v===null || typeof v==='undefined' || String(v).trim()==='' || v==='unknown';
+  const scalar=['name','cover','platform','edition','players','size','rating','ratingCount','description','genres','releaseDate','publisher','conceptId'];
+  for(const k of scalar){ if(isMissing(target[k]) && !isMissing(incoming[k])) target[k]=incoming[k]; }
+  if((!Array.isArray(target.mediaGallery) || !target.mediaGallery.length) && Array.isArray(incoming.mediaGallery) && incoming.mediaGallery.length) target.mediaGallery=limitMediaGallery(incoming.mediaGallery);
+  target.productIds = target.productIds && typeof target.productIds==='object' ? target.productIds : {};
+  target.regions = target.regions && typeof target.regions==='object' ? target.regions : {};
+  for(const code of ['TR','UA','PL','IN','US']){
+    const ir=incoming.regions && incoming.regions[code]; if(!ir) continue;
+    const tr=target.regions[code] && typeof target.regions[code]==='object' ? target.regions[code] : {};
+    if((!Number.isFinite(Number(tr.salePrice)) || Number(tr.salePrice)<=0) && Number.isFinite(Number(ir.salePrice)) && Number(ir.salePrice)>0) tr.salePrice=Number(ir.salePrice);
+    if(isMissing(tr.ru) && !isMissing(ir.ru)) tr.ru=ir.ru;
+    if(isMissing(tr.sub) && !isMissing(ir.sub)) tr.sub=ir.sub;
+    target.regions[code]=tr;
+    if(isMissing(target.productIds[code]) && incoming.productIds && !isMissing(incoming.productIds[code])) target.productIds[code]=incoming.productIds[code];
+  }
+  return target;
+}
+async function fetchPsMissingDataForGame(game){
+  const locales={TR:TR_LOCALE,UA:UA_LOCALE,PL:PL_LOCALE,IN:IN_LOCALE,US:'en-us'};
+  const out={productIds:{},regions:{},mediaGallery:[]};
+  const pidFallback=String((game.productIds && (game.productIds.UA||game.productIds.TR)) || game.id || '').trim();
+  for(const code of Object.keys(locales)){
+    const pid=String((game.productIds && game.productIds[code]) || pidFallback || '').trim();
+    if(!pid) continue;
+    const url=`https://store.playstation.com/${locales[code]}/product/${encodeURIComponent(pid)}`;
+    let html='';
+    try{
+      const ac=new AbortController(); const t=setTimeout(()=>ac.abort(),30000);
+      const r=await fetch(url,{redirect:'follow',signal:ac.signal,headers:{'user-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36','accept-language':code==='UA'?'ru-UA,ru;q=0.9,uk;q=0.8':'en-US,en;q=0.9'}}); clearTimeout(t); html=await r.text();
+    }catch(_e){ continue; }
+    if(!html || looksBlocked(html)) continue;
+    const jsonLd=extractJsonLd(html);
+    const offer=extractOfferPrice(jsonLd,pid);
+    const meta=extractGameMeta(html,jsonLd);
+    const ruInfo=extractRuFromHtmlTR(html);
+    const sub=extractSubFromHtml(html);
+    out.productIds[code]=pid;
+    out.regions[code]={salePrice:(offer&&Number.isFinite(offer.price)?offer.price:0),ru:ruInfo.ru||'none',sub:sub||''};
+    if(code==='UA' || !out.name){
+      const nameRaw=extractOg(html,'og:title') || extractOg(html,'twitter:title') || extractH1(html) || extractTitle(html);
+      const coverRaw=extractOg(html,'og:image') || extractOg(html,'twitter:image') || extractAnyImage(jsonLd);
+      out.name=nameRaw ? String(nameRaw).replace(/\s+/g,' ').trim() : out.name;
+      out.cover=coverRaw ? canonicalPsMediaUrl(String(coverRaw).trim(),'image') : out.cover;
+      out.platform=finalizePlatform(new Set([...extractPlatformsFromJsonLd(jsonLd),...extractPlatformsFromHtml(html)]),pid);
+      out.edition=extractEdition(jsonLd,nameRaw,html) || out.edition;
+      out.players=meta.players || out.players;
+      out.size=meta.size || out.size;
+      out.rating=meta.rating ?? out.rating;
+      out.ratingCount=extractRatingCount(html) ?? out.ratingCount;
+      out.releaseDate=extractReleaseDate(html,jsonLd) || out.releaseDate;
+      out.genres=extractPsGenresFromHtml(html) || out.genres;
+      out.publisher=extractPublisher(html,jsonLd) || out.publisher;
+      out.conceptId=extractConceptIdFromProductHtml(html,pid) || game.conceptId || out.conceptId;
+      const media=extractPsMediaGallery(html); if(media.length) out.mediaGallery=media;
+    }
+  }
+  if(!out.description){
+    try{ out.description=await fetchGameDescriptionFromPs((out.productIds.UA||out.productIds.TR||game.conceptId||pidFallback)); }catch(_e){}
+  }
+  return out;
+}
+
 function extractReleaseDate(html, jsonLd){
   const norm = (v) => {
     if(!v) return null;
@@ -4400,6 +4693,10 @@ function attachPublicEditions(items){
       discPerc:Number(e.discPerc||0)||0,
       discountedUntil:e.discountedUntil || null,
       players:e.players || null,
+      rating:e.rating ?? null,
+      ratingCount:Number(e.ratingCount||0)||0,
+      publisher:e.publisher || '',
+      mediaGallery:Array.isArray(e.mediaGallery)?e.mediaGallery:[],
       finalPriceRub:Number(e.finalPriceRub||0)||0,
       oldPriceRub:Number(e.oldPriceRub||0)||0,
       description:e.description || '',
@@ -4510,6 +4807,9 @@ app.get("/api/games", async (req, res) => {
         players: playersFromAllGames(g) || null,
         size: g.size || null,
         rating: (typeof g.rating !== "undefined" ? g.rating : null),
+        ratingCount: Number(g.ratingCount||0)||0,
+        publisher: g.publisher || "",
+        mediaGallery: Array.isArray(g.mediaGallery) ? g.mediaGallery : [],
         cover: g.cover || "",
         description: descriptionForPublicGame(g, descIndex),
         discPerc: reg ? Number(reg.discPerc || 0) : 0,
@@ -4674,6 +4974,9 @@ app.get("/api/game-editions", (req, res) => {
         players: playersForPublicEdition(g) || null,
         size: g.size || null,
         rating: (typeof g.rating !== "undefined" ? g.rating : null),
+        ratingCount: Number(g.ratingCount||0)||0,
+        publisher: g.publisher || "",
+        mediaGallery: Array.isArray(g.mediaGallery) ? g.mediaGallery : [],
         cover: g.cover || "",
         description: descriptionForPublicGame(g, descIndex),
         discPerc,
@@ -4988,6 +5291,7 @@ app.put("/api/admin/games/:id", requireAdmin, (req, res) => {
     if(typeof body.players !== "undefined") next.players = normalizeGameMetaField(body.players);
     if(typeof body.size !== "undefined") next.size = normalizeGameMetaField(body.size);
     if(typeof body.rating !== "undefined") next.rating = normalizeRatingValue(body.rating);
+    if(typeof body.mediaGallery !== "undefined") next.mediaGallery = Array.isArray(body.mediaGallery) ? limitMediaGallery(body.mediaGallery) : [];
     if(typeof body.genres !== "undefined") next.genres = normalizeGenres(body.genres || "");
     if(typeof body.vr2 !== "undefined") next.vr2 = !!body.vr2;
 
@@ -5043,6 +5347,22 @@ app.put("/api/admin/games/:id", requireAdmin, (req, res) => {
   }catch(e){
     res.status(500).json({ ok:false, error:String(e) });
   }
+});
+
+app.post("/api/admin/games/:id/fill-missing-media", requireAdmin, async (req,res)=>{
+  try{
+    const id=String(req.params.id||'').trim();
+    const doc=readJson(GAMES_PATH,{updatedAt:null,items:[]});
+    const items=Array.isArray(doc.items)?doc.items:[];
+    const idx=items.findIndex(x=>String(x.id)===id);
+    if(idx<0) return res.status(404).json({ok:false,error:'not_found'});
+    const before=JSON.stringify(items[idx].mediaGallery||[]);
+    const next=Object.assign({},items[idx]);
+    next.mediaGallery=mergeMissingMediaGallery(items[idx].mediaGallery,await fetchPsMediaForGame(items[idx]));
+    items[idx]=next;
+    writeJson(GAMES_PATH,{updatedAt:new Date().toISOString(),items});
+    return res.json({ok:true,changed:before!==JSON.stringify(next.mediaGallery||[]),item:next});
+  }catch(e){ return res.status(500).json({ok:false,error:String(e&&e.message||e)}); }
 });
 
 // Admin: delete games by discount date (yyyy-mm-dd) or "none" for empty dates
@@ -6176,6 +6496,9 @@ app.get("/api/allgames", async (req, res) => {
         players: g.players || null,
         size: g.size || null,
         rating: (typeof g.rating !== "undefined" ? g.rating : null),
+        ratingCount: Number(g.ratingCount||0)||0,
+        publisher: g.publisher || "",
+        mediaGallery: Array.isArray(g.mediaGallery) ? g.mediaGallery : [],
         cover: g.cover || "",
         description: descriptionForPublicGame(g, descIndex),
         discPerc,
@@ -6540,6 +6863,9 @@ app.get("/api/newreleases", async (req, res) => {
         players: g.players || null,
         size: g.size || null,
         rating: (typeof g.rating !== "undefined" ? g.rating : null),
+        ratingCount: Number(g.ratingCount||0)||0,
+        publisher: g.publisher || "",
+        mediaGallery: Array.isArray(g.mediaGallery) ? g.mediaGallery : [],
         cover: g.cover || "",
         description: descriptionForPublicGame(g, descIndex),
         discPerc: 0,
@@ -6672,6 +6998,9 @@ app.get("/api/preorders", async (req, res) => {
         players: g.players || null,
         size: g.size || null,
         rating: (typeof g.rating !== "undefined" ? g.rating : null),
+        ratingCount: Number(g.ratingCount||0)||0,
+        publisher: g.publisher || "",
+        mediaGallery: Array.isArray(g.mediaGallery) ? g.mediaGallery : [],
         cover: g.cover || "",
         description: descriptionForPublicGame(g, descIndex),
         discPerc: 0,
@@ -6867,7 +7196,12 @@ app.post("/api/admin/allgames/add", requireAdmin, (req, res) => {
       next.players = normalizeGameMetaField(g.players);
       next.size = normalizeGameMetaField(g.size);
       next.rating = normalizeRatingValue(g.rating);
+      next.ratingCount = Number.isFinite(Number(g.ratingCount)) ? Number(g.ratingCount) : null;
+      next.publisher = normalizeGameMetaField(g.publisher);
+      next.releaseDate = g.releaseDate ? String(g.releaseDate).slice(0,10) : null;
+      next.mediaGallery = Array.isArray(g.mediaGallery) ? limitMediaGallery(g.mediaGallery) : [];
       next.description = cleanPsDescriptionText(g.description || "");
+      next.mediaGallery = Array.isArray(g.mediaGallery) ? limitMediaGallery(g.mediaGallery) : [];
       next.genres = normalizeGenres(g.genres || "");
       next.vr2 = !!g.vr2;
 
@@ -6939,7 +7273,12 @@ app.put("/api/admin/allgames/:id", requireAdmin, (req, res) => {
     if(typeof body.players !== 'undefined') next.players = normalizeGameMetaField(body.players);
     if(typeof body.size !== 'undefined') next.size = normalizeGameMetaField(body.size);
     if(typeof body.rating !== 'undefined') next.rating = normalizeRatingValue(body.rating);
+    if(typeof body.ratingCount !== 'undefined') next.ratingCount = Number.isFinite(Number(body.ratingCount)) ? Number(body.ratingCount) : null;
+    if(typeof body.publisher !== 'undefined') next.publisher = normalizeGameMetaField(body.publisher);
+    if(typeof body.releaseDate !== 'undefined') next.releaseDate = body.releaseDate ? String(body.releaseDate).slice(0,10) : null;
+    if(typeof body.mediaGallery !== 'undefined') next.mediaGallery = Array.isArray(body.mediaGallery) ? limitMediaGallery(body.mediaGallery) : [];
     if(typeof body.description !== 'undefined') next.description = preserveAdminDescriptionText(body.description || '');
+    if(typeof body.mediaGallery !== 'undefined') next.mediaGallery = Array.isArray(body.mediaGallery) ? limitMediaGallery(body.mediaGallery) : [];
     if(typeof body.genres !== 'undefined') next.genres = normalizeGenres(body.genres || '');
     if(typeof body.vr2 !== 'undefined') next.vr2 = !!body.vr2;
     if(typeof body.conceptId !== 'undefined') next.conceptId = body.conceptId ? String(body.conceptId).trim() : null;
@@ -6950,6 +7289,8 @@ app.put("/api/admin/allgames/:id", requireAdmin, (req, res) => {
       next.productIds = next.productIds && typeof next.productIds === 'object' ? next.productIds : {};
       if(typeof p.TR !== 'undefined') next.productIds.TR = p.TR ? String(p.TR).trim() : null;
       if(typeof p.UA !== 'undefined') next.productIds.UA = p.UA ? String(p.UA).trim() : null;
+      if(typeof p.PL !== 'undefined') next.productIds.PL = p.PL ? String(p.PL).trim() : null;
+      if(typeof p.IN !== 'undefined') next.productIds.IN = p.IN ? String(p.IN).trim() : null;
       if(typeof p.PL !== 'undefined') next.productIds.PL = p.PL ? String(p.PL).trim() : null;
       if(typeof p.IN !== 'undefined') next.productIds.IN = p.IN ? String(p.IN).trim() : null;
       if(typeof p.PL !== 'undefined') next.productIds.PL = p.PL ? String(p.PL).trim() : null;
@@ -6998,6 +7339,44 @@ app.put("/api/admin/allgames/:id", requireAdmin, (req, res) => {
   }catch(e){
     res.status(500).json({ ok:false, error:String(e) });
   }
+});
+
+
+app.post("/api/admin/allgames/:id/fill-missing", requireAdmin, async (req,res)=>{
+  try{
+    const id=String(req.params.id||'').trim();
+    const doc=readJson(ALL_GAMES_PATH,{updatedAt:null,items:[]});
+    const items=Array.isArray(doc.items)?doc.items:[];
+    const idx=items.findIndex(x=>String(x.id)===id);
+    if(idx<0) return res.status(404).json({ok:false,error:'not_found'});
+    const before=JSON.stringify(items[idx].mediaGallery||[]);
+    const incoming=await fetchPsMediaForGame(items[idx]);
+    const next=Object.assign({},items[idx]);
+    next.mediaGallery=mergeMissingMediaGallery(items[idx].mediaGallery,incoming);
+    items[idx]=next;
+    writeJson(ALL_GAMES_PATH,{updatedAt:new Date().toISOString(),items});
+    return res.json({ok:true,changed:before!==JSON.stringify(next.mediaGallery||[]),item:next});
+  }catch(e){ return res.status(500).json({ok:false,error:String(e&&e.message||e)}); }
+});
+app.post("/api/admin/allgames/fill-missing", requireAdmin, async (req,res)=>{
+  try{
+    const doc=readJson(ALL_GAMES_PATH,{updatedAt:null,items:[]});
+    const items=Array.isArray(doc.items)?doc.items:[];
+    const limit=Math.max(1,Math.min(100,Number(req.body&&req.body.limit||20)));
+    const start=Math.max(0,Number(req.body&&req.body.start||0));
+    let changed=0, processed=0;
+    for(let i=start;i<Math.min(items.length,start+limit);i++){
+      const g=items[i];
+      const needs=mediaGalleryNeedsFill(g.mediaGallery);
+      if(!needs) continue;
+      processed++;
+      const before=JSON.stringify(g);
+      try{ const n=Object.assign({},g); n.mediaGallery=mergeMissingMediaGallery(g.mediaGallery,await fetchPsMediaForGame(g)); items[i]=n; }catch(_e){}
+      if(before!==JSON.stringify(items[i])) changed++;
+    }
+    writeJson(ALL_GAMES_PATH,{updatedAt:new Date().toISOString(),items});
+    return res.json({ok:true,processed,changed,nextStart:Math.min(items.length,start+limit),total:items.length,done:start+limit>=items.length});
+  }catch(e){ return res.status(500).json({ok:false,error:String(e&&e.message||e)}); }
 });
 
 app.delete("/api/admin/allgames/:id", requireAdmin, (req, res) => {
@@ -7075,6 +7454,7 @@ app.post("/api/admin/preorders/add", requireAdmin, (req, res) => {
       next.players = normalizeGameMetaField(g.players);
       next.size = normalizeGameMetaField(g.size);
       next.rating = normalizeRatingValue(g.rating);
+      next.mediaGallery = Array.isArray(g.mediaGallery) ? limitMediaGallery(g.mediaGallery) : [];
       next.description = cleanPsDescriptionText(g.description || "");
       next.genres = normalizeGenres(g.genres || "");
       next.vr2 = !!g.vr2;
@@ -7145,6 +7525,7 @@ app.put("/api/admin/preorders/:id", requireAdmin, (req, res) => {
     if(typeof body.rating !== 'undefined') next.rating = normalizeRatingValue(body.rating);
     if(typeof body.releaseDate !== 'undefined') next.releaseDate = dateOrNull(body.releaseDate);
     if(typeof body.description !== 'undefined') next.description = preserveAdminDescriptionText(body.description || '');
+    if(typeof body.mediaGallery !== 'undefined') next.mediaGallery = Array.isArray(body.mediaGallery) ? limitMediaGallery(body.mediaGallery) : [];
     if(typeof body.genres !== 'undefined') next.genres = normalizeGenres(body.genres || '');
     if(typeof body.vr2 !== 'undefined') next.vr2 = !!body.vr2;
     if(typeof body.conceptId !== 'undefined'){
@@ -7199,6 +7580,57 @@ app.put("/api/admin/preorders/:id", requireAdmin, (req, res) => {
   }catch(e){
     res.status(500).json({ ok:false, error:String(e) });
   }
+});
+
+
+app.post("/api/admin/preorders/:id/fill-missing-media", requireAdmin, async (req,res)=>{
+  try{
+    const id=String(req.params.id||'').trim();
+    const doc=readJson(PREORDERS_PATH,{updatedAt:null,items:[]});
+    const items=Array.isArray(doc.items)?doc.items:[];
+    const idx=items.findIndex(x=>String(x.id)===id);
+    if(idx<0) return res.status(404).json({ok:false,error:'not_found'});
+    const before=JSON.stringify(items[idx].mediaGallery||[]);
+    const next=Object.assign({},items[idx]);
+    next.mediaGallery=mergeMissingMediaGallery(items[idx].mediaGallery,await fetchPsMediaForGame(items[idx]));
+    items[idx]=next;
+    writeJson(PREORDERS_PATH,{updatedAt:new Date().toISOString(),items});
+    return res.json({ok:true,changed:before!==JSON.stringify(next.mediaGallery||[]),item:next});
+  }catch(e){ return res.status(500).json({ok:false,error:String(e&&e.message||e)}); }
+});
+
+// Adds only missing trailers/screenshots. Existing game metadata, prices and localization are never overwritten.
+app.post("/api/admin/media/fill-missing", requireAdmin, async (req,res)=>{
+  try{
+    const docs=[
+      {path:ALL_GAMES_PATH, key:'allgames', doc:readJson(ALL_GAMES_PATH,{updatedAt:null,items:[]})},
+      {path:NEW_RELEASES_PATH, key:'newreleases', doc:readJson(NEW_RELEASES_PATH,{updatedAt:null,items:[]})},
+      {path:PREORDERS_PATH, key:'preorders', doc:readJson(PREORDERS_PATH,{updatedAt:null,items:[]})}
+    ];
+    const flat=[];
+    for(const d of docs){
+      d.items=Array.isArray(d.doc.items)?d.doc.items:[];
+      d.items.forEach((g,i)=>flat.push({d,g,i}));
+    }
+    const limit=Math.max(1,Math.min(50,Number(req.body&&req.body.limit||20)));
+    const start=Math.max(0,Number(req.body&&req.body.start||0));
+    let processed=0,changed=0;
+    for(let p=start;p<Math.min(flat.length,start+limit);p++){
+      const e=flat[p], g=e.d.items[e.i];
+      if(!mediaGalleryNeedsFill(g.mediaGallery)) continue;
+      processed++;
+      const before=JSON.stringify(g.mediaGallery||[]);
+      try{
+        const n=Object.assign({},g);
+        n.mediaGallery=mergeMissingMediaGallery(g.mediaGallery,await fetchPsMediaForGame(g));
+        e.d.items[e.i]=n;
+        if(before!==JSON.stringify(n.mediaGallery||[])) changed++;
+      }catch(_e){}
+    }
+    for(const d of docs) writeJson(d.path,{updatedAt:new Date().toISOString(),items:d.items});
+    const nextStart=Math.min(flat.length,start+limit);
+    return res.json({ok:true,processed,changed,nextStart,total:flat.length,done:nextStart>=flat.length});
+  }catch(e){ return res.status(500).json({ok:false,error:String(e&&e.message||e)}); }
 });
 
 app.delete("/api/admin/preorders/:id", requireAdmin, (req, res) => {
@@ -7476,7 +7908,7 @@ app.post("/api/admin/import", requireAdmin, async (req, res) => {
       }
       const offer = extractOfferPrice(jsonLd, expectedSku);
       const name = nameRaw ? String(nameRaw).replace(/\s+/g," ").trim() : null;
-      const cover = coverRaw ? String(coverRaw).trim() : null;
+      const cover = coverRaw ? canonicalPsMediaUrl(String(coverRaw).trim(),'image') : null;
       const discPerc = extractDiscountPercent(html);
       const edition = extractEdition(jsonLd, nameRaw0, html);
       const conceptId = extractConceptIdFromProductHtml(html, expectedSku || productId);
@@ -7485,7 +7917,7 @@ app.post("/api/admin/import", requireAdmin, async (req, res) => {
       const genres = extractPsGenresFromHtml(html);
       // Discount end date: pull from Store (one region is enough; we later copy TR->UA)
       const until = (discPerc && discPerc > 0) ? (extractDiscountedUntil(html, jsonLd) || extractUntilDate(html)) : null;
-      return { blocked:false, name, edition, cover, platform, conceptId: conceptId || null, salePrice: (offer && Number.isFinite(offer.price) ? offer.price : null), currency: offer ? offer.currency : null, discPerc: discPerc || 0, discountedUntil: until || null, releaseDate: releaseDate || null, players: meta.players || null, size: meta.size || null, rating: meta.rating, genres: genres || "" };
+      return { blocked:false, name, edition, cover, platform, conceptId: conceptId || null, salePrice: (offer && Number.isFinite(offer.price) ? offer.price : null), currency: offer ? offer.currency : null, discPerc: discPerc || 0, discountedUntil: until || null, releaseDate: releaseDate || null, players: meta.players || null, size: meta.size || null, rating: meta.rating, ratingCount: extractRatingCount(html), publisher: extractPublisher(html, jsonLd), mediaGallery: extractPsMediaGallery(html), genres: genres || "" };
     }
 
 	    let parsedTR = parse(tr.html, productId);
@@ -7715,6 +8147,22 @@ app.post("/api/admin/import", requireAdmin, async (req, res) => {
     }
 
     
+    // --- PL / IN regular prices for every admin import form.
+    // Try the exact edition first; if the regional SKU differs, resolve it from regional search.
+    let parsedPL = { blocked:false, salePrice:null, currency:'PLN' };
+    let parsedIN = { blocked:false, salePrice:null, currency:'INR' };
+    let plProductId = productId || null;
+    let inProductId = productId || null;
+    const regionalTitle = (parsedUA && parsedUA.name) || (parsedTR && parsedTR.name) || '';
+    try{
+      const foundPL = await resolveRegionalRegularPrice(productId, regionalTitle, PL_LOCALE);
+      if(foundPL){ parsedPL.salePrice=Number(foundPL.price); parsedPL.currency=foundPL.currency||'PLN'; plProductId=foundPL.productId||plProductId; }
+    }catch(_e){}
+    try{
+      const foundIN = await resolveRegionalRegularPrice(productId, regionalTitle, IN_LOCALE);
+      if(foundIN){ parsedIN.salePrice=Number(foundIN.price); parsedIN.currency=foundIN.currency||'INR'; inProductId=foundIN.productId||inProductId; }
+    }catch(_e){}
+
     // --- Platform: prefer explicit TR/UA; if ambiguous, confirm via Chihiro in other locales.
     let bestPlatform = (parsedTR && parsedTR.platform) ? parsedTR.platform : null;
     if(parsedUA && parsedUA.platform){
@@ -7765,11 +8213,13 @@ app.post("/api/admin/import", requireAdmin, async (req, res) => {
       productIds: {
         TR: (trProductId || productId || null),
         UA: (uaProductId || productId || null),
+        PL: (plProductId || productId || null),
+        IN: (inProductId || productId || null),
       },
-      urls:{ TR: trU, UA: uaU },
-      status:{ TR: tr.status||null, UA: ua.status||null },
-      errors:{ TR: tr.error||null, UA: ua.error||null },
-      parsed:{ TR: parsedTR, UA: parsedUA }
+      urls:{ TR: trU, UA: uaU, PL: plProductId ? `https://store.playstation.com/${PL_LOCALE}/product/${plProductId}` : null, IN: inProductId ? `https://store.playstation.com/${IN_LOCALE}/product/${inProductId}` : null },
+      status:{ TR: tr.status||null, UA: ua.status||null, PL: parsedPL.salePrice ? 200 : null, IN: parsedIN.salePrice ? 200 : null },
+      errors:{ TR: tr.error||null, UA: ua.error||null, PL:null, IN:null },
+      parsed:{ TR: parsedTR, UA: parsedUA, PL: parsedPL, IN: parsedIN }
     });
   }catch(e){
     res.status(500).json({ ok:false, error:String(e) });
@@ -7979,6 +8429,9 @@ app.get("/api/search", async (req, res) => {
         players: g.players || null,
         size: g.size || null,
         rating: (typeof g.rating !== "undefined" ? g.rating : null),
+        ratingCount: Number(g.ratingCount||0)||0,
+        publisher: g.publisher || "",
+        mediaGallery: Array.isArray(g.mediaGallery) ? g.mediaGallery : [],
         cover: g.cover || "",
         discPerc,
         discountedUntil,
