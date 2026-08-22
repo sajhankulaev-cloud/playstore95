@@ -2827,6 +2827,60 @@ function gmUpdatePlayersInfo(game){
   p.innerHTML = `<span class="gmv2PlayersIcons">${gmPlayersIconsHtml(gmPlayersIconCount(text))}</span><span class="gmv2PlayersText">${escapeHtml(text)}</span>`;
 }
 
+
+let __gmMediaItems=[];
+let __gmMediaIndex=0;
+function gmMediaThumbHtml(item, idx){
+  const type=String(item&&item.type||'').toLowerCase();
+  const url=String(item&&item.url||'');
+  if(!url) return '';
+  if(type==='video'){
+    return `<button class="gmMediaThumb gmMediaThumbVideo" type="button" data-gm-media="${idx}" aria-label="Открыть трейлер"><video src="${escapeHtml(url)}#t=0.1" muted preload="metadata" playsinline></video><span class="gmMediaPlay">▶</span><span class="gmMediaLabel">Трейлер</span></button>`;
+  }
+  return `<button class="gmMediaThumb" type="button" data-gm-media="${idx}" aria-label="Открыть скриншот"><img src="${escapeHtml(optimizedPsImageUrl(url,420))}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"></button>`;
+}
+function gmRenderMedia(game){
+  const section=document.getElementById('gmMediaSection');
+  const rail=document.getElementById('gmMediaRail');
+  if(!section||!rail) return;
+  const raw=Array.isArray(game&&game.mediaGallery)?game.mediaGallery:[];
+  const videos=raw.filter(x=>String(x&&x.type||'').toLowerCase()==='video' && x.url).slice(0,3);
+  const images=raw.filter(x=>String(x&&x.type||'').toLowerCase()==='image' && x.url).slice(0,6);
+  __gmMediaItems=videos.concat(images);
+  if(!__gmMediaItems.length){ section.style.display='none'; rail.innerHTML=''; return; }
+  section.style.display='';
+  rail.innerHTML=__gmMediaItems.map(gmMediaThumbHtml).join('');
+  rail.querySelectorAll('[data-gm-media]').forEach(btn=>btn.onclick=()=>gmOpenMedia(Number(btn.getAttribute('data-gm-media')||0)));
+}
+function gmOpenMedia(idx){
+  if(!__gmMediaItems.length) return;
+  __gmMediaIndex=Math.max(0,Math.min(__gmMediaItems.length-1,Number(idx)||0));
+  const lb=document.getElementById('gmMediaLightbox');
+  if(!lb) return;
+  lb.style.display='flex'; lb.setAttribute('aria-hidden','false');
+  document.body.classList.add('modalOpen');
+  gmRenderLightbox();
+}
+function gmRenderLightbox(){
+  const stage=document.getElementById('gmMediaLbStage');
+  const counter=document.getElementById('gmMediaLbCounter');
+  if(!stage||!__gmMediaItems.length) return;
+  const item=__gmMediaItems[__gmMediaIndex];
+  const type=String(item.type||'').toLowerCase();
+  stage.innerHTML= type==='video'
+    ? `<video src="${escapeHtml(item.url)}" controls autoplay playsinline preload="metadata"></video>`
+    : `<img src="${escapeHtml(item.url)}" alt="Скриншот" referrerpolicy="no-referrer">`;
+  if(counter) counter.textContent=`${__gmMediaIndex+1} / ${__gmMediaItems.length}`;
+}
+function gmStepMedia(dir){ if(!__gmMediaItems.length)return; __gmMediaIndex=(__gmMediaIndex+dir+__gmMediaItems.length)%__gmMediaItems.length; gmRenderLightbox(); }
+function gmCloseMedia(){
+  const lb=document.getElementById('gmMediaLightbox'); if(!lb)return;
+  lb.style.display='none'; lb.setAttribute('aria-hidden','true');
+  const stage=document.getElementById('gmMediaLbStage'); if(stage) stage.innerHTML='';
+  const gameOpen=document.getElementById('gameModal');
+  if(!gameOpen || gameOpen.style.display==='none') document.body.classList.remove('modalOpen');
+}
+
 function openGameModal(game){
   const overlay=document.getElementById("gameModal");
   if(!overlay) return;
@@ -2886,6 +2940,7 @@ function openGameModal(game){
   }
 
   gmUpdatePlayersInfo(game);
+  gmRenderMedia(game);
 
   if(relEl){
     const hasRel = !!(game && game.isPreorder && isFutureReleaseDate(game.releaseDate));
@@ -3019,11 +3074,23 @@ document.addEventListener("click",(e)=>{
   if(e.target===overlay) closeGameModal();
 });
 document.addEventListener("keydown",(e)=>{
-  if(e.key==="Escape") { closeGameModal(); closeRegionCompare(); }
+  const lb=document.getElementById('gmMediaLightbox');
+  const lbOpen=lb && lb.style.display!=="none";
+  if(lbOpen && e.key==="ArrowLeft"){ e.preventDefault(); gmStepMedia(-1); return; }
+  if(lbOpen && e.key==="ArrowRight"){ e.preventDefault(); gmStepMedia(1); return; }
+  if(e.key==="Escape") { if(lbOpen){ gmCloseMedia(); return; } closeGameModal(); closeRegionCompare(); }
 });
 document.addEventListener("DOMContentLoaded",()=>{
   const btn=document.getElementById("gameModalClose");
   if(btn) btn.onclick=closeGameModal;
+  const lb=document.getElementById('gmMediaLightbox');
+  const lbc=document.getElementById('gmMediaLbClose');
+  const lbp=document.getElementById('gmMediaLbPrev');
+  const lbn=document.getElementById('gmMediaLbNext');
+  if(lbc) lbc.onclick=gmCloseMedia;
+  if(lbp) lbp.onclick=()=>gmStepMedia(-1);
+  if(lbn) lbn.onclick=()=>gmStepMedia(1);
+  if(lb) lb.addEventListener('click',e=>{ if(e.target===lb) gmCloseMedia(); });
 });
 
 async function loadDiscountTabs(){
@@ -3744,6 +3811,10 @@ load();
       </div>
     </div>
 
+    <section class="gmv2MediaSection" id="gmMediaSection" style="display:none">
+      <div class="gmv2MediaRail" id="gmMediaRail"></div>
+    </section>
+
     <section class="gmv2EditionsSection" id="gmEditionsSection" style="display:none">
       <div class="gmv2SectionHead">
         <h3>Другие издания</h3>
@@ -3752,6 +3823,14 @@ load();
       <div class="gmv2EditionsList" id="gmEditionsList"></div>
     </section>
   </div>
+</div>
+
+<div id="gmMediaLightbox" class="gmMediaLightbox" style="display:none" aria-hidden="true">
+  <button class="gmMediaLbClose" id="gmMediaLbClose" type="button" aria-label="Закрыть">×</button>
+  <button class="gmMediaLbNav gmMediaLbPrev" id="gmMediaLbPrev" type="button" aria-label="Назад">‹</button>
+  <div class="gmMediaLbStage" id="gmMediaLbStage"></div>
+  <button class="gmMediaLbNav gmMediaLbNext" id="gmMediaLbNext" type="button" aria-label="Вперёд">›</button>
+  <div class="gmMediaLbCounter" id="gmMediaLbCounter"></div>
 </div>
 
 <div id="regionCompareModal" class="modalOverlay regionCompareOverlay" style="display:none">
