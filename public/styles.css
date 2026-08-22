@@ -4543,7 +4543,7 @@ body[data-tab="topup"] #pager{
 .gmMediaThumb{position:relative;flex:0 0 188px;height:122px;border:1px solid #dfe4ec;border-radius:10px;overflow:hidden;background:#11151c;padding:0;cursor:pointer;scroll-snap-align:start}
 .gmMediaThumb img,.gmMediaThumb video{width:100%;height:100%;object-fit:cover;display:block}
 .gmMediaThumbVideo{background:#151920}.gmMediaThumbVideo video{opacity:.62}
-.gmMediaPlay{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:25px;height:25px;border-radius:50%;display:grid;place-items:center;background:#a9ff35;color:#111;font-size:11px;padding-left:1px;box-shadow:0 1px 8px rgba(0,0,0,.35)}
+.gmMediaPlay{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:#ffeb3b;color:#111;font-size:11px;padding-left:1px;box-shadow:0 1px 8px rgba(0,0,0,.35)}
 .gmMediaLabel{position:absolute;left:43px;top:50%;transform:translateY(-50%);color:#fff;font-size:11px;font-weight:800;text-shadow:0 1px 3px #000}
 .gmMediaLightbox{position:fixed;inset:0;z-index:99999;background:rgba(4,8,18,.92);align-items:center;justify-content:center;padding:42px 54px}
 .gmMediaLbStage{width:min(1120px,92vw);height:min(76vh,760px);display:flex;align-items:center;justify-content:center}
