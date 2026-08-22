@@ -321,6 +321,9 @@ button{ color:#0f172a !important; }
         </div>
         <div class="small" style="margin-top:8px;">Описание</div>
         <textarea id="preDescription" class="input" rows="7" placeholder="Описание на русском из PS Store UA"></textarea>
+        <div class="small" style="margin-top:8px;">Трейлеры и скриншоты</div>
+        <textarea id="preMediaGallery" class="input" rows="6" placeholder="video|https://...mp4&#10;image|https://...jpg"></textarea>
+        <div class="small">Максимум 3 трейлера и 6 скриншотов. При импорте заполняется автоматически.</div>
 
         <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;">
           <div style="flex:1;min-width:180px;">
@@ -480,6 +483,12 @@ button{ color:#0f172a !important; }
         </div>
           <div class="small" style="margin-top:8px;">Описание</div>
           <textarea id="allDescription" class="input" rows="7" placeholder="Описание на русском из PS Store UA"></textarea>
+          <div style="margin-top:10px;">
+            <div><div class="small">Дата релиза</div><input id="allReleaseDate" class="input" type="date" /></div>
+          </div>
+          <div class="small" style="margin-top:8px;">Трейлеры и скриншоты</div>
+          <textarea id="allMediaGallery" class="input" rows="6" placeholder="video|https://...mp4&#10;image|https://...jpg"></textarea>
+          <div class="small">Формат: одна строка = <b>video|URL</b> или <b>image|URL</b>. При импорте заполняется автоматически.</div>
 
           <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;">
             <div style="flex:1;min-width:180px;">
@@ -595,6 +604,8 @@ button{ color:#0f172a !important; }
     <button class="btnGhost" id="updatePlPrices">Обновить цены PL</button>
     <button class="btnGhost" id="updateInPrices">Обновить цены IN</button>
     <button class="btnGhost" id="cleanDescriptions">Очистить мусор описаний</button>
+    <button class="btnDark" id="fillMissingAllGames">Дополнить трейлеры и скриншоты</button>
+    <span class="small" id="fillMissingStatus"></span>
     <span class="small" id="newReleasesStatus"></span>
     <span class="small" id="gamesCount"></span>
   </div>
@@ -1416,6 +1427,7 @@ async function openDiscountEdit(id, anchorTr){
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
           <button class="btnDark" data-act="save">Сохранить</button>
+          <button class="btnGhost" data-act="fill-media">Обновить трейлеры и скриншоты</button>
           <button class="btnGhost" data-act="cancel">Отмена</button>
           <span class="small" data-el="status"></span>
         </div>
@@ -1441,6 +1453,11 @@ async function openDiscountEdit(id, anchorTr){
         <div style="grid-column:1 / span 2;">
           <div class="small">Cover URL</div>
           <input class="input" data-f="cover" type="text" value="${(g.cover||'').replace(/"/g,'&quot;')}" placeholder="https://...png" />
+        </div>
+        <div style="grid-column:1 / span 2;">
+          <div class="small">Трейлеры и скриншоты</div>
+          <textarea class="input" data-f="mediaGallery" rows="6">${mediaGalleryToText(g.mediaGallery).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
+          <div class="small">Максимум 3 трейлера и 6 скриншотов.</div>
         </div>
         <div style="grid-column:1 / span 2;">
           <div class="small">Жанры</div>
@@ -1514,6 +1531,18 @@ async function openDiscountEdit(id, anchorTr){
   const setStatus = (msg)=>{ if(statusEl) statusEl.textContent = msg||''; };
 
   row.querySelector('button[data-act="cancel"]').onclick = ()=>{ closeInlineEditor(); };
+  const fillMediaBtn=row.querySelector('button[data-act="fill-media"]');
+  if(fillMediaBtn) fillMediaBtn.onclick=async()=>{
+    setStatus('Получаю трейлеры и скриншоты из PS Store...'); fillMediaBtn.disabled=true;
+    try{
+      const rr=await fetch('/api/admin/games/'+encodeURIComponent(gameId)+'/fill-missing-media',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+      const jj=await rr.json().catch(()=>({ok:false,error:'bad_json'}));
+      if(!rr.ok||!jj.ok){ setStatus('Ошибка: '+(jj.error||rr.status)); return; }
+      const ta=row.querySelector('[data-f="mediaGallery"]');
+      if(ta && jj.item) ta.value=mediaGalleryToText(jj.item.mediaGallery);
+      setStatus(jj.changed?'Трейлеры и скриншоты обновлены.':'Новых трейлеров или скриншотов не найдено.');
+    }finally{ fillMediaBtn.disabled=false; }
+  };
   row.querySelector('button[data-act="save"]').onclick = async ()=>{
     setStatus('Сохранение...');
     const payload = {
@@ -1521,6 +1550,7 @@ async function openDiscountEdit(id, anchorTr){
       platform: row.querySelector('select[data-f="platform"]').value,
       edition: (row.querySelector('[data-f="edition"]').value||'').trim(),
       description: (row.querySelector('[data-f="description"]')?.value||'').trim(),
+      mediaGallery: mediaGalleryFromText(row.querySelector('[data-f="mediaGallery"]')?.value||''),
       genres: (row.querySelector('[data-f="genres"]')?.value||'').trim(),
       vr2: !!row.querySelector('[data-f="vr2"]')?.checked,
       cover: (row.querySelector('[data-f="cover"]').value||'').trim() || null,
@@ -1803,6 +1833,8 @@ if(cover){
   }
   document.getElementById("impTrPrice").value=j.parsed?.TR?.salePrice ?? "";
   document.getElementById("impUaPrice").value=j.parsed?.UA?.salePrice ?? "";
+  if(document.getElementById("impPlPrice")) document.getElementById("impPlPrice").value=j.parsed?.PL?.salePrice ?? "";
+  if(document.getElementById("impInPrice")) document.getElementById("impInPrice").value=j.parsed?.IN?.salePrice ?? "";
   document.getElementById("impTrDisc").value=j.parsed?.TR?.discPerc ?? 0;
   document.getElementById("impUaDisc").value=j.parsed?.UA?.discPerc ?? 0;
   // Дату окончания скидки берём из ручного поля админки (как было раньше).
@@ -1887,6 +1919,7 @@ async function doImportPreorder(){
   const pidUA = (j.productIds && j.productIds.UA) ? String(j.productIds.UA) : "";
   const tr = j.parsed?.TR || {};
   const ua = j.parsed?.UA || {};
+  window.__preImportProductIds = j.productIds || {};
 
   const name=(tr.name)|| (ua.name)|| "";
   const cover=(tr.cover)|| (ua.cover)|| "";
@@ -1946,6 +1979,7 @@ async function doImportPreorder(){
   const ind = j.parsed?.IN || {};
   if(document.getElementById("prePlPrice")) document.getElementById("prePlPrice").value = pl.salePrice ?? "";
   if(document.getElementById("preInPrice")) document.getElementById("preInPrice").value = ind.salePrice ?? "";
+  if(document.getElementById("preMediaGallery")) document.getElementById("preMediaGallery").value = mediaGalleryToText((ua.mediaGallery&&ua.mediaGallery.length)?ua.mediaGallery:tr.mediaGallery);
 
   document.getElementById("preImportResult").style.display="block";
   document.getElementById("preImportStatus").textContent="Готово. Проверь и нажми 'Добавить'.";
@@ -1960,7 +1994,12 @@ async function addPreorder(){
 
   const payload = {
     id: itemId,
-    productIds: { TR: idTR || null, UA: idUA || null },
+    productIds: {
+      TR: idTR || null,
+      UA: idUA || null,
+      PL: (window.__preImportProductIds?.PL || idTR || idUA || null),
+      IN: (window.__preImportProductIds?.IN || idTR || idUA || null)
+    },
     conceptId: (document.getElementById("preConceptId").value||"").trim() || null,
     genres: (document.getElementById("preGenres").value||"").trim(),
     vr2: !!document.getElementById("preVr2")?.checked,
@@ -1971,6 +2010,7 @@ async function addPreorder(){
     ...readMetaFields("pre"),
     releaseDate: (document.getElementById("preReleaseDate").value||"").trim() || null,
     description: (document.getElementById("preDescription")?.value||"").trim(),
+    mediaGallery: mediaGalleryFromText(document.getElementById("preMediaGallery")?.value||""),
     regions:{
       TR:{ salePrice: Number(document.getElementById("preTrPrice").value||0), ru: (document.getElementById("preRuTR").value||"unknown"), sub: (document.getElementById("preSub").value||"") },
       UA:{ salePrice: Number(document.getElementById("preUaPrice").value||0), ru: (document.getElementById("preRuUA").value||"unknown"), sub: (document.getElementById("preSub").value||"") },
@@ -2036,6 +2076,8 @@ function beginPreorderEdit(id){
 
   document.getElementById("preName").value = g.name || '';
   document.getElementById("preEdition").value = g.edition || '';
+  if(document.getElementById("preMediaGallery")) document.getElementById("preMediaGallery").value = mediaGalleryToText(g.mediaGallery);
+  window.__preImportProductIds = g.productIds || {};
   setMetaFields("pre", g, {});
   document.getElementById("prePlatform").value = g.platform || 'PS4 / PS5';
   document.getElementById("preReleaseDate").value = g.releaseDate ? String(g.releaseDate).slice(0,10) : '';
@@ -2228,6 +2270,7 @@ async function openPreorderEdit(id, anchorTr){
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
           <button class="btnDark" data-act="save">Сохранить</button>
+          <button class="btnGhost" data-act="fill-preorder">Обновить трейлеры и скриншоты</button>
           <button class="btnGhost" data-act="cancel">Отмена</button>
           <span class="small" data-el="status"></span>
         </div>
@@ -2257,6 +2300,11 @@ async function openPreorderEdit(id, anchorTr){
         <div style="grid-column:1 / span 2;">
           <div class="small">Описание</div>
           <textarea class="input" data-f="description" rows="7">${String(g.description||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
+        </div>
+        <div style="grid-column:1 / span 2;">
+          <div class="small">Трейлеры и скриншоты</div>
+          <textarea class="input" data-f="mediaGallery" rows="6">${mediaGalleryToText(g.mediaGallery).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
+          <div class="small">Максимум 3 трейлера и 6 скриншотов.</div>
         </div>
         <div style="grid-column:1 / span 2;">
           <div class="small">Cover URL</div>
@@ -2350,6 +2398,18 @@ async function openPreorderEdit(id, anchorTr){
   const setStatus = (m)=>{ if(statusEl) statusEl.textContent = m||''; };
 
   row.querySelector('button[data-act="cancel"]').onclick = ()=>closeInlineEditor();
+  const fillPreBtn=row.querySelector('button[data-act="fill-preorder"]');
+  if(fillPreBtn) fillPreBtn.onclick=async()=>{
+    setStatus('Получаю трейлеры и скриншоты из PS Store...'); fillPreBtn.disabled=true;
+    try{
+      const rr=await fetch('/api/admin/preorders/'+encodeURIComponent(gameId)+'/fill-missing-media',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+      const jj=await rr.json().catch(()=>({ok:false,error:'bad_json'}));
+      if(!rr.ok||!jj.ok){ setStatus('Ошибка: '+(jj.error||rr.status)); return; }
+      const ta=row.querySelector('[data-f="mediaGallery"]');
+      if(ta && jj.item) ta.value=mediaGalleryToText(jj.item.mediaGallery);
+      setStatus(jj.changed?'Трейлеры и скриншоты обновлены.':'Новых трейлеров или скриншотов не найдено.');
+    }finally{ fillPreBtn.disabled=false; }
+  };
   row.querySelector('button[data-act="save"]').onclick = async ()=>{
     setStatus('Сохранение...');
     const newIdTR = (row.querySelector('[data-f="idTR"]').value||'').trim();
@@ -2364,6 +2424,7 @@ async function openPreorderEdit(id, anchorTr){
       edition: (row.querySelector('[data-f="edition"]').value||'').trim(),
       players: normalizePlayersChoice(row.querySelector('[data-f="players"]')?.value || ''),
       description: (row.querySelector('[data-f="description"]')?.value||'').trim(),
+      mediaGallery: mediaGalleryFromText(row.querySelector('[data-f="mediaGallery"]')?.value||''),
       genres: (row.querySelector('[data-f="genres"]')?.value||'').trim(),
       vr2: !!row.querySelector('[data-f="vr2"]')?.checked,
       cover: (row.querySelector('[data-f="cover"]').value||'').trim() || null,
@@ -2398,6 +2459,20 @@ async function openPreorderEdit(id, anchorTr){
 }
 
 // === ALL GAMES (library) ===
+function mediaGalleryToText(list){
+  return (Array.isArray(list)?list:[]).filter(x=>x&&x.url).map(x=>`${String(x.type||'image').toLowerCase()}|${x.url}`).join('\n');
+}
+function mediaGalleryFromText(text){
+  const items = String(text||'').split(/\r?\n/).map(s=>s.trim()).filter(Boolean).map(line=>{
+    const p=line.indexOf('|');
+    if(p>0){ const type=line.slice(0,p).trim().toLowerCase(); const url=line.slice(p+1).trim(); return {type:type==='video'?'video':'image',url}; }
+    return {type:/\.mp4(?:\?|$)/i.test(line)?'video':'image',url:line};
+  }).filter(x=>/^https:\/\//i.test(x.url));
+  const videos = items.filter(x=>x.type==='video').slice(0,3);
+  const images = items.filter(x=>x.type==='image').slice(0,6);
+  return videos.concat(images);
+}
+
 async function doImportAllGames(){
   const url=document.getElementById("allImportUrl").value.trim();
   if(!url){alert("Вставь ссылку");return;}
@@ -2410,6 +2485,7 @@ async function doImportAllGames(){
 
   const pidTR = (j.productIds && j.productIds.TR) ? String(j.productIds.TR) : (j.productId||"");
   const pidUA = (j.productIds && j.productIds.UA) ? String(j.productIds.UA) : "";
+  window.__allImportProductIds = j.productIds || {};
   const name=(j.parsed?.TR?.name)|| (j.parsed?.UA?.name)|| "";
   const cover=(j.parsed?.TR?.cover)|| (j.parsed?.UA?.cover)|| "";
   document.getElementById("allIdTR").value=pidTR||"";
@@ -2439,6 +2515,8 @@ async function doImportAllGames(){
   const edEl = document.getElementById("allEdition");
   if(edEl) edEl.value = ed;
   setMetaFields("all", tr, ua);
+  if(document.getElementById("allReleaseDate")) document.getElementById("allReleaseDate").value = String(ua.releaseDate || tr.releaseDate || "").slice(0,10);
+  if(document.getElementById("allMediaGallery")) document.getElementById("allMediaGallery").value = mediaGalleryToText((ua.mediaGallery&&ua.mediaGallery.length)?ua.mediaGallery:tr.mediaGallery);
 
   // RU per region
   document.getElementById("allRuTR").value = (tr.ru || "none");
@@ -2460,9 +2538,11 @@ async function doImportAllGames(){
     document.getElementById("allNoCover").style.display="block";
   }
 
-  // Prices: TR and UA separately
+  // Prices: TR / UA / PL / IN
   document.getElementById("allTrPrice").value = j.parsed?.TR?.salePrice ?? "";
   document.getElementById("allUaPrice").value = j.parsed?.UA?.salePrice ?? "";
+  if(document.getElementById("allPlPrice")) document.getElementById("allPlPrice").value = j.parsed?.PL?.salePrice ?? "";
+  if(document.getElementById("allInPrice")) document.getElementById("allInPrice").value = j.parsed?.IN?.salePrice ?? "";
 
   document.getElementById("allImportResult").style.display="block";
   document.getElementById("allImportStatus").textContent="Готово. Проверь и нажми 'Добавить'.";
@@ -2478,8 +2558,8 @@ async function addAllGame(){
     productIds: {
       TR: idTR || null,
       UA: idUA || null,
-      PL: idTR || idUA || null,
-      IN: idTR || idUA || null,
+      PL: (window.__allImportProductIds?.PL || idTR || idUA || null),
+      IN: (window.__allImportProductIds?.IN || idTR || idUA || null),
     },
     name: (document.getElementById("allName").value||"").trim(),
     cover: (document.getElementById("allCover").style.display==="block") ? document.getElementById("allCover").src : null,
@@ -2490,6 +2570,8 @@ async function addAllGame(){
     genres: (document.getElementById("allGenres").value||"").trim(),
     vr2: !!document.getElementById("allVr2")?.checked,
     description: (document.getElementById("allDescription")?.value||"").trim(),
+    releaseDate: (document.getElementById("allReleaseDate")?.value||"").trim() || null,
+    mediaGallery: mediaGalleryFromText(document.getElementById("allMediaGallery")?.value||""),
     regions:{
       TR:{
         salePrice: Number(document.getElementById("allTrPrice").value||0),
@@ -2670,6 +2752,7 @@ async function openAllGameEdit(id, anchorTr){
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
           <button class="btnDark" data-act="save">Сохранить</button>
+          <button class="btnGhost" data-act="fill">Дополнить трейлеры и скриншоты</button>
           <button class="btnGhost" data-act="cancel">Отмена</button>
           <span class="small" data-el="status"></span>
         </div>
@@ -2700,6 +2783,8 @@ async function openAllGameEdit(id, anchorTr){
           <div class="small">Описание</div>
           <textarea class="input" data-f="description" rows="7">${String(g.description||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
         </div>
+        <div><div class="small">Дата релиза</div><input class="input" data-f="releaseDate" type="date" value="${String(g.releaseDate||'').slice(0,10)}" /></div>
+        <div style="grid-column:1 / span 2;"><div class="small">Трейлеры и скриншоты</div><textarea class="input" data-f="mediaGallery" rows="6">${mediaGalleryToText(g.mediaGallery).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea></div>
         <div style="grid-column:1 / span 2;">
           <div class="small">Cover URL</div>
           <input class="input" data-f="cover" type="text" value="${String(g.cover||'').replace(/"/g,'&quot;')}" placeholder="https://...png" />
@@ -2783,6 +2868,16 @@ async function openAllGameEdit(id, anchorTr){
   const statusEl = row.querySelector('[data-el="status"]');
   const setStatus = (m)=>{ if(statusEl) statusEl.textContent = m||''; };
   row.querySelector('button[data-act="cancel"]').onclick = ()=>closeInlineEditor();
+  const fillBtn=row.querySelector('button[data-act="fill"]');
+  if(fillBtn) fillBtn.onclick=async()=>{
+    setStatus('Получаю трейлеры и скриншоты из PS Store...'); fillBtn.disabled=true;
+    try{
+      const rr=await fetch('/api/admin/allgames/'+encodeURIComponent(gameId)+'/fill-missing',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+      const jj=await rr.json().catch(()=>({ok:false,error:'bad_json'}));
+      if(!rr.ok||!jj.ok){ setStatus('Ошибка: '+(jj.error||rr.status)); return; }
+      setStatus(jj.changed?'Медиа дополнено. Закрой и открой редактирование заново.':'Новых трейлеров или скриншотов не найдено.');
+    }finally{ fillBtn.disabled=false; }
+  };
   row.querySelector('button[data-act="save"]').onclick = async ()=>{
     setStatus('Сохранение...');
     const newIdTR = (row.querySelector('[data-f="idTR"]').value||'').trim();
@@ -2796,6 +2891,8 @@ async function openAllGameEdit(id, anchorTr){
       edition: (row.querySelector('[data-f="edition"]').value||'').trim(),
       players: normalizePlayersChoice(row.querySelector('[data-f="players"]')?.value || ''),
       description: (row.querySelector('[data-f="description"]')?.value||'').trim(),
+      releaseDate: (row.querySelector('[data-f="releaseDate"]')?.value||'').trim() || null,
+      mediaGallery: mediaGalleryFromText(row.querySelector('[data-f="mediaGallery"]')?.value||''),
       genres: (row.querySelector('[data-f="genres"]')?.value||'').trim(),
       vr2: !!row.querySelector('[data-f="vr2"]')?.checked,
       cover: (row.querySelector('[data-f="cover"]').value||'').trim() || null,
@@ -2873,6 +2970,26 @@ if(_btnUpdateIn){
   _btnUpdateIn.onclick = ()=>runRegionalPriceUpdate("updateInPrices", "/api/admin/prices/update-in", "IN");
 }
 
+async function fillMissingAllGames(){
+  const btn=document.getElementById('fillMissingAllGames'); const status=document.getElementById('fillMissingStatus');
+  if(!btn) return;
+  if(!confirm('Дополнить недостающие трейлеры и скриншоты у всех игр, новинок и предзаказов? Уже сохранённые данные останутся без изменений.')) return;
+  btn.disabled=true; let start=0,total=0,changed=0,processed=0;
+  try{
+    while(true){
+      if(status) status.textContent=`Проверка записей ${start+1}–${start+20}...`;
+      const r=await fetch('/api/admin/media/fill-missing',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({start,limit:20})});
+      const j=await r.json().catch(()=>({ok:false,error:'bad_json'}));
+      if(!r.ok||!j.ok) throw new Error(j.error||r.status);
+      total=j.total||total; changed+=Number(j.changed||0); processed+=Number(j.processed||0); start=Number(j.nextStart||start+20);
+      if(j.done) break;
+    }
+    if(status) status.textContent=`Готово: записей ${total}, проверено ${processed}, дополнено ${changed}.`;
+    await Promise.all([loadAllGamesList(), loadPreordersList()]);
+  }catch(e){ if(status) status.textContent='Ошибка: '+String(e.message||e); }
+  finally{ btn.disabled=false; }
+}
+
 document.getElementById("btnAddGame").onclick=addGame;
 
 document.getElementById("btnPreImport").onclick=doImportPreorder;
@@ -2881,6 +2998,7 @@ document.getElementById("btnCancelPreorderEdit").onclick=()=>endPreorderEdit(fal
 
 document.getElementById("btnAllImport").onclick=doImportAllGames;
 document.getElementById("btnAddAllGame").onclick=addAllGame;
+const __fillMissingBtn=document.getElementById('fillMissingAllGames'); if(__fillMissingBtn) __fillMissingBtn.onclick=fillMissingAllGames;
 
 (function wireRuMirrors(){
   const pairs = [
