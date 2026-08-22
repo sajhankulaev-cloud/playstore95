@@ -4540,7 +4540,7 @@ body[data-tab="topup"] #pager{
 /* PS95 media gallery inside the game modal */
 .gmv2MediaSection{margin:10px 0 12px;padding:0 2px;overflow:hidden}
 .gmv2MediaRail{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;padding:2px 0 7px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
-.gmMediaThumb{position:relative;flex:0 0 128px;height:72px;border:1px solid #dfe4ec;border-radius:10px;overflow:hidden;background:#11151c;padding:0;cursor:pointer;scroll-snap-align:start}
+.gmMediaThumb{position:relative;flex:0 0 188px;height:122px;border:1px solid #dfe4ec;border-radius:10px;overflow:hidden;background:#11151c;padding:0;cursor:pointer;scroll-snap-align:start}
 .gmMediaThumb img,.gmMediaThumb video{width:100%;height:100%;object-fit:cover;display:block}
 .gmMediaThumbVideo{background:#151920}.gmMediaThumbVideo video{opacity:.62}
 .gmMediaPlay{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:25px;height:25px;border-radius:50%;display:grid;place-items:center;background:#a9ff35;color:#111;font-size:11px;padding-left:1px;box-shadow:0 1px 8px rgba(0,0,0,.35)}
@@ -4552,4 +4552,4 @@ body[data-tab="topup"] #pager{
 .gmMediaLbClose{right:18px;top:16px;width:42px;height:42px;border-radius:50%;font-size:30px;line-height:1}
 .gmMediaLbNav{top:50%;transform:translateY(-50%);width:46px;height:64px;border-radius:12px;font-size:42px;line-height:1}.gmMediaLbPrev{left:14px}.gmMediaLbNext{right:14px}
 .gmMediaLbCounter{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);color:#fff;background:rgba(0,0,0,.42);padding:6px 12px;border-radius:999px;font-size:13px}
-@media(max-width:640px){.gmMediaThumb{flex-basis:112px;height:63px}.gmMediaLightbox{padding:52px 10px 60px}.gmMediaLbStage{width:100%;height:72vh}.gmMediaLbNav{width:38px;height:54px;font-size:34px;background:rgba(0,0,0,.5)}.gmMediaLbPrev{left:5px}.gmMediaLbNext{right:5px}.gmMediaLbClose{right:10px;top:10px}.gmMediaLabel{font-size:10px;left:40px}.gmMediaPlay{left:10px}}
+@media(max-width:640px){.gmMediaThumb{flex-basis:133px;height:83px}.gmMediaLightbox{padding:52px 10px 60px}.gmMediaLbStage{width:100%;height:72vh}.gmMediaLbNav{width:38px;height:54px;font-size:34px;background:rgba(0,0,0,.5)}.gmMediaLbPrev{left:5px}.gmMediaLbNext{right:5px}.gmMediaLbClose{right:10px;top:10px}.gmMediaLabel{font-size:10px;left:40px}.gmMediaPlay{left:10px}}
