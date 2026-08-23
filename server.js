@@ -2339,6 +2339,113 @@ function extractRegularPriceFromHtmlNextData(html, expectedSku){
   }
 }
 
+
+function extractDiscountPercentFromHeroHtml(html){
+  const text = normalizePsStoreVisibleText(html);
+  if(!text) return 0;
+  const firstCart = text.search(/Add\s+to\s+Cart/i);
+  const before = firstCart >= 0 ? text.slice(0, firstCart) : text;
+  const hero = before.slice(Math.max(0, before.length - 2500));
+  const vals = [];
+  const patterns = [
+    /Save\s*(\d{1,3})%/gi,
+    /(\d{1,3})%\s*(?:off|discount|indirim)/gi,
+    /%(\d{1,3})\s*indirim/gi,
+  ];
+  for(const re of patterns){
+    let m;
+    while((m=re.exec(hero))){
+      const n=Number(m[1]);
+      if(Number.isFinite(n) && n>0 && n<=100) vals.push(n);
+    }
+  }
+  return vals.length ? Math.max(...vals) : 0;
+}
+
+function extractCurrentDiscountPriceFromHeroHtml(html, locale){
+  const text = normalizePsStoreVisibleText(html);
+  if(!text) return null;
+  const firstCart = text.search(/Add\s+to\s+Cart/i);
+  const before = firstCart >= 0 ? text.slice(0, firstCart) : text;
+  const hero = before.slice(Math.max(0, before.length - 2500));
+  const currencyPattern = moneyPatternForLocale(locale);
+
+  // Prefer an explicitly labelled current/discounted price when PS Store exposes one.
+  const labels = [
+    /discounted\s+price/i,
+    /sale\s+price/i,
+    /current\s+price/i,
+    /now/i,
+  ];
+  for(const lab of labels){
+    const m = hero.match(new RegExp(lab.source + String.raw`\s*(` + currencyPattern + `)`, 'i'));
+    if(m){
+      const n = parseRegionalMoneyText(m[1]);
+      if(n) return n;
+    }
+  }
+
+  const regular = extractRegularPriceFromTextBlock(hero, locale);
+  const pct = extractDiscountPercentFromHeroHtml(html);
+  if(regular && pct > 0){
+    return computeDiscountedPrice(regular, pct);
+  }
+  return null;
+}
+
+async function fetchDiscountRegionalPrice(productId, locale){
+  const pid = String(productId || '').trim().toUpperCase();
+  const loc = String(locale || '').trim().toLowerCase();
+  if(!pid || !loc) return null;
+  try{
+    const html = await fetchText(`https://store.playstation.com/${loc}/product/${pid}`, { acceptLanguage: loc.replace('-', '_') });
+    if(html && !looksBlocked(html)){
+      const current = extractCurrentDiscountPriceFromHeroHtml(html, loc);
+      const regular = extractRegularPriceFromHeroHtml(html, loc);
+      const pct = extractDiscountPercentFromHeroHtml(html);
+      if(Number.isFinite(Number(current)) && Number(current) > 0){
+        return { price:Number(current), regularPrice:Number(regular)||null, discPerc:Number(pct)||0, currency: loc.includes('in') ? 'INR' : (loc.includes('pl') ? 'PLN' : null), productId:pid, source:'html_hero_discount' };
+      }
+
+      // JSON-LD often carries the currently payable price. Accept it only when it is
+      // lower than the hero regular price, so another edition/regular price is not used.
+      const offer = extractOfferPrice(extractJsonLd(html));
+      if(offer && Number.isFinite(Number(offer.price)) && Number(offer.price) > 0 && Number.isFinite(Number(regular)) && Number(regular) > 0 && Number(offer.price) < Number(regular)){
+        return { price:Number(offer.price), regularPrice:Number(regular), discPerc:Number(pct)||computeDiscountPercentFromPrices(regular, offer.price), currency:offer.currency || (loc.includes('in') ? 'INR' : 'PLN'), productId:pid, source:'jsonld_discount' };
+      }
+    }
+  }catch(_e){}
+  return null;
+}
+
+async function resolveRegionalDiscountPrice(productId, title, locale){
+  const first = await fetchDiscountRegionalPrice(productId, locale);
+  if(first) return first;
+  const loc = String(locale || '').trim().toLowerCase();
+  const q = String(title || '').trim();
+  if(!loc || !q) return null;
+  try{
+    const html = await fetchText(`https://store.playstation.com/${loc}/search/${encodeURIComponent(q)}`, { acceptLanguage: loc.replace('-', '_') });
+    if(!html || looksBlocked(html)) return null;
+    const ids=[];
+    const re = new RegExp(`/${loc}/product/([A-Z0-9_-]{10,})`, 'gi');
+    let m;
+    while((m=re.exec(html))){ const id=String(m[1]||'').toUpperCase(); if(id && !ids.includes(id)) ids.push(id); }
+    const src=String(productId||'').toUpperCase();
+    const tail=src.includes('_00-') ? src.split('_00-')[1] : '';
+    const prefix=src.includes('-') ? src.split('-')[0] : '';
+    ids.sort((a,b)=>{
+      const score=(id)=>(tail && id.includes('_00-'+tail)?500:0)+(prefix && id.startsWith(prefix+'-')?100:0);
+      return score(b)-score(a);
+    });
+    for(const id of ids.slice(0,8)){
+      const found=await fetchDiscountRegionalPrice(id,loc);
+      if(found) return found;
+    }
+  }catch(_e){}
+  return null;
+}
+
 async function fetchRegularRegionalPrice(productId, locale){
   const pid = String(productId || "").trim().toUpperCase();
   const loc = String(locale || "").trim().toLowerCase();
@@ -4605,6 +4712,16 @@ function publicDiscountRegionFor(g, region, regionBaseIndex){
   if(R !== 'PL' && R !== 'IN') return ownReg;
 
   const trReg = (g && g.regions && g.regions.TR) ? g.regions.TR : null;
+
+  // If the discount row already contains a real region-specific PL/IN sale price,
+  // use it directly. Regional PlayStation discounts can differ from Turkey, so
+  // applying TR's percentage to a PL/IN regular price is only a fallback.
+  const ownSale = ownReg ? Number(ownReg.salePrice || 0) : 0;
+  const ownDisc = ownReg ? Number(ownReg.discPerc || 0) : 0;
+  if(ownReg && Number.isFinite(ownSale) && ownSale > 0 && ownDisc > 0 && isDiscountActiveForRegion(ownReg)){
+    return ownReg;
+  }
+
   const discPerc = trReg ? Number(trReg.discPerc || 0) : 0;
   const baseReg = findIndexedRegionBaseReg(regionBaseIndex, g, R) || ownReg;
   const basePrice = baseReg ? Number(baseReg.salePrice || 0) : 0;
@@ -8397,20 +8514,22 @@ app.post("/api/admin/import", requireAdmin, async (req, res) => {
     }
 
     
-    // --- PL / IN regular prices for every admin import form.
-    // Try the exact edition first; if the regional SKU differs, resolve it from regional search.
+    // --- PL / IN prices for admin import forms.
+    // Normal/preorder imports use the regular regional price.
+    // The discount form explicitly requests the CURRENT discounted PL/IN price.
+    const discountMode = !!req.body.discountMode;
     let parsedPL = { blocked:false, salePrice:null, currency:'PLN' };
     let parsedIN = { blocked:false, salePrice:null, currency:'INR' };
     let plProductId = productId || null;
     let inProductId = productId || null;
     const regionalTitle = (parsedUA && parsedUA.name) || (parsedTR && parsedTR.name) || '';
     try{
-      const foundPL = await resolveRegionalRegularPrice(productId, regionalTitle, PL_LOCALE);
-      if(foundPL){ parsedPL.salePrice=Number(foundPL.price); parsedPL.currency=foundPL.currency||'PLN'; plProductId=foundPL.productId||plProductId; }
+      const foundPL = discountMode ? await resolveRegionalDiscountPrice(productId, regionalTitle, PL_LOCALE) : await resolveRegionalRegularPrice(productId, regionalTitle, PL_LOCALE);
+      if(foundPL){ parsedPL.salePrice=Number(foundPL.price); parsedPL.currency=foundPL.currency||'PLN'; parsedPL.discPerc=Number(foundPL.discPerc||0); plProductId=foundPL.productId||plProductId; }
     }catch(_e){}
     try{
-      const foundIN = await resolveRegionalRegularPrice(productId, regionalTitle, IN_LOCALE);
-      if(foundIN){ parsedIN.salePrice=Number(foundIN.price); parsedIN.currency=foundIN.currency||'INR'; inProductId=foundIN.productId||inProductId; }
+      const foundIN = discountMode ? await resolveRegionalDiscountPrice(productId, regionalTitle, IN_LOCALE) : await resolveRegionalRegularPrice(productId, regionalTitle, IN_LOCALE);
+      if(foundIN){ parsedIN.salePrice=Number(foundIN.price); parsedIN.currency=foundIN.currency||'INR'; parsedIN.discPerc=Number(foundIN.discPerc||0); inProductId=foundIN.productId||inProductId; }
     }catch(_e){}
 
     // --- Platform: prefer explicit TR/UA; if ambiguous, confirm via Chihiro in other locales.
