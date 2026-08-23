@@ -3622,6 +3622,141 @@ function extractPsMediaGallery(html){
   return videos.concat(images);
 }
 
+
+function _directProductIdsFromNode(node){
+  if(!node || typeof node !== 'object' || Array.isArray(node)) return [];
+  const keys=['id','productId','productID','product_id','skuId','skuID','sku_id','storeId','store_id'];
+  const out=[];
+  for(const k of keys){
+    const v=node[k];
+    if(typeof v!=='string' && typeof v!=='number') continue;
+    const x=String(v).trim().toUpperCase();
+    if(/^[A-Z]{2}\d{4}-[A-Z0-9]+_\d{2}-[A-Z0-9]+$/i.test(x) && !out.includes(x)) out.push(x);
+  }
+  return out;
+}
+
+function _collectExactProductMediaFromJson(root, expectedProductId){
+  const wanted=String(expectedProductId||'').trim().toUpperCase();
+  if(!wanted || !root || typeof root!=='object') return [];
+  const matches=[];
+  const seenNodes=new Set();
+
+  const find=(node)=>{
+    if(!node || typeof node!=='object' || seenNodes.has(node)) return;
+    seenNodes.add(node);
+    if(Array.isArray(node)){ for(const x of node) find(x); return; }
+    const ids=_directProductIdsFromNode(node);
+    if(ids.includes(wanted)) matches.push(node);
+    for(const v of Object.values(node)) find(v);
+  };
+  find(root);
+  if(!matches.length) return [];
+
+  const byVideo=new Map(), byImage=new Map();
+  const collect=(node,pathParts,visited)=>{
+    if(node===null || typeof node==='undefined') return;
+    if(typeof node==='string'){
+      const raw=node.replace(/\\u002F/gi,'/').replace(/\\\//g,'/');
+      const path=pathParts.join(' ').toLowerCase();
+      const add=(url,type)=>{
+        url=canonicalPsMediaUrl(url,type);
+        if(!url) return;
+        const key=psMediaIdentity(url,type); if(!key) return;
+        let score=0;
+        if(/screenshot|screen[-_ ]?shot|gallery|media|preview/.test(path)) score+=80;
+        if(/trailer|video|preview/.test(path) && type==='video') score+=80;
+        if(/cover|hero|background|bg|logo|thumbnail|edition|tile|master/.test(path) && type==='image') score-=120;
+        const map=type==='video'?byVideo:byImage;
+        const prev=map.get(key);
+        if(!prev || score>prev.score) map.set(key,{type,url,score});
+      };
+      const vm=raw.match(/https:\/\/vulcan\.dl\.playstation\.net[^\s"'<>]+?\.mp4(?:\?[^\s"'<>]*)?/ig)||[];
+      for(const u of vm) add(u,'video');
+      const im=raw.match(/https:\/\/image\.api\.playstation\.com[^\s"'<>]+?\.(?:jpg|jpeg|png|webp)(?:\?[^\s"'<>]*)?/ig)||[];
+      for(const u of im) add(u,'image');
+      return;
+    }
+    if(typeof node!=='object') return;
+    if(visited.has(node)) return;
+    visited.add(node);
+    if(!Array.isArray(node)){
+      const ids=_directProductIdsFromNode(node);
+      if(ids.length && !ids.includes(wanted)) return; // prune media belonging to sibling products
+    }
+    if(Array.isArray(node)){
+      for(let i=0;i<node.length;i++) collect(node[i],pathParts.concat(String(i)),visited);
+    }else{
+      const meta=[];
+      for(const k of ['role','type','purpose','kind','imageType','mediaType','name','title','alt']){
+        const v=node[k];
+        if(typeof v==='string' && v.length<120) meta.push(k, v);
+      }
+      const ctxPath=meta.length ? pathParts.concat(meta) : pathParts;
+      for(const [k,v] of Object.entries(node)) collect(v,ctxPath.concat(k),visited);
+    }
+  };
+
+  for(const match of matches) collect(match,[],new Set());
+  const videos=[...byVideo.values()].sort((a,b)=>b.score-a.score).slice(0,3).map(({type,url})=>({type,url}));
+  let images=[...byImage.values()].filter(x=>x.score>=0).sort((a,b)=>b.score-a.score).slice(0,6).map(({type,url})=>({type,url}));
+  return limitMediaGallery(videos.concat(images));
+}
+
+function extractPsMediaGalleryForProduct(html, expectedProductId){
+  const src=String(html||'');
+  const pid=String(expectedProductId||'').trim().toUpperCase();
+  if(!src || !pid) return [];
+  const jsonBlocks=[];
+  const next=src.match(/<script[^>]+id=["']__NEXT_DATA__["'][^>]*>([\s\S]*?)<\/script>/i);
+  if(next){ try{ jsonBlocks.push(JSON.parse(decodeHtmlEntities(next[1]))); }catch(_e){} }
+  const appJson=/<script[^>]*type=["']application\/json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  let m;
+  while((m=appJson.exec(src))){ try{ jsonBlocks.push(JSON.parse(decodeHtmlEntities(m[1]))); }catch(_e){} }
+  for(const obj of jsonBlocks){
+    const media=_collectExactProductMediaFromJson(obj,pid);
+    if(media.length) return media;
+  }
+  return [];
+}
+
+async function fetchExactPsMediaForGame(game){
+  const candidates=[];
+  const add=(locale,pid)=>{
+    const p=String(pid||'').trim().toUpperCase();
+    if(!p || !/^[A-Z]{2}\d{4}-/.test(p)) return;
+    if(!candidates.some(x=>x.pid===p && x.locale===locale)) candidates.push({locale,pid:p});
+  };
+  if(game && game.productIds && typeof game.productIds==='object'){
+    add(UA_LOCALE||'ru-ua',game.productIds.UA);
+    add(TR_LOCALE||'en-tr',game.productIds.TR);
+    add(PL_LOCALE||'pl-pl',game.productIds.PL);
+    add(IN_LOCALE||'en-in',game.productIds.IN);
+    add('en-us',game.productIds.US);
+  }
+  add(UA_LOCALE||'ru-ua',game && game.productId);
+  add(UA_LOCALE||'ru-ua',game && game.id);
+  if(!candidates.length) return [];
+
+  for(const c of candidates){
+    // Exact Product ID via Viewfinder is preferred because it is product-scoped.
+    try{
+      const obj=await fetchChihiro(c.locale,c.pid);
+      const media=_collectExactProductMediaFromJson(obj,c.pid);
+      if(media.length) return media;
+    }catch(_e){}
+    // HTML fallback is accepted only when media is structurally nested under the exact Product ID.
+    try{
+      const html=await fetchText(`https://store.playstation.com/${c.locale}/product/${encodeURIComponent(c.pid)}`,{acceptLanguage:String(c.locale).replace('-','_'),timeoutMs:15000});
+      if(html && !looksBlocked(html)){
+        const media=extractPsMediaGalleryForProduct(html,c.pid);
+        if(media.length) return media;
+      }
+    }catch(_e){}
+  }
+  return [];
+}
+
 function limitMediaGallery(list){
   const src = Array.isArray(list) ? list : [];
   const seenV=new Set(), seenI=new Set(), videos=[], images=[];
@@ -3667,8 +3802,7 @@ function mediaGalleryNeedsFill(list){
   return a.filter(x=>x.type==='video').length<3 || a.filter(x=>x.type==='image').length<6;
 }
 async function fetchPsMediaForGame(game){
-  const data=await fetchPsMissingDataForGame(game);
-  return limitMediaGallery(data && data.mediaGallery);
+  return await fetchExactPsMediaForGame(game);
 }
 function extractRatingCount(html){
   const src=String(html||'');
@@ -3757,7 +3891,7 @@ async function fetchPsMissingDataForGame(game){
       out.genres=extractPsGenresFromHtml(html) || out.genres;
       out.publisher=extractPublisher(html,jsonLd) || out.publisher;
       out.conceptId=extractConceptIdFromProductHtml(html,pid) || game.conceptId || out.conceptId;
-      const media=extractPsMediaGallery(html); if(media.length) out.mediaGallery=media;
+      const media=extractPsMediaGalleryForProduct(html,pid); if(media.length) out.mediaGallery=media;
     }
   }
   if(!out.description){
@@ -5426,7 +5560,8 @@ app.post("/api/admin/games/:id/fill-missing-media", requireAdmin, async (req,res
     if(idx<0) return res.status(404).json({ok:false,error:'not_found'});
     const before=JSON.stringify(items[idx].mediaGallery||[]);
     const next=Object.assign({},items[idx]);
-    next.mediaGallery=mergeMissingMediaGallery(items[idx].mediaGallery,await fetchPsMediaForGame(items[idx]));
+    const freshMedia=await fetchPsMediaForGame(items[idx]);
+    if(freshMedia.length) next.mediaGallery=limitMediaGallery(freshMedia);
     items[idx]=next;
     writeJson(GAMES_PATH,{updatedAt:new Date().toISOString(),items});
     return res.json({ok:true,changed:before!==JSON.stringify(next.mediaGallery||[]),item:next});
@@ -7420,7 +7555,7 @@ app.post("/api/admin/allgames/:id/fill-missing", requireAdmin, async (req,res)=>
     const before=JSON.stringify(items[idx].mediaGallery||[]);
     const incoming=await fetchPsMediaForGame(items[idx]);
     const next=Object.assign({},items[idx]);
-    next.mediaGallery=mergeMissingMediaGallery(items[idx].mediaGallery,incoming);
+    if(incoming.length) next.mediaGallery=limitMediaGallery(incoming);
     items[idx]=next;
     writeJson(ALL_GAMES_PATH,{updatedAt:new Date().toISOString(),items});
     return res.json({ok:true,changed:before!==JSON.stringify(next.mediaGallery||[]),item:next});
@@ -7435,12 +7570,17 @@ app.post("/api/admin/allgames/fill-missing", requireAdmin, async (req,res)=>{
     let changed=0, processed=0;
     for(let i=start;i<Math.min(items.length,start+limit);i++){
       const g=items[i];
-      const needs=mediaGalleryNeedsFill(g.mediaGallery);
-      if(!needs) continue;
       processed++;
-      const before=JSON.stringify(g);
-      try{ const n=Object.assign({},g); n.mediaGallery=mergeMissingMediaGallery(g.mediaGallery,await fetchPsMediaForGame(g)); items[i]=n; }catch(_e){}
-      if(before!==JSON.stringify(items[i])) changed++;
+      const before=JSON.stringify(g.mediaGallery||[]);
+      try{
+        const fresh=await fetchPsMediaForGame(g);
+        if(fresh.length){
+          const n=Object.assign({},g);
+          n.mediaGallery=limitMediaGallery(fresh);
+          items[i]=n;
+        }
+      }catch(_e){}
+      if(before!==JSON.stringify(items[i].mediaGallery||[])) changed++;
     }
     writeJson(ALL_GAMES_PATH,{updatedAt:new Date().toISOString(),items});
     return res.json({ok:true,processed,changed,nextStart:Math.min(items.length,start+limit),total:items.length,done:start+limit>=items.length});
@@ -7660,7 +7800,8 @@ app.post("/api/admin/preorders/:id/fill-missing-media", requireAdmin, async (req
     if(idx<0) return res.status(404).json({ok:false,error:'not_found'});
     const before=JSON.stringify(items[idx].mediaGallery||[]);
     const next=Object.assign({},items[idx]);
-    next.mediaGallery=mergeMissingMediaGallery(items[idx].mediaGallery,await fetchPsMediaForGame(items[idx]));
+    const freshMedia=await fetchPsMediaForGame(items[idx]);
+    if(freshMedia.length) next.mediaGallery=limitMediaGallery(freshMedia);
     items[idx]=next;
     writeJson(PREORDERS_PATH,{updatedAt:new Date().toISOString(),items});
     return res.json({ok:true,changed:before!==JSON.stringify(next.mediaGallery||[]),item:next});
@@ -7685,14 +7826,16 @@ app.post("/api/admin/media/fill-missing", requireAdmin, async (req,res)=>{
     let processed=0,changed=0;
     for(let p=start;p<Math.min(flat.length,start+limit);p++){
       const e=flat[p], g=e.d.items[e.i];
-      if(!mediaGalleryNeedsFill(g.mediaGallery)) continue;
       processed++;
       const before=JSON.stringify(g.mediaGallery||[]);
       try{
-        const n=Object.assign({},g);
-        n.mediaGallery=mergeMissingMediaGallery(g.mediaGallery,await fetchPsMediaForGame(g));
-        e.d.items[e.i]=n;
-        if(before!==JSON.stringify(n.mediaGallery||[])) changed++;
+        const fresh=await fetchPsMediaForGame(g);
+        if(fresh.length){
+          const n=Object.assign({},g);
+          n.mediaGallery=limitMediaGallery(fresh);
+          e.d.items[e.i]=n;
+          if(before!==JSON.stringify(n.mediaGallery||[])) changed++;
+        }
       }catch(_e){}
     }
     for(const d of docs) writeJson(d.path,{updatedAt:new Date().toISOString(),items:d.items});
@@ -7985,7 +8128,7 @@ app.post("/api/admin/import", requireAdmin, async (req, res) => {
       const genres = extractPsGenresFromHtml(html);
       // Discount end date: pull from Store (one region is enough; we later copy TR->UA)
       const until = (discPerc && discPerc > 0) ? (extractDiscountedUntil(html, jsonLd) || extractUntilDate(html)) : null;
-      return { blocked:false, name, edition, cover, platform, conceptId: conceptId || null, salePrice: (offer && Number.isFinite(offer.price) ? offer.price : null), currency: offer ? offer.currency : null, discPerc: discPerc || 0, discountedUntil: until || null, releaseDate: releaseDate || null, players: meta.players || null, size: meta.size || null, rating: meta.rating, ratingCount: extractRatingCount(html), publisher: extractPublisher(html, jsonLd), mediaGallery: extractPsMediaGallery(html), genres: genres || "" };
+      return { blocked:false, name, edition, cover, platform, conceptId: conceptId || null, salePrice: (offer && Number.isFinite(offer.price) ? offer.price : null), currency: offer ? offer.currency : null, discPerc: discPerc || 0, discountedUntil: until || null, releaseDate: releaseDate || null, players: meta.players || null, size: meta.size || null, rating: meta.rating, ratingCount: extractRatingCount(html), publisher: extractPublisher(html, jsonLd), mediaGallery: extractPsMediaGalleryForProduct(html, expectedSku || productId), genres: genres || "" };
     }
 
 	    let parsedTR = parse(tr.html, productId);
@@ -7999,6 +8142,24 @@ app.post("/api/admin/import", requireAdmin, async (req, res) => {
     if(parsedTR.sub && (!parsedTR.edition || !String(parsedTR.edition).trim())) parsedTR.edition = "Standard Edition";
 
     let parsedUA = parse(ua.html, uaProductId || productId);
+    // Gallery must be tied to the exact Product ID, not merely the Concept ID.
+    // Some Call of Duty releases share one concept and Sony can expose mixed concept media.
+    try{
+      const exactMedia = await fetchExactPsMediaForGame({
+        id: productId,
+        productIds: { TR: productId, UA: (uaProductId || productId) }
+      });
+      if(exactMedia.length){
+        parsedTR.mediaGallery = exactMedia;
+        parsedUA.mediaGallery = exactMedia;
+      }else{
+        parsedTR.mediaGallery = [];
+        parsedUA.mediaGallery = [];
+      }
+    }catch(_e){
+      parsedTR.mediaGallery = [];
+      parsedUA.mediaGallery = [];
+    }
     if(ua.ruInfo && ua.ruInfo.ru) parsedUA.ru = ua.ruInfo.ru;
     if(ua.ruInfo && ua.ruInfo.sub) parsedUA.sub = ua.ruInfo.sub;
     if(!parsedUA.sub) parsedUA.sub = extractSubFromHtml(ua.html);
