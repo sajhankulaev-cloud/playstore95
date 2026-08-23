@@ -2847,9 +2847,16 @@ function gmRenderMedia(game){
   const videos=raw.filter(x=>String(x&&x.type||'').toLowerCase()==='video' && x.url).slice(0,3);
   const images=raw.filter(x=>String(x&&x.type||'').toLowerCase()==='image' && x.url).slice(0,6);
   __gmMediaItems=videos.concat(images);
+  // Each opened game starts its media gallery from the first item.
+  // The same modal/rail DOM node is reused between games, so without this
+  // reset scrollLeft from the previously opened game is preserved.
+  rail.scrollLeft = 0;
+  __gmMediaIndex = 0;
   if(!__gmMediaItems.length){ section.style.display='none'; rail.innerHTML=''; return; }
   section.style.display='';
   rail.innerHTML=__gmMediaItems.map(gmMediaThumbHtml).join('');
+  // Reset once more after thumbnails are in the DOM (important on mobile).
+  requestAnimationFrame(()=>{ rail.scrollLeft = 0; });
   rail.querySelectorAll('[data-gm-media]').forEach(btn=>btn.onclick=()=>gmOpenMedia(Number(btn.getAttribute('data-gm-media')||0)));
 }
 function gmOpenMedia(idx){
