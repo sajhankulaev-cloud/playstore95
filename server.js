@@ -4973,6 +4973,23 @@ app.get("/api/game-editions", (req, res) => {
       return false;
     };
 
+    // Discount/preorder entries are lightweight copies. Media must always come
+    // from the main "Все игры" library when that game exists there. This keeps
+    // the same gallery in normal and discount cards and avoids a discount row
+    // overwriting media with an empty array.
+    const allGamesMediaByIdForEditions = new Map();
+    const allGamesDocForEditionsMedia = readJson(ALL_GAMES_PATH, { updatedAt:null, items:[] });
+    for(const ag of (Array.isArray(allGamesDocForEditionsMedia.items) ? allGamesDocForEditionsMedia.items : [])){
+      const key = String(ag && ag.id || '').trim();
+      const media = Array.isArray(ag && ag.mediaGallery) ? limitMediaGallery(ag.mediaGallery) : [];
+      if(key && media.length) allGamesMediaByIdForEditions.set(key, media);
+    }
+    const mediaForPublicEdition = (g)=>{
+      const key = String(g && g.id || '').trim();
+      if(key && allGamesMediaByIdForEditions.has(key)) return allGamesMediaByIdForEditions.get(key);
+      return Array.isArray(g && g.mediaGallery) ? limitMediaGallery(g.mediaGallery) : [];
+    };
+
     // Discount entries may not store the players field themselves.
     // Use the same game metadata source as the regular catalog when possible.
     const allGamesPlayersByKey = new Map();
@@ -5027,7 +5044,7 @@ app.get("/api/game-editions", (req, res) => {
         rating: (typeof g.rating !== "undefined" ? g.rating : null),
         ratingCount: Number(g.ratingCount||0)||0,
         publisher: g.publisher || "",
-        mediaGallery: Array.isArray(g.mediaGallery) ? g.mediaGallery : [],
+        mediaGallery: mediaForPublicEdition(g),
         cover: g.cover || "",
         description: descriptionForPublicGame(g, descIndex),
         discPerc,
