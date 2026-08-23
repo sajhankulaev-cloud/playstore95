@@ -2776,12 +2776,13 @@ function gmEditionGameTitleText(g){
   return n || gmEditionShortText(g);
 }
 function gmRenderEditionItem(g, activeId){
-  const active = String(g.id||'') === String(activeId||'');
+  const editionKey = String(g.productId || g.id || '');
+  const active = editionKey === String(activeId||'');
   const img = g.cover ? `<img src="${escapeHtml(optimizedPsImageUrl(g.cover, 160))}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : `<div class="gmv2EditionNoCover"></div>`;
   const disc = Number(g.discPerc||0) ? `<span class="gmv2EditionDiscount">-${Number(g.discPerc||0)}%</span>` : ``;
   const old = Number(g.oldPriceRub||0) ? `<div class="gmv2EditionOld">${escapeHtml(fmtRub(g.oldPriceRub))}</div>` : '';
   const price = Number(g.finalPriceRub||0) ? escapeHtml(fmtRub(g.finalPriceRub)) : '—';
-  return `<button class="gmv2Edition ${active?'isActive':''}" type="button" data-gmv2-edition="${escapeHtml(g.id||'')}" aria-pressed="${active?'true':'false'}">
+  return `<button class="gmv2Edition ${active?'isActive':''}" type="button" data-gmv2-edition="${escapeHtml(editionKey)}" aria-pressed="${active?'true':'false'}">
     <div class="gmv2EditionCover">${img}</div>
     <div class="gmv2EditionInfo">
       <div class="gmv2EditionName">${escapeHtml(gmEditionGameTitleText(g))}</div>
@@ -3006,11 +3007,11 @@ function openGameModal(game){
     if(!editionsWrap || !editionsSection) return;
     const list = Array.isArray(editions) && editions.length ? editions : [game];
     editionsSection.style.display = list.length > 1 ? '' : 'none';
-    editionsWrap.innerHTML = list.map(e=>gmRenderEditionItem(e, game.id)).join('');
+    editionsWrap.innerHTML = list.map(e=>gmRenderEditionItem(e, game.productId || game.id)).join('');
     editionsWrap.querySelectorAll('.gmv2Edition[data-gmv2-edition]').forEach(card=>{
       card.onclick=()=>{
         const id = card.getAttribute('data-gmv2-edition');
-        const next = list.find(x=>String(x.id||'')===String(id));
+        const next = list.find(x=>String(x.productId || x.id || '')===String(id));
         if(next){
           next.editions = list;
           openGameModal(next);
@@ -3023,14 +3024,15 @@ function openGameModal(game){
     renderEditions(Array.isArray(game.editions) && game.editions.length ? game.editions : [game]);
     if(!game.__editionsLoaded){
       const conceptId = String(game.conceptId || '').trim();
-      const editionQs = new URLSearchParams({ region: state.region, id: String(game.id || '') });
+      const editionQs = new URLSearchParams({ region: state.region, id: String(game.productId || game.id || '') });
       if(conceptId) editionQs.set('conceptId', conceptId);
       fetch(`/api/game-editions?${editionQs.toString()}`)
         .then(r=>r.ok?r.json():null)
         .then(j=>{
           if(j && Array.isArray(j.items) && j.items.length){
             const list = j.items;
-            const freshCurrent = list.find(x=>String(x.id||'')===String(game.id||''));
+            const currentKey = String(game.productId || game.id || '');
+            const freshCurrent = list.find(x=>String(x.productId || x.id || '')===currentKey);
             const selected = freshCurrent || list[0];
 
             // The card that opens the modal can be only a lightweight game object.
