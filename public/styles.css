@@ -4542,12 +4542,12 @@ body[data-tab="topup"] #pager{
 .gmv2MediaRail{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;padding:2px 0 7px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
 .gmMediaThumb{position:relative;flex:0 0 188px;height:122px;border:1px solid #dfe4ec;border-radius:10px;overflow:hidden;background:#11151c;padding:0;cursor:pointer;scroll-snap-align:start}
 .gmMediaThumb img,.gmMediaThumb video{width:100%;height:100%;object-fit:cover;display:block}
-.gmMediaThumbVideo{background:#151920}.gmMediaThumbVideo video{opacity:.62}
+.gmMediaThumbVideo{background:#151920}.gmMediaThumbVideo video,.gmMediaThumbVideo img{opacity:.62}
 .gmMediaPlay{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:#ffeb3b;color:#111;font-size:11px;padding-left:1px;box-shadow:0 1px 8px rgba(0,0,0,.35)}
 .gmMediaLabel{position:absolute;left:48px;top:50%;transform:translateY(-50%);color:#fff;font-size:14px;font-weight:600;text-shadow:0 1px 3px #000}
 .gmMediaLightbox{position:fixed;inset:0;z-index:99999;background:rgba(4,8,18,.92);align-items:center;justify-content:center;padding:42px 54px}
 .gmMediaLbStage{width:min(1120px,92vw);height:min(76vh,760px);display:flex;align-items:center;justify-content:center}
-.gmMediaLbStage img,.gmMediaLbStage video{display:block;max-width:100%;max-height:100%;object-fit:contain;border-radius:10px;background:#000}
+.gmMediaLbStage img,.gmMediaLbStage video{display:block;max-width:100%;max-height:100%;object-fit:contain;border-radius:10px;background:#000}.gmMediaYoutube{display:block;width:min(1120px,92vw);aspect-ratio:16/9;max-height:76vh;border:0;border-radius:10px;background:#000}
 .gmMediaLbClose,.gmMediaLbNav{position:fixed;border:0;background:rgba(255,255,255,.13);color:#fff;cursor:pointer;backdrop-filter:blur(8px)}
 .gmMediaLbClose{right:18px;top:16px;width:42px;height:42px;border-radius:50%;font-size:30px;line-height:1}
 .gmMediaLbNav{top:50%;transform:translateY(-50%);width:46px;height:64px;border-radius:12px;font-size:42px;line-height:1}.gmMediaLbPrev{left:14px}.gmMediaLbNext{right:14px}
