@@ -4763,15 +4763,37 @@ app.get("/api/games", async (req, res) => {
     // the discount card can reuse that gallery instead of appearing empty.
     const allGamesMediaById = new Map();
     const allGamesMediaByConcept = new Map();
+    const allGamesMediaByName = new Map();
+    const allGamesMediaByBaseName = new Map();
+    const ambiguousMediaNames = new Set();
+    const ambiguousMediaBaseNames = new Set();
+    const mediaIdKey = (v)=>String(v || '').trim().toUpperCase();
+    const mediaNameKey = (v)=>normText(String(v || '')).trim();
+    const addUniqueMediaName = (map, ambiguous, key, mediaVal)=>{
+      if(!key || ambiguous.has(key)) return;
+      if(!map.has(key)){ map.set(key, mediaVal); return; }
+      const prev = JSON.stringify(map.get(key) || []);
+      const next = JSON.stringify(mediaVal || []);
+      if(prev !== next){ map.delete(key); ambiguous.add(key); }
+    };
     for(const ag of (Array.isArray(allGamesDocForPlayers.items) ? allGamesDocForPlayers.items : [])){
       const mediaVal = Array.isArray(ag.mediaGallery) ? limitMediaGallery(ag.mediaGallery) : [];
       if(mediaVal.length){
         for(const key of collectExactProductLookupKeys(ag, region)){
-          const k = String(key || '').trim();
+          const k = mediaIdKey(key);
           if(k && !allGamesMediaById.has(k)) allGamesMediaById.set(k, mediaVal);
         }
         const cid = String(ag.conceptId || ag.psStoreConceptId || '').trim();
         if(cid && !allGamesMediaByConcept.has(cid)) allGamesMediaByConcept.set(cid, mediaVal);
+        // Discount rows are sometimes rebuilt with a regional product id that is
+        // different from the one stored in all_games.json. In that case the
+        // exact product-id lookup cannot find the gallery. Use the normalized
+        // game title as a safe fallback, but only when that title maps to one
+        // unambiguous gallery in the main library.
+        const nameKey = mediaNameKey(ag.name);
+        addUniqueMediaName(allGamesMediaByName, ambiguousMediaNames, nameKey, mediaVal);
+        const baseNameKey = mediaNameKey(baseTitleForRank(ag.name || ''));
+        addUniqueMediaName(allGamesMediaByBaseName, ambiguousMediaBaseNames, baseNameKey, mediaVal);
       }
       const playersVal = normalizeGameMetaField(ag.players);
       if(!playersVal) continue;
@@ -4797,11 +4819,15 @@ app.get("/api/games", async (req, res) => {
       const own = Array.isArray(g && g.mediaGallery) ? limitMediaGallery(g.mediaGallery) : [];
       if(own.length) return own;
       for(const key of collectExactProductLookupKeys(g, region)){
-        const k = String(key || '').trim();
+        const k = mediaIdKey(key);
         if(k && allGamesMediaById.has(k)) return allGamesMediaById.get(k);
       }
       const cid = String(conceptId || g && (g.conceptId || g.psStoreConceptId) || '').trim();
       if(cid && allGamesMediaByConcept.has(cid)) return allGamesMediaByConcept.get(cid);
+      const nameKey = mediaNameKey(g && g.name);
+      if(nameKey && allGamesMediaByName.has(nameKey)) return allGamesMediaByName.get(nameKey);
+      const baseNameKey = mediaNameKey(baseTitleForRank((g && g.name) || ''));
+      if(baseNameKey && allGamesMediaByBaseName.has(baseNameKey)) return allGamesMediaByBaseName.get(baseNameKey);
       return [];
     };
 
