@@ -2830,11 +2830,34 @@ function gmUpdatePlayersInfo(game){
 
 let __gmMediaItems=[];
 let __gmMediaIndex=0;
+function gmYoutubeId(rawUrl){
+  const raw=String(rawUrl||'').trim();
+  if(!raw) return '';
+  try{
+    const u=new URL(raw);
+    const host=u.hostname.toLowerCase().replace(/^www\./,'');
+    if(host==='youtu.be') return (u.pathname.split('/').filter(Boolean)[0]||'').slice(0,32);
+    if(host==='youtube.com' || host==='m.youtube.com' || host==='music.youtube.com' || host==='youtube-nocookie.com'){
+      if(u.pathname==='/watch') return (u.searchParams.get('v')||'').slice(0,32);
+      const parts=u.pathname.split('/').filter(Boolean);
+      if(['embed','shorts','live'].includes(parts[0])) return (parts[1]||'').slice(0,32);
+    }
+  }catch(_e){}
+  return '';
+}
+function gmYoutubeEmbedUrl(rawUrl){
+  const id=gmYoutubeId(rawUrl);
+  return id ? `https://www.youtube.com/embed/${encodeURIComponent(id)}?autoplay=1&rel=0&playsinline=1` : '';
+}
 function gmMediaThumbHtml(item, idx){
   const type=String(item&&item.type||'').toLowerCase();
   const url=String(item&&item.url||'');
   if(!url) return '';
   if(type==='video'){
+    const ytId=gmYoutubeId(url);
+    if(ytId){
+      return `<button class="gmMediaThumb gmMediaThumbVideo" type="button" data-gm-media="${idx}" aria-label="Открыть трейлер"><img src="https://i.ytimg.com/vi/${encodeURIComponent(ytId)}/hqdefault.jpg" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"><span class="gmMediaPlay">▶</span><span class="gmMediaLabel">Трейлер</span></button>`;
+    }
     return `<button class="gmMediaThumb gmMediaThumbVideo" type="button" data-gm-media="${idx}" aria-label="Открыть трейлер"><video src="${escapeHtml(url)}#t=0.1" muted preload="metadata" playsinline></video><span class="gmMediaPlay">▶</span><span class="gmMediaLabel">Трейлер</span></button>`;
   }
   return `<button class="gmMediaThumb" type="button" data-gm-media="${idx}" aria-label="Открыть скриншот"><img src="${escapeHtml(optimizedPsImageUrl(url,420))}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"></button>`;
@@ -2874,9 +2897,14 @@ function gmRenderLightbox(){
   if(!stage||!__gmMediaItems.length) return;
   const item=__gmMediaItems[__gmMediaIndex];
   const type=String(item.type||'').toLowerCase();
-  stage.innerHTML= type==='video'
-    ? `<video src="${escapeHtml(item.url)}" controls autoplay playsinline preload="metadata"></video>`
-    : `<img src="${escapeHtml(item.url)}" alt="Скриншот" referrerpolicy="no-referrer">`;
+  if(type==='video'){
+    const ytEmbed=gmYoutubeEmbedUrl(item.url);
+    stage.innerHTML = ytEmbed
+      ? `<iframe class="gmMediaYoutube" src="${escapeHtml(ytEmbed)}" title="Трейлер YouTube" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`
+      : `<video src="${escapeHtml(item.url)}" controls autoplay playsinline preload="metadata"></video>`;
+  }else{
+    stage.innerHTML=`<img src="${escapeHtml(item.url)}" alt="Скриншот" referrerpolicy="no-referrer">`;
+  }
   if(counter) counter.textContent=`${__gmMediaIndex+1} / ${__gmMediaItems.length}`;
 }
 function gmStepMedia(dir){ if(!__gmMediaItems.length)return; __gmMediaIndex=(__gmMediaIndex+dir+__gmMediaItems.length)%__gmMediaItems.length; gmRenderLightbox(); }
