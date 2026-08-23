@@ -1772,7 +1772,7 @@ async function doImport(){
   const url=document.getElementById("importUrl").value.trim();
   if(!url){alert("Вставь ссылку");return;}
   document.getElementById("importStatus").textContent="Импорт...";
-  const j=await fetch("/api/admin/import",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url})}).then(r=>r.json());
+  const j=await fetch("/api/admin/import",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url, discountMode:true})}).then(r=>r.json());
   if(!j.ok){document.getElementById("importStatus").textContent="Ошибка: "+(j.error||"");return;}
   document.getElementById("importHttp").textContent = `HTTP TR:${j.status.TR} UA:${j.status.UA}`;
   if(j.parsed?.TR?.blocked || j.parsed?.UA?.blocked){alert("PS Store заблокировал импорт (captcha/blocked). Попробуй другой VPN/сервер.");}
@@ -1835,6 +1835,8 @@ if(cover){
   document.getElementById("impUaPrice").value=j.parsed?.UA?.salePrice ?? "";
   if(document.getElementById("impPlPrice")) document.getElementById("impPlPrice").value=j.parsed?.PL?.salePrice ?? "";
   if(document.getElementById("impInPrice")) document.getElementById("impInPrice").value=j.parsed?.IN?.salePrice ?? "";
+  window.__impPlDiscPerc = Number(j.parsed?.PL?.discPerc ?? j.parsed?.TR?.discPerc ?? 0);
+  window.__impInDiscPerc = Number(j.parsed?.IN?.discPerc ?? j.parsed?.TR?.discPerc ?? 0);
   document.getElementById("impTrDisc").value=j.parsed?.TR?.discPerc ?? 0;
   document.getElementById("impUaDisc").value=j.parsed?.UA?.discPerc ?? 0;
   // Дату окончания скидки берём из ручного поля админки (как было раньше).
@@ -1876,15 +1878,15 @@ async function addGame(){
       },
       PL:{
         salePrice:Number(document.getElementById("impPlPrice")?.value||0),
-        discPerc:0,
-        discountedUntil:null,
+        discPerc:Number(window.__impPlDiscPerc || document.getElementById("impTrDisc")?.value || 0),
+        discountedUntil:manualUntil,
         ru: (document.getElementById("impRuPLCard")?.value || document.getElementById("impRuPL")?.value || document.getElementById("impRuTR")?.value || "none"),
         sub: (document.getElementById("impSubTR")?.value || "")
       },
       IN:{
         salePrice:Number(document.getElementById("impInPrice")?.value||0),
-        discPerc:0,
-        discountedUntil:null,
+        discPerc:Number(window.__impInDiscPerc || document.getElementById("impTrDisc")?.value || 0),
+        discountedUntil:manualUntil,
         ru: (document.getElementById("impRuINCard")?.value || document.getElementById("impRuIN")?.value || document.getElementById("impRuTR")?.value || "none"),
         sub: (document.getElementById("impSubTR")?.value || "")
       }
