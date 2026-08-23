@@ -3543,8 +3543,29 @@ function psMediaIdentity(raw, type){
   if(!url) return '';
   try{
     const u = new URL(url);
-    // Host + pathname is the actual Sony asset. Ignore transformation query strings.
-    return String(type||'') + '|' + u.hostname.toLowerCase() + u.pathname.toLowerCase();
+    const host = u.hostname.toLowerCase().replace(/^www\./,'');
+    const mediaType = String(type||'');
+
+    // YouTube watch URLs share the same pathname (/watch). The actual video ID is
+    // stored in ?v=..., so ignoring the query makes every YouTube video look like
+    // the same asset and only the first one survives limitMediaGallery().
+    if(mediaType === 'video'){
+      let youtubeId = '';
+      if(host === 'youtu.be'){
+        youtubeId = u.pathname.split('/').filter(Boolean)[0] || '';
+      }else if(host === 'youtube.com' || host === 'm.youtube.com' || host === 'music.youtube.com'){
+        if(u.pathname === '/watch') youtubeId = u.searchParams.get('v') || '';
+        else {
+          const m = u.pathname.match(/^\/(?:embed|shorts|live)\/([^/?#]+)/i);
+          if(m) youtubeId = m[1];
+        }
+      }
+      if(youtubeId) return mediaType + '|youtube|' + youtubeId.toLowerCase();
+    }
+
+    // Sony assets are identified by host + pathname. Ignore resize/transformation
+    // query strings so thumbnail variants of the same asset are deduplicated.
+    return mediaType + '|' + u.hostname.toLowerCase() + u.pathname.toLowerCase();
   }catch(_e){ return String(type||'') + '|' + url.split('?')[0].toLowerCase(); }
 }
 
