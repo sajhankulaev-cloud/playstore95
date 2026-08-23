@@ -4337,6 +4337,46 @@ function mergeDiscountItemsById(existingItems, newItems){
 
 
 
+function collectExactStoreProductLookupKeys(g, region){
+  const keys = [];
+  const push = (v)=>{
+    const k = String(v || '').trim();
+    if(k && !keys.includes(k)) keys.push(k);
+  };
+  const R = String(region || '').toUpperCase();
+  if(!g || typeof g !== 'object') return keys;
+  // Media must be matched by the real PS Store product/SKU, never by conceptId
+  // or by a shared public/internal id. Some Call of Duty releases share those.
+  if(g.productIds && typeof g.productIds === 'object'){
+    if(R) push(g.productIds[R]);
+    push(g.productIds.TR);
+    push(g.productIds.UA);
+    push(g.productIds.PL);
+    push(g.productIds.IN);
+    push(g.productIds.US);
+  }
+  if(g.regions && typeof g.regions === 'object'){
+    for(const key of [R,'TR','UA','PL','IN','US']){
+      const rg = g.regions[key];
+      if(rg && typeof rg === 'object'){
+        push(rg.productId);
+        push(rg.storeId);
+        // region.id is accepted only when it is clearly a PS Store product id.
+        if(/^[A-Z]{2}\d{4}-/i.test(String(rg.id || ''))) push(rg.id);
+      }
+    }
+  }
+  // Older rows often stored the PS SKU directly in id. Keep that compatibility,
+  // but do not use arbitrary numeric/shared public ids for gallery matching.
+  if(/^[A-Z]{2}\d{4}-/i.test(String(g.id || ''))) push(g.id);
+  return keys;
+}
+
+function publicProductIdForGame(g, region){
+  const keys = collectExactStoreProductLookupKeys(g, region);
+  return keys.length ? keys[0] : '';
+}
+
 function collectExactProductLookupKeys(g, region){
   const keys = [];
   const push = (v)=>{ const k = String(v || '').trim(); if(k && !keys.includes(k)) keys.push(k); };
@@ -4779,7 +4819,7 @@ app.get("/api/games", async (req, res) => {
     for(const ag of (Array.isArray(allGamesDocForPlayers.items) ? allGamesDocForPlayers.items : [])){
       const mediaVal = Array.isArray(ag.mediaGallery) ? limitMediaGallery(ag.mediaGallery) : [];
       if(mediaVal.length){
-        for(const key of collectExactProductLookupKeys(ag, region)){
+        for(const key of collectExactStoreProductLookupKeys(ag, region)){
           const k = mediaIdKey(key);
           if(k && !allGamesMediaById.has(k)) allGamesMediaById.set(k, mediaVal);
         }
@@ -4818,16 +4858,13 @@ app.get("/api/games", async (req, res) => {
     const mediaFromAllGames = (g, conceptId) => {
       const own = Array.isArray(g && g.mediaGallery) ? limitMediaGallery(g.mediaGallery) : [];
       if(own.length) return own;
-      for(const key of collectExactProductLookupKeys(g, region)){
+      for(const key of collectExactStoreProductLookupKeys(g, region)){
         const k = mediaIdKey(key);
         if(k && allGamesMediaById.has(k)) return allGamesMediaById.get(k);
       }
-      const cid = String(conceptId || g && (g.conceptId || g.psStoreConceptId) || '').trim();
-      if(cid && allGamesMediaByConcept.has(cid)) return allGamesMediaByConcept.get(cid);
-      const nameKey = mediaNameKey(g && g.name);
-      if(nameKey && allGamesMediaByName.has(nameKey)) return allGamesMediaByName.get(nameKey);
-      const baseNameKey = mediaNameKey(baseTitleForRank((g && g.name) || ''));
-      if(baseNameKey && allGamesMediaByBaseName.has(baseNameKey)) return allGamesMediaByBaseName.get(baseNameKey);
+      // Never fallback by conceptId/name for media. A shared PlayStation concept/public id
+      // can point at several different releases (notably Call of Duty), which would
+      // display another game's trailer. If the exact SKU is unknown, show no gallery.
       return [];
     };
 
@@ -4847,6 +4884,7 @@ app.get("/api/games", async (req, res) => {
 
       const base = {
         id: g.id,
+        productId: publicProductIdForGame(g, region),
         name: g.name,
         edition: anySub ? "Standard Edition" : (g.edition || "Standard Edition"),
         ru: gameRuStatus(g, (typeof R !== 'undefined' ? R : (typeof region !== 'undefined' ? region : 'TR'))),
@@ -4977,16 +5015,23 @@ app.get("/api/game-editions", (req, res) => {
     // from the main "Все игры" library when that game exists there. This keeps
     // the same gallery in normal and discount cards and avoids a discount row
     // overwriting media with an empty array.
-    const allGamesMediaByIdForEditions = new Map();
+    const allGamesMediaByProductForEditions = new Map();
     const allGamesDocForEditionsMedia = readJson(ALL_GAMES_PATH, { updatedAt:null, items:[] });
     for(const ag of (Array.isArray(allGamesDocForEditionsMedia.items) ? allGamesDocForEditionsMedia.items : [])){
-      const key = String(ag && ag.id || '').trim();
       const media = Array.isArray(ag && ag.mediaGallery) ? limitMediaGallery(ag.mediaGallery) : [];
-      if(key && media.length) allGamesMediaByIdForEditions.set(key, media);
+      if(!media.length) continue;
+      for(const productKey of collectExactStoreProductLookupKeys(ag, region)){
+        const key = mediaIdKey(productKey);
+        if(key && !allGamesMediaByProductForEditions.has(key)) allGamesMediaByProductForEditions.set(key, media);
+      }
     }
     const mediaForPublicEdition = (g)=>{
-      const key = String(g && g.id || '').trim();
-      if(key && allGamesMediaByIdForEditions.has(key)) return allGamesMediaByIdForEditions.get(key);
+      for(const productKey of collectExactStoreProductLookupKeys(g, region)){
+        const key = mediaIdKey(productKey);
+        if(key && allGamesMediaByProductForEditions.has(key)) return allGamesMediaByProductForEditions.get(key);
+      }
+      // Main-library rows may carry their gallery directly. For lightweight discount
+      // rows do not borrow media by concept/public id; wrong media is worse than none.
       return Array.isArray(g && g.mediaGallery) ? limitMediaGallery(g.mediaGallery) : [];
     };
 
@@ -5033,6 +5078,7 @@ app.get("/api/game-editions", (req, res) => {
       const anySub = trSub || uaSub;
       const item = {
         id: g.id,
+        productId: publicProductIdForGame(g, region),
         name: g.name,
         edition: anySub ? "Standard Edition" : (g.edition || "Standard Edition"),
         ru: gameRuStatus(g, (typeof R !== 'undefined' ? R : (typeof region !== 'undefined' ? region : 'TR'))),
@@ -5056,7 +5102,7 @@ app.get("/api/game-editions", (req, res) => {
         releaseDate: g.releaseDate || null,
         isPreorder: entry.source === 'preorder' && isFutureReleaseDateYMD(g.releaseDate)
       };
-      const key = String(item.id || '').trim();
+      const key = String(item.productId || item.id || '').trim();
       if(!key) continue;
       const prev = byId.get(key);
       // Prefer discounted library entries, then items with description.
@@ -5281,6 +5327,7 @@ app.get("/api/admin/games/list", requireAdmin, (req, res) => {
       const until = (g?.regions?.TR?.discountedUntil) || (g?.regions?.UA?.discountedUntil) || null;
       return {
         id: g.id,
+        productId: publicProductIdForGame(g, region),
         name: g.name,
         platform: g.platform || "",
         cover: g.cover || null,
@@ -6152,6 +6199,7 @@ app.get("/api/subgames", async (req, res) => {
 
       return {
         id: g.id,
+        productId: publicProductIdForGame(g, region),
         name: g.name,
         edition: g.edition || "Standard Edition",
         platform: g.platform || "PS4 / PS5",
@@ -6555,6 +6603,7 @@ app.get("/api/allgames", async (req, res) => {
 
       const base = {
         id: g.id,
+        productId: publicProductIdForGame(g, region),
         name: g.name,
         edition: anySub ? "Standard Edition" : (g.edition || "Standard Edition"),
         ru: gameRuStatus(g, (typeof R !== 'undefined' ? R : (typeof region !== 'undefined' ? region : 'TR'))),
@@ -6922,6 +6971,7 @@ app.get("/api/newreleases", async (req, res) => {
       const psRank = Number(g._newReleaseRank || g.newReleaseRank || idx + 1) || (idx + 1);
       const base = {
         id: g.id,
+        productId: publicProductIdForGame(g, region),
         name: g.name,
         edition: anySub ? "Standard Edition" : (g.edition || "Standard Edition"),
         ru: gameRuStatus(regionMetaGame, region),
@@ -7057,6 +7107,7 @@ app.get("/api/preorders", async (req, res) => {
 
       const base = {
         id: g.id,
+        productId: publicProductIdForGame(g, region),
         name: g.name,
         edition: anySub ? "Standard Edition" : (g.edition || "Standard Edition"),
         ru: gameRuStatus(g, (typeof R !== 'undefined' ? R : (typeof region !== 'undefined' ? region : 'TR'))),
@@ -8488,6 +8539,7 @@ app.get("/api/search", async (req, res) => {
 
       const base = {
         id: g.id,
+        productId: publicProductIdForGame(g, region),
         name: g.name,
         edition: anySub ? "Standard Edition" : (g.edition || "Standard Edition"),
         ru: gameRuStatus(g, (typeof R !== 'undefined' ? R : (typeof region !== 'undefined' ? region : 'TR'))),
