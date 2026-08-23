@@ -4758,7 +4758,21 @@ app.get("/api/games", async (req, res) => {
     const conceptIndex = buildConceptIndex();
     const allGamesDocForPlayers = readJson(ALL_GAMES_PATH, { updatedAt:null, items:[] });
     const allGamesPlayersById = new Map();
+    // Discounts may contain a lightweight copy of a game while its media was
+    // already filled in the main "Все игры" database. Keep media indexes so
+    // the discount card can reuse that gallery instead of appearing empty.
+    const allGamesMediaById = new Map();
+    const allGamesMediaByConcept = new Map();
     for(const ag of (Array.isArray(allGamesDocForPlayers.items) ? allGamesDocForPlayers.items : [])){
+      const mediaVal = Array.isArray(ag.mediaGallery) ? limitMediaGallery(ag.mediaGallery) : [];
+      if(mediaVal.length){
+        for(const key of collectExactProductLookupKeys(ag, region)){
+          const k = String(key || '').trim();
+          if(k && !allGamesMediaById.has(k)) allGamesMediaById.set(k, mediaVal);
+        }
+        const cid = String(ag.conceptId || ag.psStoreConceptId || '').trim();
+        if(cid && !allGamesMediaByConcept.has(cid)) allGamesMediaByConcept.set(cid, mediaVal);
+      }
       const playersVal = normalizeGameMetaField(ag.players);
       if(!playersVal) continue;
       // Exact product/version identifiers only. Do not use conceptId for players:
@@ -4778,6 +4792,17 @@ app.get("/api/games", async (req, res) => {
         if(k && allGamesPlayersById.has(k)) return allGamesPlayersById.get(k);
       }
       return null;
+    };
+    const mediaFromAllGames = (g, conceptId) => {
+      const own = Array.isArray(g && g.mediaGallery) ? limitMediaGallery(g.mediaGallery) : [];
+      if(own.length) return own;
+      for(const key of collectExactProductLookupKeys(g, region)){
+        const k = String(key || '').trim();
+        if(k && allGamesMediaById.has(k)) return allGamesMediaById.get(k);
+      }
+      const cid = String(conceptId || g && (g.conceptId || g.psStoreConceptId) || '').trim();
+      if(cid && allGamesMediaByConcept.has(cid)) return allGamesMediaByConcept.get(cid);
+      return [];
     };
 
     let computed = all.map(g => {
@@ -4809,7 +4834,7 @@ app.get("/api/games", async (req, res) => {
         rating: (typeof g.rating !== "undefined" ? g.rating : null),
         ratingCount: Number(g.ratingCount||0)||0,
         publisher: g.publisher || "",
-        mediaGallery: Array.isArray(g.mediaGallery) ? g.mediaGallery : [],
+        mediaGallery: mediaFromAllGames(g, conceptId),
         cover: g.cover || "",
         description: descriptionForPublicGame(g, descIndex),
         discPerc: reg ? Number(reg.discPerc || 0) : 0,
