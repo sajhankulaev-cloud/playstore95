@@ -1031,19 +1031,27 @@ async function scrapeKnownTrProductDiscounts(baseItems, opts={}){
       if(i >= ids.length) break;
       const pid = ids[i];
       const url = `https://store.playstation.com/en-tr/product/${pid}`;
-      try{
-        const html = await fetchText(url, { acceptLanguage: "en-TR,en;q=0.9,tr-TR;q=0.8", timeoutMs });
-        const parsed = parseTrProductHtmlForDiscount(html, pid);
-        if(parsed && !parsed.blocked && Number(parsed.discPerc||0) > 0 && parsed.trDiscountPrice != null){
-          results.push({
-            productId: pid,
-            discPerc: Number(parsed.discPerc || 0),
-            discountedUntil: parsed.discountedUntil || null,
-            trDiscountPrice: Number(parsed.trDiscountPrice || 0),
-            source: "known_product_page"
-          });
+      // PS Store occasionally resets/times out individual requests. One retry prevents
+      // a transient network error from silently making a discounted game disappear.
+      for(let attempt=0; attempt<2; attempt++){
+        try{
+          const html = await fetchText(url, { acceptLanguage: "en-TR,en;q=0.9,tr-TR;q=0.8", timeoutMs });
+          const parsed = parseTrProductHtmlForDiscount(html, pid);
+          if(parsed && !parsed.blocked && Number(parsed.discPerc||0) > 0 && parsed.trDiscountPrice != null){
+            results.push({
+              productId: pid,
+              discPerc: Number(parsed.discPerc || 0),
+              discountedUntil: parsed.discountedUntil || null,
+              trDiscountPrice: Number(parsed.trDiscountPrice || 0),
+              source: "known_product_page"
+            });
+          }
+          break;
+        }catch(_e){
+          if(attempt >= 1) break;
+          await new Promise(resolve => setTimeout(resolve, 180));
         }
-      }catch(_e){}
+      }
     }
   });
   await Promise.all(workers);
@@ -5886,10 +5894,20 @@ app.post("/api/admin/discounts/refresh_from_ps", requireAdmin, async (req, res) 
     }
 
     const discountsFromCategory = await scrapeTrDiscountCategory({ pages, timeoutMs });
+    // Check every exact TR Product ID from our own library.
+    // The library can be larger than the old hard limit of 1200 items, which meant
+    // games after that point were never checked directly and their discounts could be missed.
+    const knownTrProductCount = (() => {
+      const ids = new Set();
+      for(const g of baseItemsToCheck){
+        for(const pid of collectTrProductIdsFromGame(g)) ids.add(String(pid).toUpperCase().trim());
+      }
+      return ids.size;
+    })();
     const discountsFromKnownProducts = await scrapeKnownTrProductDiscounts(baseItemsToCheck, {
       timeoutMs: Math.min(Math.max(3000, timeoutMs), 8000),
-      concurrency: Number(req.body && req.body.extraConcurrency) || 5,
-      maxProducts: Number(req.body && req.body.extraMaxProducts) || 1200
+      concurrency: Number(req.body && req.body.extraConcurrency) || 6,
+      maxProducts: Number(req.body && req.body.extraMaxProducts) || Math.max(1, Math.min(3000, knownTrProductCount))
     });
     const discounts = mergeDiscountListsExact([discountsFromCategory, discountsFromKnownProducts]);
 
@@ -5981,6 +5999,7 @@ app.post("/api/admin/discounts/refresh_from_ps", requireAdmin, async (req, res) 
         scraped: discounts.length,
         scrapedFromCategory: discountsFromCategory.length,
         scrapedFromKnownProducts: discountsFromKnownProducts.length,
+        knownProductsCheckedTarget: knownTrProductCount,
         cleanedExpired: localDiscounts.removedExpired,
         keptActive: activeExistingItems.length,
         skippedActiveKnownProducts: baseItems.length - baseItemsToCheck.length,
@@ -6000,6 +6019,7 @@ app.post("/api/admin/discounts/refresh_from_ps", requireAdmin, async (req, res) 
       scraped: discounts.length,
       scrapedFromCategory: discountsFromCategory.length,
       scrapedFromKnownProducts: discountsFromKnownProducts.length,
+      knownProductsCheckedTarget: knownTrProductCount,
       cleanedExpired: localDiscounts.removedExpired,
       keptActive: activeExistingItems.length,
       skippedActiveKnownProducts: baseItems.length - baseItemsToCheck.length,
