@@ -11,7 +11,7 @@
   <div class="topbarHeader">
     <a href="/" class="brand">
 		<span class="brandIcon" aria-hidden="true"></span>
-		<span class="brandText">PlayStore 95</span>
+		<span class="brandTextWrap"><span class="brandText">PlayStore 95</span><span class="brandWholesaleLabel">Оптовый</span></span>
 	</a>
     <div class="headerActions">
       <div class="searchWrap" id="searchWrap">
@@ -153,6 +153,29 @@
 </div>
 
 <script>
+
+// Open wholesale storefront. Keep the same UI, but mark all public API calls
+// so server-side price calculations use wholesale settings.
+const __isWholesaleStorefront = window.location.pathname === "/ps95_optovik" || window.location.pathname.startsWith("/ps95_optovik/");
+const __storefrontBasePath = __isWholesaleStorefront ? "/ps95_optovik" : "/";
+if(__isWholesaleStorefront){
+  document.body.classList.add("wholesaleStorefront");
+  const __brand = document.querySelector("a.brand");
+  if(__brand) __brand.setAttribute("href", "/ps95_optovik");
+  const __nativeFetch = window.fetch.bind(window);
+  window.fetch = function(input, init){
+    try{
+      const raw = (typeof input === "string") ? input : (input && input.url ? input.url : "");
+      const u = new URL(raw, window.location.href);
+      if(u.origin === window.location.origin && u.pathname.startsWith("/api/") && !u.pathname.startsWith("/api/admin/")){
+        u.searchParams.set("wholesale", "1");
+        if(typeof input === "string") input = u.pathname + u.search + u.hash;
+        else input = new Request(u.href, input);
+      }
+    }catch(_e){}
+    return __nativeFetch(input, init);
+  };
+}
 
 const state={tab:"home",region:"TR",sort:"pop",platform:"",players:"",language:"",genres:[],search:"",page:1,until:"",subPage:"",allDeals:false,discountRates:{TR:[],UA:[],PL:[],IN:[]},topupCards:{TR:[],PL:[],IN:[]},useTurkeyTopupCards:false,useIndiaTopupCards:true,roundStep:50};
 
@@ -393,7 +416,7 @@ function setActiveTab(tab, opts={}){
     if(state.until && tab==="discounts") qs.set("until", state.until); else qs.delete("until");
     if(state.allDeals && tab==="discounts") qs.set("all", "1"); else qs.delete("all");
     const __u = new URL(window.location.href);
-    __u.pathname = "/";
+    __u.pathname = __storefrontBasePath;
     __u.search = "?" + qs.toString();
     history.replaceState(null,"", __u.pathname + __u.search);
   }catch(_){}
@@ -483,7 +506,7 @@ function openSubPage(sub, scrollToGames=false){
       const qs=new URLSearchParams(location.search);
       qs.set("tab","subs");
       qs.set("sub", sub);
-      history.replaceState(null,"", "/?" + qs.toString() + "#subs-games");
+      history.replaceState(null,"", __storefrontBasePath + "?" + qs.toString() + "#subs-games");
     }
   }catch(_){ }
   if(scrollToGames) scrollToSubsGamesIfRequested(); else scrollTo(0,0);
@@ -933,7 +956,7 @@ async function renderMultiplayerPage(){
   grid.classList.remove("gridSubs", "searchResults");
   grid.innerHTML = `<section class="fullListPage multiplayerPage"><h1 class="multiplayerTitle">Игры для нескольких игроков</h1><div class="multiplayerToolbar"><button class="btnGhost" type="button" id="multiplayerBackBtn">← На главную</button><div class="fullListCount" id="multiplayerCount">Загрузка...</div></div><div class="grid fullListGrid" id="multiplayerGrid"></div></section>`;
   const back=document.getElementById("multiplayerBackBtn");
-  if(back) back.onclick=()=>{ window.location.href="/"; };
+  if(back) back.onclick=()=>{ window.location.href=__storefrontBasePath; };
   const list=document.getElementById("multiplayerGrid");
   const count=document.getElementById("multiplayerCount");
   const renderPager=(total, perPage)=>{
