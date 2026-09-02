@@ -3228,18 +3228,30 @@ function readStore() {
     if(Number.isFinite(n) && n > 0) s.settings.minPriceRub = n;
   }
 
-  // Wholesale settings are stored alongside retail settings but are completely
-  // independent for top-up cards and subscriptions. Existing installations are
-  // seeded from the current retail tables so enabling /ps95_optovik is safe.
-  if(!s.settings.wholesaleRateReductions || typeof s.settings.wholesaleRateReductions !== "object") {
-    const legacy = Number(s.settings.wholesaleRateReduction);
-    const seed = Number.isFinite(legacy) && legacy >= 0 ? legacy : 0.10;
-    s.settings.wholesaleRateReductions = { TR:seed, UA:seed, PL:seed, IN:seed };
+  // Wholesale rates are a fully independent range table, just like retail rates.
+  // Migration from the previous "retail minus X" model keeps the currently
+  // effective wholesale values once, then removes the old reduction settings.
+  if(!s.wholesaleRates || typeof s.wholesaleRates !== "object") {
+    const reductions = (s.settings && s.settings.wholesaleRateReductions && typeof s.settings.wholesaleRateReductions === "object")
+      ? s.settings.wholesaleRateReductions : {};
+    const legacy = Number(s.settings && s.settings.wholesaleRateReduction);
+    const fallbackReduction = Number.isFinite(legacy) && legacy >= 0 ? legacy : 0;
+    s.wholesaleRates = {};
+    for(const _r of ["TR","UA","PL","IN"]){
+      const reductionRaw = Number(reductions[_r]);
+      const reduction = Number.isFinite(reductionRaw) && reductionRaw >= 0 ? reductionRaw : fallbackReduction;
+      s.wholesaleRates[_r] = (Array.isArray(s.rates && s.rates[_r]) ? s.rates[_r] : []).map(rule => ({
+        min:rule.min, max:rule.max, rate:Math.max(0.01, Number((Number(rule.rate || 0) - reduction).toFixed(4)))
+      }));
+    }
   }
   for(const _r of ["TR","UA","PL","IN"]){
-    const n = Number(s.settings.wholesaleRateReductions[_r]);
-    s.settings.wholesaleRateReductions[_r] = Number.isFinite(n) && n >= 0 ? n : 0;
+    if(!Array.isArray(s.wholesaleRates[_r])) s.wholesaleRates[_r] = JSON.parse(JSON.stringify((s.rates && s.rates[_r]) || []));
+    s.wholesaleRates[_r] = s.wholesaleRates[_r]
+      .map(r => ({ min:Number(r.min), max:(r.max===null||r.max===""||typeof r.max==="undefined")?null:Number(r.max), rate:Number(r.rate) }))
+      .filter(r => Number.isFinite(r.min) && (r.max===null || Number.isFinite(r.max)) && Number.isFinite(r.rate));
   }
+  delete s.settings.wholesaleRateReductions;
   delete s.settings.wholesaleRateReduction;
   if(!s.wholesaleTopupCards || typeof s.wholesaleTopupCards !== "object"){
     s.wholesaleTopupCards = JSON.parse(JSON.stringify(s.topupCards || defaultTopupCards()));
@@ -3265,15 +3277,9 @@ function readStore() {
   const ctx = requestContext.getStore();
   if(ctx && ctx.wholesale){
     const view = JSON.parse(JSON.stringify(s));
-    const reductions = view.settings.wholesaleRateReductions || {};
-    const reduceRules = (rules, reduction)=> (Array.isArray(rules) ? rules : []).map(r => ({
-      min:r.min, max:r.max, rate:Math.max(0.01, Number((Number(r.rate || 0) - Number(reduction || 0)).toFixed(4)))
-    }));
-    for(const _r of ["TR","UA","PL","IN"]){
-      const reduction = Number(reductions[_r] || 0);
-      if(Array.isArray(view.rates && view.rates[_r]) && view.rates[_r].length) view.rates[_r] = reduceRules(view.rates[_r], reduction);
-      if(Array.isArray(view.discountRates && view.discountRates[_r]) && view.discountRates[_r].length) view.discountRates[_r] = reduceRules(view.discountRates[_r], reduction);
-    }
+    // Wholesale storefront uses its own persisted rate table. Discount rates stay
+    // independent and continue to work exactly as the shared discount table.
+    view.rates = JSON.parse(JSON.stringify(view.wholesaleRates || {}));
     view.topupCards = JSON.parse(JSON.stringify(view.wholesaleTopupCards || {}));
     view.subscriptionsPrices = JSON.parse(JSON.stringify(view.wholesaleSubscriptionsPrices || {}));
     view.settings.priceMode = "wholesale";
@@ -5438,7 +5444,7 @@ app.get("/api/admin/rates", requireAdmin, (req, res) => {
   const store = readStore();
   const region = String(req.query.region || "TR").toUpperCase();
   const type = String(req.query.type || "main");
-  const bucket = type === "discount" ? store.discountRates : store.rates;
+  const bucket = type === "discount" ? store.discountRates : (type === "wholesale" ? store.wholesaleRates : store.rates);
   res.json({ region, type, rules: bucket[region] || [] });
 });
 app.put("/api/admin/rates", requireAdmin, (req, res) => {
@@ -5452,6 +5458,9 @@ app.put("/api/admin/rates", requireAdmin, (req, res) => {
   if(type === "discount"){
     store.discountRates = store.discountRates || defaultDiscountRates();
     store.discountRates[region] = cleaned;
+  }else if(type === "wholesale"){
+    store.wholesaleRates = store.wholesaleRates || {};
+    store.wholesaleRates[region] = cleaned;
   }else{
     store.rates[region] = cleaned;
   }
@@ -5529,35 +5538,28 @@ app.put("/api/admin/subscriptions-prices", requireAdmin, (req, res) => {
   writeJson(STORE_PATH, store);
   res.json({ ok:true, prices: store.subscriptionsPrices });
 });
-// Admin: wholesale storefront settings
-app.get("/api/admin/wholesale/settings", requireAdmin, (req, res) => {
+// Admin: bulk rate adjustment. This changes the persisted table itself.
+app.post("/api/admin/rates/adjust", requireAdmin, (req, res) => {
   const store = readStore();
-  const settings = store.settings || {};
-  const reductions = settings.wholesaleRateReductions || {};
-  const legacy = Number(settings.wholesaleRateReduction);
-  const fallback = Number.isFinite(legacy) && legacy >= 0 ? legacy : 0.10;
-  res.json({ ok:true, wholesaleRateReductions:{
-    TR:Number.isFinite(Number(reductions.TR)) ? Number(reductions.TR) : fallback,
-    UA:Number.isFinite(Number(reductions.UA)) ? Number(reductions.UA) : fallback,
-    PL:Number.isFinite(Number(reductions.PL)) ? Number(reductions.PL) : fallback,
-    IN:Number.isFinite(Number(reductions.IN)) ? Number(reductions.IN) : fallback
-  }});
-});
-app.put("/api/admin/wholesale/settings", requireAdmin, (req, res) => {
-  const store = readStore();
-  const src = req.body && req.body.wholesaleRateReductions;
-  if(!src || typeof src !== "object") return res.status(400).json({ ok:false, error:"bad_reductions" });
-  const cleaned = {};
-  for(const region of ["TR","UA","PL","IN"]){
-    const n = Number(src[region]);
-    if(!Number.isFinite(n) || n < 0 || n > 20) return res.status(400).json({ ok:false, error:"bad_reduction_"+region });
-    cleaned[region] = n;
-  }
-  store.settings = store.settings || {};
-  store.settings.wholesaleRateReductions = cleaned;
-  delete store.settings.wholesaleRateReduction;
+  const region = String(req.body && req.body.region || "TR").toUpperCase();
+  const type = String(req.body && req.body.type || "main");
+  const delta = Number(req.body && req.body.delta);
+  if(!["TR","UA","PL","IN"].includes(region)) return res.status(400).json({ ok:false, error:"bad_region" });
+  if(!["main","wholesale","discount"].includes(type)) return res.status(400).json({ ok:false, error:"bad_type" });
+  if(!Number.isFinite(delta) || delta === 0 || Math.abs(delta) > 20) return res.status(400).json({ ok:false, error:"bad_delta" });
+  const bucket = type === "discount" ? store.discountRates : (type === "wholesale" ? store.wholesaleRates : store.rates);
+  const rules = Array.isArray(bucket && bucket[region]) ? bucket[region] : [];
+  if(!rules.length) return res.status(400).json({ ok:false, error:"empty_rates" });
+  const adjusted = rules.map(r => ({
+    min:r.min,
+    max:r.max,
+    rate:Math.max(0.01, Number((Number(r.rate || 0) + delta).toFixed(4)))
+  }));
+  if(type === "discount") store.discountRates[region] = adjusted;
+  else if(type === "wholesale") store.wholesaleRates[region] = adjusted;
+  else store.rates[region] = adjusted;
   writeJson(STORE_PATH, store);
-  res.json({ ok:true, wholesaleRateReductions:cleaned });
+  res.json({ ok:true, region, type, delta, rules:adjusted });
 });
 
 app.get("/api/admin/wholesale/topup-cards", requireAdmin, (req, res) => {
