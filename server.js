@@ -3,6 +3,7 @@ const https = require("https");
 const path = require("path");
 const express = require("express");
 const crypto = require("crypto");
+const { AsyncLocalStorage } = require("async_hooks");
 let sharp = null;
 try{ sharp = require("sharp"); }catch(_e){ sharp = null; }
 
@@ -2698,6 +2699,24 @@ function pickTitleFromChihiro(obj){
 
 app.use(express.json({ limit: "50mb" }));
 
+// Per-request price mode. /ps95_optovik is an open wholesale storefront.
+// API calls made from that page inherit wholesale pricing via the Referer header.
+const requestContext = new AsyncLocalStorage();
+function isWholesaleHttpRequest(req){
+  try{
+    if(String(req.path || "").startsWith("/api/admin") || String(req.path || "") === "/ps95_manage") return false;
+    if(String(req.query && req.query.wholesale || "") === "1") return true;
+    if(String(req.path || "") === "/ps95_optovik" || String(req.path || "").startsWith("/ps95_optovik/")) return true;
+    const ref = String(req.get && req.get("referer") || "");
+    if(ref){
+      const u = new URL(ref);
+      if(u.pathname === "/ps95_optovik" || u.pathname.startsWith("/ps95_optovik/")) return true;
+    }
+  }catch(_e){}
+  return false;
+}
+app.use((req, _res, next)=> requestContext.run({ wholesale:isWholesaleHttpRequest(req) }, next));
+
 // visitors counter (admin-only display)
 app.use((req, _res, next)=>{ recordVisit(req); next(); });
 
@@ -3208,6 +3227,59 @@ function readStore() {
     const n = Number(ENV.MIN_PRICE_RUB);
     if(Number.isFinite(n) && n > 0) s.settings.minPriceRub = n;
   }
+
+  // Wholesale settings are stored alongside retail settings but are completely
+  // independent for top-up cards and subscriptions. Existing installations are
+  // seeded from the current retail tables so enabling /ps95_optovik is safe.
+  if(!s.settings.wholesaleRateReductions || typeof s.settings.wholesaleRateReductions !== "object") {
+    const legacy = Number(s.settings.wholesaleRateReduction);
+    const seed = Number.isFinite(legacy) && legacy >= 0 ? legacy : 0.10;
+    s.settings.wholesaleRateReductions = { TR:seed, UA:seed, PL:seed, IN:seed };
+  }
+  for(const _r of ["TR","UA","PL","IN"]){
+    const n = Number(s.settings.wholesaleRateReductions[_r]);
+    s.settings.wholesaleRateReductions[_r] = Number.isFinite(n) && n >= 0 ? n : 0;
+  }
+  delete s.settings.wholesaleRateReduction;
+  if(!s.wholesaleTopupCards || typeof s.wholesaleTopupCards !== "object"){
+    s.wholesaleTopupCards = JSON.parse(JSON.stringify(s.topupCards || defaultTopupCards()));
+  }
+  for(const _r of ["TR","PL","IN"]){
+    if(!Array.isArray(s.wholesaleTopupCards[_r])) s.wholesaleTopupCards[_r] = JSON.parse(JSON.stringify((s.topupCards && s.topupCards[_r]) || []));
+    s.wholesaleTopupCards[_r] = s.wholesaleTopupCards[_r]
+      .map(c => ({ amount:Number(c.amount), rub:Number(c.rub) }))
+      .filter(c => Number.isFinite(c.amount) && c.amount > 0 && Number.isFinite(c.rub) && c.rub > 0);
+  }
+  if(!s.wholesaleSubscriptionsPrices || typeof s.wholesaleSubscriptionsPrices !== "object"){
+    s.wholesaleSubscriptionsPrices = JSON.parse(JSON.stringify(s.subscriptionsPrices || {}));
+  }
+  for(const _r of ["TR","UA","PL","IN"]){
+    if(!s.wholesaleSubscriptionsPrices[_r]) s.wholesaleSubscriptionsPrices[_r] = JSON.parse(JSON.stringify(s.subscriptionsPrices[_r] || {}));
+    if(!s.wholesaleSubscriptionsPrices[_r].psplus) s.wholesaleSubscriptionsPrices[_r].psplus = JSON.parse(JSON.stringify(s.subscriptionsPrices[_r].psplus || {}));
+    if(!s.wholesaleSubscriptionsPrices[_r].eaplay) s.wholesaleSubscriptionsPrices[_r].eaplay = JSON.parse(JSON.stringify(s.subscriptionsPrices[_r].eaplay || {}));
+    for(const _tier of ["essential","extra","deluxe"]){
+      if(!s.wholesaleSubscriptionsPrices[_r].psplus[_tier]) s.wholesaleSubscriptionsPrices[_r].psplus[_tier] = JSON.parse(JSON.stringify(s.subscriptionsPrices[_r].psplus[_tier] || {}));
+    }
+  }
+
+  const ctx = requestContext.getStore();
+  if(ctx && ctx.wholesale){
+    const view = JSON.parse(JSON.stringify(s));
+    const reductions = view.settings.wholesaleRateReductions || {};
+    const reduceRules = (rules, reduction)=> (Array.isArray(rules) ? rules : []).map(r => ({
+      min:r.min, max:r.max, rate:Math.max(0.01, Number((Number(r.rate || 0) - Number(reduction || 0)).toFixed(4)))
+    }));
+    for(const _r of ["TR","UA","PL","IN"]){
+      const reduction = Number(reductions[_r] || 0);
+      if(Array.isArray(view.rates && view.rates[_r]) && view.rates[_r].length) view.rates[_r] = reduceRules(view.rates[_r], reduction);
+      if(Array.isArray(view.discountRates && view.discountRates[_r]) && view.discountRates[_r].length) view.discountRates[_r] = reduceRules(view.discountRates[_r], reduction);
+    }
+    view.topupCards = JSON.parse(JSON.stringify(view.wholesaleTopupCards || {}));
+    view.subscriptionsPrices = JSON.parse(JSON.stringify(view.wholesaleSubscriptionsPrices || {}));
+    view.settings.priceMode = "wholesale";
+    return view;
+  }
+  s.settings.priceMode = "retail";
   return s;
 }
 
@@ -5457,6 +5529,78 @@ app.put("/api/admin/subscriptions-prices", requireAdmin, (req, res) => {
   writeJson(STORE_PATH, store);
   res.json({ ok:true, prices: store.subscriptionsPrices });
 });
+// Admin: wholesale storefront settings
+app.get("/api/admin/wholesale/settings", requireAdmin, (req, res) => {
+  const store = readStore();
+  const settings = store.settings || {};
+  const reductions = settings.wholesaleRateReductions || {};
+  const legacy = Number(settings.wholesaleRateReduction);
+  const fallback = Number.isFinite(legacy) && legacy >= 0 ? legacy : 0.10;
+  res.json({ ok:true, wholesaleRateReductions:{
+    TR:Number.isFinite(Number(reductions.TR)) ? Number(reductions.TR) : fallback,
+    UA:Number.isFinite(Number(reductions.UA)) ? Number(reductions.UA) : fallback,
+    PL:Number.isFinite(Number(reductions.PL)) ? Number(reductions.PL) : fallback,
+    IN:Number.isFinite(Number(reductions.IN)) ? Number(reductions.IN) : fallback
+  }});
+});
+app.put("/api/admin/wholesale/settings", requireAdmin, (req, res) => {
+  const store = readStore();
+  const src = req.body && req.body.wholesaleRateReductions;
+  if(!src || typeof src !== "object") return res.status(400).json({ ok:false, error:"bad_reductions" });
+  const cleaned = {};
+  for(const region of ["TR","UA","PL","IN"]){
+    const n = Number(src[region]);
+    if(!Number.isFinite(n) || n < 0 || n > 20) return res.status(400).json({ ok:false, error:"bad_reduction_"+region });
+    cleaned[region] = n;
+  }
+  store.settings = store.settings || {};
+  store.settings.wholesaleRateReductions = cleaned;
+  delete store.settings.wholesaleRateReduction;
+  writeJson(STORE_PATH, store);
+  res.json({ ok:true, wholesaleRateReductions:cleaned });
+});
+
+app.get("/api/admin/wholesale/topup-cards", requireAdmin, (req, res) => {
+  const region = String(req.query.region || "TR").toUpperCase();
+  if(!["TR","PL","IN"].includes(region)) return res.status(400).json({ ok:false, error:"bad_region" });
+  const store = readStore();
+  res.json({ ok:true, region, cards:(store.wholesaleTopupCards && store.wholesaleTopupCards[region]) || [] });
+});
+app.put("/api/admin/wholesale/topup-cards", requireAdmin, (req, res) => {
+  const region = String(req.body && req.body.region || "TR").toUpperCase();
+  if(!["TR","PL","IN"].includes(region)) return res.status(400).json({ ok:false, error:"bad_region" });
+  const cards = Array.isArray(req.body && req.body.cards) ? req.body.cards : [];
+  const cleaned = cards.map(c => ({ amount:Number(c.amount), rub:Number(c.rub) }))
+    .filter(c => Number.isFinite(c.amount) && c.amount > 0 && Number.isFinite(c.rub) && c.rub > 0)
+    .sort((a,b)=>a.amount-b.amount);
+  const store = readStore();
+  store.wholesaleTopupCards = store.wholesaleTopupCards || {};
+  store.wholesaleTopupCards[region] = cleaned;
+  writeJson(STORE_PATH, store);
+  res.json({ ok:true, region, cards:cleaned });
+});
+
+app.get("/api/admin/wholesale/subscriptions-prices", requireAdmin, (req, res) => {
+  const store = readStore();
+  res.json({ ok:true, prices:store.wholesaleSubscriptionsPrices || {} });
+});
+app.put("/api/admin/wholesale/subscriptions-prices", requireAdmin, (req, res) => {
+  const p = req.body && req.body.prices;
+  if(!p || typeof p !== "object") return res.status(400).json({ ok:false, error:"bad_prices" });
+  const cleanNum = (v)=>{ const n=Number(v); return Number.isFinite(n) ? Math.max(0,n) : 0; };
+  const normRegion = (region)=>{
+    const r = p[region] && typeof p[region] === "object" ? p[region] : {};
+    const ps = r.psplus && typeof r.psplus === "object" ? r.psplus : {};
+    const ea = r.eaplay && typeof r.eaplay === "object" ? r.eaplay : {};
+    const normTier=(t)=>({"1":cleanNum(t&&t["1"]),"3":cleanNum(t&&t["3"]),"12":cleanNum(t&&t["12"]),discount12:cleanNum(t&&t.discount12)});
+    return { psplus:{ essential:normTier(ps.essential), extra:normTier(ps.extra), deluxe:normTier(ps.deluxe) }, eaplay:{"1":cleanNum(ea["1"]),"12":cleanNum(ea["12"]),discount12:cleanNum(ea.discount12)} };
+  };
+  const store = readStore();
+  store.wholesaleSubscriptionsPrices = {TR:normRegion("TR"),UA:normRegion("UA"),PL:normRegion("PL"),IN:normRegion("IN")};
+  writeJson(STORE_PATH, store);
+  res.json({ ok:true, prices:store.wholesaleSubscriptionsPrices });
+});
+
 app.get("/api/admin/settings", requireAdmin, (req, res) => res.json(readStore().settings));
 
 // Admin: visitors counter (last 24 hours)
@@ -8694,6 +8838,8 @@ app.post("/api/admin/games/add", requireAdmin, async (req, res) => {
   }
 });
 
+app.get("/ps95_optovik", (req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
+app.get("/ps95_optovik/", (req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
 app.get("/ps95_manage", (req, res) => res.sendFile(path.join(__dirname, "public", "admin.html")));
 app.use("/", express.static(path.join(__dirname, "public")));
 
