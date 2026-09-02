@@ -4553,3 +4553,27 @@ body[data-tab="topup"] #pager{
 .gmMediaLbNav{top:50%;transform:translateY(-50%);width:46px;height:64px;border-radius:12px;font-size:42px;line-height:1}.gmMediaLbPrev{left:14px}.gmMediaLbNext{right:14px}
 .gmMediaLbCounter{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);color:#fff;background:rgba(0,0,0,.42);padding:6px 12px;border-radius:999px;font-size:13px}
 @media(max-width:640px){.gmMediaThumb{flex-basis:133px;height:83px}.gmMediaLightbox{padding:52px 10px 60px}.gmMediaLbStage{width:100%;height:72vh}.gmMediaLbNav{width:38px;height:54px;font-size:34px;background:rgba(0,0,0,.5)}.gmMediaLbPrev{left:5px}.gmMediaLbNext{right:5px}.gmMediaLbClose{right:10px;top:10px}.gmMediaLabel{font-size:10px;left:40px}.gmMediaPlay{left:10px}}
+
+/* Wholesale storefront marker under the main logo */
+.brandTextWrap{
+  display:inline-flex;
+  flex-direction:column;
+  align-items:flex-end;
+  line-height:1;
+}
+.brandWholesaleLabel{
+  display:none;
+  margin-top:3px;
+  padding-right:1px;
+  font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:11px;
+  line-height:1.1;
+  font-weight:800;
+  text-transform:none;
+  letter-spacing:.02em;
+  color:#1452e7;
+}
+body.wholesaleStorefront .brandWholesaleLabel{display:block;}
+@media (max-width:480px){
+  .brandWholesaleLabel{font-size:9px;margin-top:2px;}
+}
