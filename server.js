@@ -19,7 +19,7 @@ try{ fs.mkdirSync(IMAGE_CACHE_DIR, { recursive:true }); }catch(_e){}
 const PS_BROWSE_CACHE_PATH = path.join(__dirname, "data", "ps_browse_rank_cache.json");
 const PS_BROWSE_PAGE_SIZE_GUESS = 24; // PS Store browse commonly shows 24 tiles per page
 const PS_BROWSE_MAX_PAGES_HARD_LIMIT = 500; // safety
-const PS_BROWSE_CANONICAL_LOCALE = "en-in"; // Default public order follows https://store.playstation.com/en-in/pages/browse
+const PS_BROWSE_CANONICAL_LOCALE = "en-tr"; // Default public order follows the Turkish PlayStation Store browse ranking
 
 // --- PlayStation Pre-orders category rank helpers ---
 // Category page example (TR):
@@ -5189,7 +5189,7 @@ app.get("/api/games", async (req, res) => {
       return [];
     };
 
-    let computed = all.map(g => {
+    let computed = all.map((g, sourceIndex) => {
       const reg = publicDiscountRegionFor(g, region, regionBaseIndex);
       const storePrice = reg ? Number(reg.salePrice || 0) : 0;
 
@@ -5228,6 +5228,7 @@ app.get("/api/games", async (req, res) => {
         oldPriceRub: (Number(reg && reg.discPerc || 0) > 0 ? calcRegionRub(store, region, (storePrice / Math.max(0.01, (1 - (Number(reg.discPerc||0)/100))))) : 0),
         conceptId,
         popRank: g.popRank || 999999,
+        _sourceOrder: sourceIndex,
         psRank: firstFinite(
           psRanksById[String(conceptId || "").trim()],
           psRanksById[String(g.id || "").trim()],
@@ -5259,7 +5260,19 @@ app.get("/api/games", async (req, res) => {
       if (sort === "name_desc") return String(b.name||"").localeCompare(String(a.name||""), "ru") || ((a.popRank||0)-(b.popRank||0));
       if (sort === "price_desc") return (b.finalPriceRub-a.finalPriceRub) || ((a.popRank||0)-(b.popRank||0));
       if (sort === "price_asc") return (a.finalPriceRub-b.finalPriceRub) || ((a.popRank||0)-(b.popRank||0));
-      return (a.psRank||999999)-(b.psRank||999999) || (a.popRank||999999)-(b.popRank||999999);
+      // "Без сортировки" means PlayStation order. Never use the title as an
+      // implicit fallback: if PS rank is unavailable, keep the stored source order.
+      const aps = Number(a.psRank); const bps = Number(b.psRank);
+      const apsKnown = Number.isFinite(aps) && aps < 999999;
+      const bpsKnown = Number.isFinite(bps) && bps < 999999;
+      if(apsKnown !== bpsKnown) return apsKnown ? -1 : 1;
+      if(apsKnown && bpsKnown && aps !== bps) return aps - bps;
+      const ap = Number(a.popRank); const bp = Number(b.popRank);
+      const apKnown = Number.isFinite(ap) && ap > 0 && ap < 999999;
+      const bpKnown = Number.isFinite(bp) && bp > 0 && bp < 999999;
+      if(apKnown !== bpKnown) return apKnown ? -1 : 1;
+      if(apKnown && bpKnown && ap !== bp) return ap - bp;
+      return Number(a._sourceOrder||0) - Number(b._sourceOrder||0);
     };
 
     if(q){
@@ -5272,7 +5285,7 @@ app.get("/api/games", async (req, res) => {
 
     const total = computed.length;
     const startIndex = (page - 1) * perPage;
-    const items = computed.slice(startIndex, startIndex + perPage).map(({ _score, psRank, ...rest }) => rest);
+    const items = computed.slice(startIndex, startIndex + perPage).map(({ _score, psRank, _sourceOrder, ...rest }) => rest);
     res.json({ region, page, perPage, total, items, updatedAt: gamesDoc.updatedAt || null });
   } catch (e) {
     res.status(500).json({ error: String(e) });
@@ -6944,7 +6957,7 @@ app.get("/api/allgames", async (req, res) => {
     const newReleaseKeys = buildNewReleaseKeySet();
     const regionBaseIndex = (region === "PL" || region === "IN") ? buildAllGamesRegionPriceIndex(region) : null;
 
-    let computed = all.map(g => {
+    let computed = all.map((g, sourceIndex) => {
       const reg = (g.regions && g.regions[region]) ? g.regions[region] : null;
       const baseStorePrice = reg ? Number(reg.salePrice || 0) : 0;
 
@@ -7015,6 +7028,7 @@ app.get("/api/allgames", async (req, res) => {
         oldPriceRub: (discPerc > 0 ? calcRegionRub(store, region, baseStorePrice) : 0),
         conceptId: conceptForGame(g, conceptIndex),
         popRank: g.popRank || 999999,
+        _sourceOrder: sourceIndex,
         isNewRelease: isGameInNewReleases(g, newReleaseKeys, conceptIndex),
         sourceTab: "allgames",
         // Prefer PS browse rank by id; fallback to title match.
@@ -7058,8 +7072,22 @@ app.get("/api/allgames", async (req, res) => {
     } else if (sort === "price_desc") {
       computed.sort((a,b)=> (b.finalPriceRub||0)-(a.finalPriceRub||0));
     } else {
-      // Default: PlayStation browse-like order, with fallback to popRank
-      computed.sort((a,b)=> (a.psRank||999999)-(b.psRank||999999) || (a.popRank||999999)-(b.popRank||999999));
+      // "Без сортировки" = PlayStation Store browse order.
+      // Do not alphabetize items that have no PS rank. Unknown items stay in
+      // their original database order after all ranked PlayStation items.
+      computed.sort((a,b)=>{
+        const aps = Number(a.psRank); const bps = Number(b.psRank);
+        const apsKnown = Number.isFinite(aps) && aps < 999999;
+        const bpsKnown = Number.isFinite(bps) && bps < 999999;
+        if(apsKnown !== bpsKnown) return apsKnown ? -1 : 1;
+        if(apsKnown && bpsKnown && aps !== bps) return aps - bps;
+        const ap = Number(a.popRank); const bp = Number(b.popRank);
+        const apKnown = Number.isFinite(ap) && ap > 0 && ap < 999999;
+        const bpKnown = Number.isFinite(bp) && bp > 0 && bp < 999999;
+        if(apKnown !== bpKnown) return apKnown ? -1 : 1;
+        if(apKnown && bpKnown && ap !== bp) return ap - bp;
+        return Number(a._sourceOrder||0) - Number(b._sourceOrder||0);
+      });
     }
 
     // Keep editions together (e.g. Standard/Deluxe/Ultimate should go one after another)
@@ -7150,7 +7178,7 @@ app.get("/api/allgames", async (req, res) => {
 
     const total = computed.length;
     const startIdx = (page - 1) * perPage;
-    const items = computed.slice(startIdx, startIdx + perPage);
+    const items = computed.slice(startIdx, startIdx + perPage).map(({ _sourceOrder, psRank, _score, ...rest }) => rest);
 
     res.json({ region, page, perPage, total, items });
   } catch (e) {
