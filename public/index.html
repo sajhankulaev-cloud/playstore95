@@ -2750,7 +2750,7 @@ function regionComparePriceHtml(g){
   return `<div class="regionComparePriceLine">${disc ? `<span class="regionCompareDiscount">-${disc}%</span>` : ``}<div class="regionComparePrices">${old ? `<span class="regionCompareOld">${escapeHtml(fmtRub(old))}</span>` : ``}<span class="regionComparePrice">${price ? escapeHtml(fmtRub(price)) : '—'}</span></div></div>`;
 }
 function renderRegionCompareItems(items, activeRegion){
-  const order=["UA","TR","PL","IN"];
+  const order=["UA","TR","PL","IN"].filter(isRegionEnabled);
   return order.map(R=>{
     const g = (items||[]).find(x=>String(x.region||'').toUpperCase()===R);
     if(!g){
