@@ -768,6 +768,16 @@ button{ color:#0f172a !important; }
 <select id="roundStep" class="selecColor" style="width:100%;"><option value="50">до 50 ₽ (вверх)</option><option value="100">до 100 ₽ (вверх)</option></select></div>
 <div style="flex:2;min-width:260px;"><div class="small">WhatsApp ссылка</div><input id="wa" class="input" type="text" placeholder="https://wa.me/..."/></div>
 <div style="align-self:flex-end;"><button class="btnDark" id="saveSettings" type="button">Сохранить</button></div>
+</div>
+<div style="margin-top:16px;padding-top:14px;border-top:1px solid #e5e7eb;">
+  <div style="font-weight:900;">Регионы на сайте</div>
+  <div class="small" style="margin-top:4px;">Отключённый регион полностью исчезает из выбора на публичном и оптовом сайте. В админке он остаётся доступен для настройки и повторного включения.</div>
+  <div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:10px;">
+    <label style="display:flex;align-items:center;gap:7px;font-weight:800;"><input type="checkbox" id="regionEnabledTR"> Турция (TR)</label>
+    <label style="display:flex;align-items:center;gap:7px;font-weight:800;"><input type="checkbox" id="regionEnabledUA"> Украина (UA)</label>
+    <label style="display:flex;align-items:center;gap:7px;font-weight:800;"><input type="checkbox" id="regionEnabledPL"> Польша (PL)</label>
+    <label style="display:flex;align-items:center;gap:7px;font-weight:800;"><input type="checkbox" id="regionEnabledIN"> Индия (IN)</label>
+  </div>
 </div></div>
 
 <div class="adminCard" id="visitors">
@@ -1160,14 +1170,20 @@ async function saveWholesaleSubsPrices(){
 }
 
 async function loadSettings(){const j=await fetch(`/api/admin/settings`).then(r=>r.json());
-document.getElementById("roundStep").value=String(j.roundStep||50);document.getElementById("wa").value=j.whatsappLink||"";const cb=document.getElementById("useTurkeyTopupCards");if(cb) cb.checked=!!j.useTurkeyTopupCards;const cbIn=document.getElementById("useIndiaTopupCards");if(cbIn) cbIn.checked=!!j.useIndiaTopupCards;}
+document.getElementById("roundStep").value=String(j.roundStep||50);document.getElementById("wa").value=j.whatsappLink||"";const cb=document.getElementById("useTurkeyTopupCards");if(cb) cb.checked=!!j.useTurkeyTopupCards;const cbIn=document.getElementById("useIndiaTopupCards");if(cbIn) cbIn.checked=!!j.useIndiaTopupCards;
+const enabled=(j.enabledRegions&&typeof j.enabledRegions==="object")?j.enabledRegions:{TR:true,UA:true,PL:true,IN:true};
+for(const R of ["TR","UA","PL","IN"]){const el=document.getElementById(`regionEnabled${R}`);if(el) el.checked=enabled[R]!==false;}
+}
 async function saveSettings(){const roundStep=document.getElementById("roundStep").value;
 const whatsappLink=document.getElementById("wa").value.trim();
 const cb=document.getElementById("useTurkeyTopupCards");
 const useTurkeyTopupCards=cb?!!cb.checked:false;
 const cbIn=document.getElementById("useIndiaTopupCards");
 const useIndiaTopupCards=cbIn?!!cbIn.checked:true;
-const j=await fetch(`/api/admin/settings`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({roundStep,whatsappLink,useTurkeyTopupCards,useIndiaTopupCards})}).then(r=>r.json());
+const enabledRegions={};for(const R of ["TR","UA","PL","IN"]){const el=document.getElementById(`regionEnabled${R}`);enabledRegions[R]=!!(el&&el.checked);}
+if(!Object.values(enabledRegions).some(Boolean)){alert("Нужно оставить включённым хотя бы один регион.");return;}
+const r=await fetch(`/api/admin/settings`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({roundStep,whatsappLink,useTurkeyTopupCards,useIndiaTopupCards,enabledRegions})});
+const j=await r.json().catch(()=>({ok:false}));
 alert(j.ok?"Сохранено":"Ошибка");}
 
 // --- Visitors counter ---
