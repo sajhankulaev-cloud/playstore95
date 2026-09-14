@@ -177,7 +177,7 @@ if(__isWholesaleStorefront){
   };
 }
 
-const state={tab:"home",region:"TR",sort:"pop",platform:"",players:"",language:"",genres:[],search:"",page:1,until:"",subPage:"",allDeals:false,discountRates:{TR:[],UA:[],PL:[],IN:[]},topupCards:{TR:[],PL:[],IN:[]},useTurkeyTopupCards:false,useIndiaTopupCards:true,roundStep:50};
+const state={tab:"home",region:"TR",sort:"pop",platform:"",players:"",language:"",genres:[],search:"",page:1,until:"",subPage:"",allDeals:false,discountRates:{TR:[],UA:[],PL:[],IN:[]},topupCards:{TR:[],PL:[],IN:[]},useTurkeyTopupCards:false,useIndiaTopupCards:true,roundStep:50,enabledRegions:{TR:true,UA:true,PL:true,IN:true}};
 
 function shouldScrollToSubsGames(){
   return !!(state.scrollToSubsGames || window.location.hash === "#subs-games");
@@ -1933,6 +1933,39 @@ try{
 
 const REGION_LABELS={TR:"TR",UA:"UA",PL:"PL",IN:"IN"};
 const REGION_FLAG_CLASSES={TR:"regionFlagTR",UA:"regionFlagCIS",PL:"regionFlagPL",IN:"regionFlagIN"};
+const REGION_ORDER=["TR","UA","PL","IN"];
+function applyEnabledRegions(enabled){
+  const src=(enabled&&typeof enabled==="object")?enabled:{};
+  const normalized={};
+  for(const R of REGION_ORDER) normalized[R]=src[R]!==false;
+  if(!REGION_ORDER.some(R=>normalized[R])) normalized.TR=true;
+  state.enabledRegions=normalized;
+
+  // Remove disabled regions from both the custom picker and the hidden native select.
+  document.querySelectorAll(".regionPickerOption[data-region]").forEach(btn=>{
+    const R=String(btn.dataset.region||"").toUpperCase();
+    btn.hidden=!normalized[R];
+    btn.style.display=normalized[R]?"":"none";
+  });
+  const select=document.getElementById("region");
+  if(select){
+    [...select.options].forEach(opt=>{ opt.disabled=!normalized[String(opt.value||"").toUpperCase()]; opt.hidden=opt.disabled; });
+  }
+
+  // A disabled region can still be present in an old URL/localStorage. Never render it.
+  const current=String(state.region||"").toUpperCase();
+  if(!normalized[current]){
+    state.region=REGION_ORDER.find(R=>normalized[R]) || "TR";
+    try{localStorage.setItem("ps95_region",state.region);}catch(_){}
+    const url=new URL(location.href);
+    if(url.searchParams.has("region")){
+      url.searchParams.set("region",state.region);
+      history.replaceState(null,"",url.pathname+(url.searchParams.toString()?"?"+url.searchParams.toString():"")+url.hash);
+    }
+  }
+  updateRegionPicker();
+}
+function isRegionEnabled(region){return state.enabledRegions[String(region||"").toUpperCase()]!==false;}
 function regionFlagHtml(region){
   const R=String(region||"TR").toUpperCase();
   const cls=REGION_FLAG_CLASSES[R]||REGION_FLAG_CLASSES.TR;
@@ -1970,7 +2003,7 @@ function openRegionPicker(){
 }
 function setRegionValue(region){
   const R=String(region||"TR").toUpperCase();
-  if(!REGION_LABELS[R]) return;
+  if(!REGION_LABELS[R] || !isRegionEnabled(R)) return;
   state.region=R;
   try{localStorage.setItem("ps95_region",state.region);}catch(_){}
   updateRegionPicker();
@@ -3441,6 +3474,9 @@ async function load(){
     if(searchEl) searchEl.value=currentHeaderSearchValue;
   }
   const meta=await fetch("/api/meta").then(r=>r.json());
+  if(meta && meta.settings){
+    applyEnabledRegions(meta.settings.enabledRegions);
+  }
   populateGenreFilters(meta && meta.genres);
   // Apply active tab UI (do not reset page when loading)
   const knownTabs = new Set(["home","preorders","new","discounts","allgames","subs","topup","bestsellers","multiplayer","search"]);
