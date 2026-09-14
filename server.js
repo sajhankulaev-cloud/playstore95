@@ -3160,6 +3160,17 @@ function readStore() {
   if(!s.rates.IN.length) s.rates.IN = defaultIndiaRates();
   if(typeof s.settings.useTurkeyTopupCards === "undefined") s.settings.useTurkeyTopupCards = false;
   if(typeof s.settings.useIndiaTopupCards === "undefined") s.settings.useIndiaTopupCards = true;
+  // Public storefront regions can be enabled/disabled from admin.
+  // Keep the setting as a simple map so older store.json files migrate safely.
+  if(!s.settings.enabledRegions || typeof s.settings.enabledRegions !== "object") {
+    s.settings.enabledRegions = { TR:true, UA:true, PL:true, IN:true };
+  }
+  for(const _r of ["TR","UA","PL","IN"]){
+    if(typeof s.settings.enabledRegions[_r] === "undefined") s.settings.enabledRegions[_r] = true;
+    else s.settings.enabledRegions[_r] = !!s.settings.enabledRegions[_r];
+  }
+  // Never allow a configuration with no public region at all.
+  if(!["TR","UA","PL","IN"].some(_r => s.settings.enabledRegions[_r])) s.settings.enabledRegions.TR = true;
   if(!s.topupCards || typeof s.topupCards !== "object") s.topupCards = defaultTopupCards();
   const _defaultTopupCards = defaultTopupCards();
   for(const _r of ["TR","PL","IN"]){
@@ -5638,6 +5649,15 @@ app.put("/api/admin/settings", requireAdmin, (req, res) => {
   if (req.body.whatsappLink !== undefined) store.settings.whatsappLink = String(req.body.whatsappLink);
   if (req.body.useTurkeyTopupCards !== undefined) store.settings.useTurkeyTopupCards = !!req.body.useTurkeyTopupCards;
   if (req.body.useIndiaTopupCards !== undefined) store.settings.useIndiaTopupCards = !!req.body.useIndiaTopupCards;
+  if(req.body.enabledRegions !== undefined){
+    const src = (req.body.enabledRegions && typeof req.body.enabledRegions === "object") ? req.body.enabledRegions : {};
+    const enabledRegions = {};
+    for(const _r of ["TR","UA","PL","IN"]) enabledRegions[_r] = !!src[_r];
+    if(!Object.values(enabledRegions).some(Boolean)){
+      return res.status(400).json({ ok:false, error:"at_least_one_region_required" });
+    }
+    store.settings.enabledRegions = enabledRegions;
+  }
   const dd = req.body.defaultDiscountUntil ?? req.body.defaultDate;
   if (dd !== undefined) store.settings.defaultDiscountUntil = dd ? String(dd) : null;
   writeJson(STORE_PATH, store);
