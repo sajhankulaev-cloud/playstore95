@@ -7272,7 +7272,10 @@ app.get("/api/game-regions", (req, res) => {
 
     // Сравнение регионов работает только по точному product id.
     // ConceptId здесь не используем: у разных версий/игр он может совпадать.
-    const order = ['UA','TR','PL','IN'];
+    const enabledRegions = (store.settings && store.settings.enabledRegions && typeof store.settings.enabledRegions === 'object')
+      ? store.settings.enabledRegions
+      : { TR:true, UA:true, PL:true, IN:true };
+    const order = ['UA','TR','PL','IN'].filter(R => enabledRegions[R] !== false);
     const exactProductIds = new Set();
     for(const key of collectExactProductLookupKeys(g, activeRegion)){
       if(key) exactProductIds.add(String(key).trim());
