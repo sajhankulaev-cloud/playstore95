@@ -5,7 +5,13 @@
     "minPriceRub": 450,
     "useTurkeyTopupCards": false,
     "useIndiaTopupCards": false,
-    "priceMode": "retail"
+    "priceMode": "retail",
+    "enabledRegions": {
+      "TR": true,
+      "UA": true,
+      "PL": true,
+      "IN": true
+    }
   },
   "rates": {
     "TR": [
