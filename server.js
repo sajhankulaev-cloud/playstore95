@@ -412,6 +412,9 @@ function publicDescriptionFromValue(v){
   return text;
 }
 function buildDescriptionIndex(){
+  const paths = [ALL_GAMES_PATH, PREORDERS_PATH, NEW_RELEASES_PATH, GAMES_PATH];
+  const sig = publicDataSignature(paths);
+  if(buildDescriptionIndex._cache && buildDescriptionIndex._cache.sig === sig) return buildDescriptionIndex._cache.value;
   const idx = new Map();
   const add = (g)=>{
     if(!g) return;
@@ -429,11 +432,12 @@ function buildDescriptionIndex(){
       if(desc.length > prev.length) idx.set(k, desc);
     }
   };
-  for(const file of [ALL_GAMES_PATH, PREORDERS_PATH, NEW_RELEASES_PATH, GAMES_PATH]){
-    const doc = readJson(file, { items:[] });
+  for(const file of paths){
+    const doc = readJsonCachedPublic(file, { items:[] });
     const arr = Array.isArray(doc) ? doc : (Array.isArray(doc.items) ? doc.items : []);
     arr.forEach(add);
   }
+  buildDescriptionIndex._cache = {sig, value:idx};
   return idx;
 }
 function descriptionForPublicGame(g, descIndex){
@@ -453,6 +457,9 @@ function descriptionForPublicGame(g, descIndex){
   return '';
 }
 function buildConceptIndex(){
+  const paths = [ALL_GAMES_PATH, PREORDERS_PATH, NEW_RELEASES_PATH, GAMES_PATH];
+  const sig = publicDataSignature(paths);
+  if(buildConceptIndex._cache && buildConceptIndex._cache.sig === sig) return buildConceptIndex._cache.value;
   const idx = new Map();
   const add = (g)=>{
     if(!g || !g.conceptId) return;
@@ -463,11 +470,12 @@ function buildConceptIndex(){
       for(const v of Object.values(g.productIds)){ if(v) idx.set(String(v).trim(), cid); }
     }
   };
-  for(const file of [ALL_GAMES_PATH, PREORDERS_PATH, NEW_RELEASES_PATH, GAMES_PATH]){
-    const doc = readJson(file, { items:[] });
+  for(const file of paths){
+    const doc = readJsonCachedPublic(file, { items:[] });
     const arr = Array.isArray(doc) ? doc : (Array.isArray(doc.items) ? doc.items : []);
     arr.forEach(add);
   }
+  buildConceptIndex._cache = {sig, value:idx};
   return idx;
 }
 function conceptForGame(g, conceptIndex){
@@ -2860,7 +2868,33 @@ const PL_LOCALE = (ENV.PL_LOCALE || "en-pl").trim();
 const IN_LOCALE = (ENV.IN_LOCALE || "en-in").trim();
 
 function readJson(p, fallback) { try { return JSON.parse(fs.readFileSync(p, "utf-8")); } catch { return fallback; } }
-function writeJson(p, obj) { fs.writeFileSync(p, JSON.stringify(obj, null, 2), "utf-8"); }
+
+// Hot public catalog endpoints used to parse the same JSON files many times per request.
+// Keep a read-only parsed copy keyed by mtime+size. Admin writes invalidate the entry,
+// so public requests see changes immediately without repeated disk I/O / JSON.parse work.
+const __publicJsonCache = new Map();
+function readJsonCachedPublic(p, fallback){
+  try{
+    const st = fs.statSync(p);
+    const sig = `${st.mtimeMs}:${st.size}`;
+    const prev = __publicJsonCache.get(p);
+    if(prev && prev.sig === sig) return prev.value;
+    const value = JSON.parse(fs.readFileSync(p, "utf-8"));
+    __publicJsonCache.set(p, {sig, value});
+    return value;
+  }catch(_e){
+    return fallback;
+  }
+}
+function publicDataSignature(paths){
+  try{
+    return paths.map(p=>{ const st=fs.statSync(p); return `${p}:${st.mtimeMs}:${st.size}`; }).join('|');
+  }catch(_e){ return String(Date.now()); }
+}
+function writeJson(p, obj) {
+  fs.writeFileSync(p, JSON.stringify(obj, null, 2), "utf-8");
+  __publicJsonCache.delete(p);
+}
 
 // --- Visitors counter (admin-only) ---
 // We store rolling per-hour buckets for the last 24 hours.
@@ -4422,9 +4456,9 @@ function extractEdition(jsonLd, title, html){
 
 app.get("/api/meta", (req, res) => {
   const store = readStore();
-  const games = readJson(GAMES_PATH, { updatedAt:null, items:[] });
-  const allGames = readJson(ALL_GAMES_PATH, { updatedAt:null, items:[] });
-  const preorders = readJson(PREORDERS_PATH, { updatedAt:null, items:[] });
+  const games = readJsonCachedPublic(GAMES_PATH, { updatedAt:null, items:[] });
+  const allGames = readJsonCachedPublic(ALL_GAMES_PATH, { updatedAt:null, items:[] });
+  const preorders = readJsonCachedPublic(PREORDERS_PATH, { updatedAt:null, items:[] });
   const hasAnyUntil = { TR:false, UA:false, PL:false, IN:false };
   for (const g of (games.items||[])) {
     for (const r of ["TR","UA","PL","IN"]) {
@@ -4631,12 +4665,13 @@ function isDiscountActiveForRegion(reg){
 
 // Build map of currently discounted games (by internal id and by conceptId)
 function readActiveDiscountsIndex(){
-  const doc = readJson(GAMES_PATH, { updatedAt:null, items:[] });
+  const sig = publicDataSignature([GAMES_PATH]);
+  if(readActiveDiscountsIndex._cache && readActiveDiscountsIndex._cache.sig === sig) return readActiveDiscountsIndex._cache.value;
+  const doc = readJsonCachedPublic(GAMES_PATH, { updatedAt:null, items:[] });
   const items = Array.isArray(doc.items) ? doc.items : [];
   const byId = new Map();
   for(const g of items){
     if(!g || !g.regions) continue;
-    // Keep discounts exact: one product/version must not give a discount to another edition.
     const tr = g.regions.TR;
     const ua = g.regions.UA;
     if(!isDiscountActiveForRegion(tr) && !isDiscountActiveForRegion(ua)) continue;
@@ -4647,7 +4682,9 @@ function readActiveDiscountsIndex(){
       }
     }
   }
-  return { byId, updatedAt: doc.updatedAt || null };
+  const value = { byId, updatedAt: doc.updatedAt || null };
+  readActiveDiscountsIndex._cache = {sig, value};
+  return value;
 }
 function pruneExpiredDiscountItems(){
   const doc = readJson(GAMES_PATH, { updatedAt:null, items:[] });
@@ -4779,7 +4816,11 @@ function collectRegionLookupKeys(g, region){
 
 function buildAllGamesRegionPriceIndex(region){
   const R = String(region || '').toUpperCase();
-  const doc = readJson(ALL_GAMES_PATH, {items:[]});
+  const sig = publicDataSignature([ALL_GAMES_PATH]);
+  buildAllGamesRegionPriceIndex._cache = buildAllGamesRegionPriceIndex._cache || new Map();
+  const cached = buildAllGamesRegionPriceIndex._cache.get(R);
+  if(cached && cached.sig === sig) return cached.value;
+  const doc = readJsonCachedPublic(ALL_GAMES_PATH, {items:[]});
   const items = Array.isArray(doc) ? doc : (Array.isArray(doc.items) ? doc.items : []);
   const map = new Map();
   for(const g of items){
@@ -4791,9 +4832,9 @@ function buildAllGamesRegionPriceIndex(region){
       if(key && !map.has(key)) map.set(key, value);
     }
   }
+  buildAllGamesRegionPriceIndex._cache.set(R, {sig, value:map});
   return map;
 }
-
 function findIndexedRegionBaseReg(index, g, region){
   if(!index || typeof index.get !== 'function') return null;
   for(const key of collectRegionLookupKeys(g, region)){
@@ -4972,9 +5013,11 @@ function languagePass(game, filter, region){
 }
 function collectPublicGenres(){
   const paths=[GAMES_PATH, ALL_GAMES_PATH, PREORDERS_PATH, NEW_RELEASES_PATH];
+  const sig=publicDataSignature(paths);
+  if(collectPublicGenres._cache && collectPublicGenres._cache.sig===sig) return collectPublicGenres._cache.value;
   const map=new Map();
   for(const file of paths){
-    const doc=readJson(file,{items:[]});
+    const doc=readJsonCachedPublic(file,{items:[]});
     for(const g of (Array.isArray(doc.items)?doc.items:[])){
       for(const genre of splitPublicGenres(g && g.genres)){
         const key=normText(genre);
@@ -4982,13 +5025,15 @@ function collectPublicGenres(){
       }
     }
   }
-  return Array.from(map.values()).sort((a,b)=>String(a).localeCompare(String(b),"ru"));
+  const value=Array.from(map.values()).sort((a,b)=>String(a).localeCompare(String(b),"ru"));
+  collectPublicGenres._cache={sig,value};
+  return value;
 }
 // --- end helpers ---
 app.get("/api/discount-dates", (req, res) => {
   try {
     const region = String(req.query.region || "TR").toUpperCase();
-    const gamesDoc = readJson(GAMES_PATH, { updatedAt:null, items:[] });
+    const gamesDoc = readJsonCachedPublic(GAMES_PATH, { updatedAt:null, items:[] });
     const all = Array.isArray(gamesDoc.items) ? gamesDoc.items : [];
     const norm = (v) => String(v || "").split("T")[0];
 
@@ -5113,7 +5158,7 @@ app.get("/api/games", async (req, res) => {
       return 999999;
     };
 
-    const gamesDoc = readJson(GAMES_PATH, { updatedAt:null, items:[] });
+    const gamesDoc = readJsonCachedPublic(GAMES_PATH, { updatedAt:null, items:[] });
     let all = Array.isArray(gamesDoc.items) ? gamesDoc.items : [];
     if (q) all = all.filter(x => smartMatch(x.name || "", q));
     if (platform) all = all.filter(x => platformPass(x, platform));
@@ -5125,7 +5170,7 @@ app.get("/api/games", async (req, res) => {
 
     const descIndex = buildDescriptionIndex();
     const conceptIndex = buildConceptIndex();
-    const allGamesDocForPlayers = readJson(ALL_GAMES_PATH, { updatedAt:null, items:[] });
+    const allGamesDocForPlayers = readJsonCachedPublic(ALL_GAMES_PATH, { updatedAt:null, items:[] });
     const allGamesPlayersById = new Map();
     // Discounts may contain a lightweight copy of a game while its media was
     // already filled in the main "Все игры" database. Keep media indexes so
@@ -5998,7 +6043,7 @@ app.post("/api/admin/prices/update-in", requireAdmin, async (req, res) => {
 });
 
 app.get("/api/admin/allgames/list", requireAdmin, (req, res) => {
-  const doc = readJson(ALL_GAMES_PATH, { updatedAt:null, items:[] });
+  const doc = readJsonCachedPublic(ALL_GAMES_PATH, { updatedAt:null, items:[] });
   const items = Array.isArray(doc.items) ? doc.items : [];
   res.json({
     updatedAt: doc.updatedAt || null,
@@ -6643,7 +6688,9 @@ app.get("/api/subgames", async (req, res) => {
 
 
 function buildNewReleaseKeySet(){
-  const doc = readJson(NEW_RELEASES_PATH, {items:[]});
+  const sig = publicDataSignature([NEW_RELEASES_PATH]);
+  if(buildNewReleaseKeySet._cache && buildNewReleaseKeySet._cache.sig === sig) return buildNewReleaseKeySet._cache.value;
+  const doc = readJsonCachedPublic(NEW_RELEASES_PATH, {items:[]});
   const items = Array.isArray(doc.items) ? doc.items : [];
   const set = new Set();
   for(const g of items){
@@ -6651,6 +6698,7 @@ function buildNewReleaseKeySet(){
     if(g && g.conceptId) set.add('concept:'+String(g.conceptId));
     if(g && g.name) set.add('name:'+normText(String(g.name))+'|'+normText(String(g.edition||'')));
   }
+  buildNewReleaseKeySet._cache = {sig, value:set};
   return set;
 }
 function isGameInNewReleases(g, keySet, conceptIndex){
@@ -6664,7 +6712,7 @@ function isGameInNewReleases(g, keySet, conceptIndex){
 function buildPublicAllGamesItems(region){
   const store = readStore();
   const R = String(region || "TR").toUpperCase();
-  const doc = readJson(ALL_GAMES_PATH, { updatedAt:null, items:[] });
+  const doc = readJsonCachedPublic(ALL_GAMES_PATH, { updatedAt:null, items:[] });
   const all = Array.isArray(doc.items) ? doc.items : [];
   const rules = store.rates[R] || [];
   const step = store.settings.roundStep || 50;
@@ -6958,7 +7006,7 @@ app.get("/api/allgames", async (req, res) => {
       return 999999;
     };
 
-    const doc = readJson(ALL_GAMES_PATH, { updatedAt:null, items:[] });
+    const doc = readJsonCachedPublic(ALL_GAMES_PATH, { updatedAt:null, items:[] });
     let all = Array.isArray(doc.items) ? doc.items : [];
     if (q) all = all.filter(x => smartMatch(x.name || "", q));
     if (platform) all = all.filter(x => platformPass(x, platform));
@@ -8894,7 +8942,11 @@ app.post("/api/admin/games/add", requireAdmin, async (req, res) => {
 app.get("/ps95_optovik", (req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
 app.get("/ps95_optovik/", (req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
 app.get("/ps95_manage", (req, res) => res.sendFile(path.join(__dirname, "public", "admin.html")));
-app.use("/", express.static(path.join(__dirname, "public")));
+// Images are version-stable assets and can be cached by browsers. This reduces
+// repeat traffic substantially on mobile while HTML/CSS/JS keep normal ETag checks.
+app.use("/img", express.static(path.join(__dirname, "public", "img"), { maxAge: "6h", etag:true }));
+app.use("/banners", express.static(path.join(__dirname, "public", "banners"), { maxAge: "1h", etag:true }));
+app.use("/", express.static(path.join(__dirname, "public"), { maxAge: 0, etag:true }));
 
 const PORT = Number(process.env.PORT || ENV.PORT || 3000);
 // Auto-move released preorders on startup and periodically (no admin visit required)
@@ -8929,9 +8981,9 @@ app.get("/api/search", async (req, res) => {
 
     // Base sources: all games + preorders (search must be global).
     // Keep a source marker so the UI can show "Предзаказ" badge in search results.
-    const allDoc = readJson(ALL_GAMES_PATH, { updatedAt:null, items:[] });
-    const newDoc = readJson(NEW_RELEASES_PATH, { updatedAt:null, items:[] });
-    const preDoc = readJson(PREORDERS_PATH, { updatedAt:null, items:[] });
+    const allDoc = readJsonCachedPublic(ALL_GAMES_PATH, { updatedAt:null, items:[] });
+    const newDoc = readJsonCachedPublic(NEW_RELEASES_PATH, { updatedAt:null, items:[] });
+    const preDoc = readJsonCachedPublic(PREORDERS_PATH, { updatedAt:null, items:[] });
     let items = [];
     if(Array.isArray(allDoc.items)) items = items.concat(allDoc.items.map(x=>Object.assign({_src:"all"}, x)));
     if(Array.isArray(newDoc.items)) items = items.concat(newDoc.items.map(x=>Object.assign({_src:"new"}, x)));
