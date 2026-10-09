@@ -197,9 +197,32 @@ const TAB_LABELS={home:"Главная",preorders:"Предзаказы",new:"Н
 
 
 function escapeHtml(s){
-  return String(s ?? "").replace(/[&<>"']/g,(ch)=>(
+  return String(s == null ? "" : s).replace(/[&<>"']/g,(ch)=>(
     ch==="&"?"&amp;":ch==="<"?"&lt;":ch===">"?"&gt;":ch==='"'?"&quot;":"&#39;"
   ));
+}
+
+// Robust JSON fetch for catalog data. A transient network/proxy error should not
+// leave the page with only the header and an empty games area.
+function fetchJson(url, options, timeoutMs, retries){
+  const opts = options || {};
+  const timeout = Math.max(3000, Number(timeoutMs || 15000));
+  const left = Math.max(0, Number(retries || 0));
+  let timer = null;
+  const timeoutPromise = new Promise((_, reject)=>{
+    timer = setTimeout(()=>reject(new Error("request_timeout")), timeout);
+  });
+  return Promise.race([
+    fetch(url, opts).then(r=>{
+      if(!r.ok) throw new Error("HTTP_" + r.status);
+      return r.json();
+    }),
+    timeoutPromise
+  ]).then(v=>{ if(timer) clearTimeout(timer); return v; }, err=>{
+    if(timer) clearTimeout(timer);
+    if(left > 0) return fetchJson(url, opts, timeout, left - 1);
+    throw err;
+  });
 }
 
 function optimizedPsImageUrl(src, width){
@@ -745,9 +768,9 @@ function homeBlockHeader(title, targetTab){
 
 function topupSidebarImage(region){
   const R=String(region||state.region||"TR").toUpperCase();
-  if(R==="PL") return "/img/topup-sidebar-pl.png";
-  if(R==="IN") return "/img/topup-sidebar-in.png";
-  return "/img/topup-sidebar-tr.png";
+  if(R==="PL") return "/img/topup-sidebar-pl.jpg";
+  if(R==="IN") return "/img/topup-sidebar-in.jpg";
+  return "/img/topup-sidebar-tr.jpg";
 }
 function openTopupPage(){
   state.search="";
@@ -776,12 +799,12 @@ async function renderHome(){
   grid.innerHTML = `<div class="homePage" id="homePage">
     <section class="homeHeroWrap" aria-label="Подборки подписок">
       <div class="homeHero" id="homeHero">
-        <a class="homeBanner homeBanner--essential" href="/?tab=subs&sub=essential#subs-games" data-home-sub="essential" data-scroll-games="1" aria-label="PS Plus Essential"><img src="/img/hero-essential.jpg" alt="PS Plus Essential" loading="eager" decoding="async"/></a>
-        <a class="homeBanner homeBanner--extra" href="/?tab=subs&sub=extra#subs-games" data-home-sub="extra" data-scroll-games="1" aria-label="PS Plus Extra"><img src="/img/hero-extra.jpg" alt="PS Plus Extra" loading="eager" decoding="async"/></a>
-        <a class="homeBanner homeBanner--deluxe" href="/?tab=subs&sub=deluxe#subs-games" data-home-sub="deluxe" data-scroll-games="1" aria-label="PS Plus Deluxe"><img src="/img/hero-deluxe.jpg" alt="PS Plus Deluxe" loading="eager" decoding="async"/></a>
-        <a class="homeBanner homeBanner--eaplay" href="/?tab=subs&sub=eaplay#subs-games" data-home-sub="eaplay" data-scroll-games="1" aria-label="EA Play"><img src="/img/hero-eaplay.jpg" alt="EA Play" loading="eager" decoding="async"/></a>
-        <a class="homeBanner homeBanner--multiplayer" href="/?tab=multiplayer" data-home-page="multiplayer" aria-label="Игры для нескольких игроков"><img src="/img/hero-multiplayer.jpg" alt="Игры для нескольких игроков" loading="eager" decoding="async"/></a>
-        ${String(state.region||"TR").toUpperCase()==="UA" ? "" : `<a class="homeBanner homeBanner--topup" href="/?tab=topup" data-home-page="topup" aria-label="Карты пополнения"><img src="${escapeHtml(topupSidebarImage(state.region))}" alt="Карты пополнения" loading="eager" decoding="async"/></a>`}
+        <a class="homeBanner homeBanner--essential" href="/?tab=subs&sub=essential#subs-games" data-home-sub="essential" data-scroll-games="1" aria-label="PS Plus Essential"><img src="/img/hero-essential.jpg" alt="PS Plus Essential" loading="eager" fetchpriority="high" decoding="async"/></a>
+        <a class="homeBanner homeBanner--extra" href="/?tab=subs&sub=extra#subs-games" data-home-sub="extra" data-scroll-games="1" aria-label="PS Plus Extra"><img src="/img/hero-extra.jpg" alt="PS Plus Extra" loading="lazy" fetchpriority="low" decoding="async"/></a>
+        <a class="homeBanner homeBanner--deluxe" href="/?tab=subs&sub=deluxe#subs-games" data-home-sub="deluxe" data-scroll-games="1" aria-label="PS Plus Deluxe"><img src="/img/hero-deluxe.jpg" alt="PS Plus Deluxe" loading="lazy" fetchpriority="low" decoding="async"/></a>
+        <a class="homeBanner homeBanner--eaplay" href="/?tab=subs&sub=eaplay#subs-games" data-home-sub="eaplay" data-scroll-games="1" aria-label="EA Play"><img src="/img/hero-eaplay.jpg" alt="EA Play" loading="lazy" fetchpriority="low" decoding="async"/></a>
+        <a class="homeBanner homeBanner--multiplayer" href="/?tab=multiplayer" data-home-page="multiplayer" aria-label="Игры для нескольких игроков"><img src="/img/hero-multiplayer.jpg" alt="Игры для нескольких игроков" loading="lazy" fetchpriority="low" decoding="async"/></a>
+        ${String(state.region||"TR").toUpperCase()==="UA" ? "" : `<a class="homeBanner homeBanner--topup" href="/?tab=topup" data-home-page="topup" aria-label="Карты пополнения"><img src="${escapeHtml(topupSidebarImage(state.region))}" alt="Карты пополнения" loading="lazy" fetchpriority="low" decoding="async"/></a>`}
       </div>
       <div class="homeHeroDots" id="homeHeroDots" aria-hidden="true"></div>
     </section>
@@ -890,7 +913,7 @@ async function renderHome(){
     if(!row) return;
     row.innerHTML = `<div class="homeLoading">Загрузка...</div>`;
     try{
-      const j=await fetch(url,{cache:"no-store"}).then(r=>r.json());
+      const j=await fetchJson(url,{cache:"no-store"},15000,1);
       row.innerHTML="";
       const defaultSourceTab = id === "homeBest" ? "allgames" : (id === "homeNew" ? "new" : (id === "homePreorders" ? "preorders" : (id === "homeDiscounts" ? "discounts" : state.tab)));
       (j.items||[]).slice(0,15).forEach(g=>{
@@ -1149,8 +1172,7 @@ let __subsPricesCache = null;
 async function getSubsPrices(){
   if(__subsPricesCache) return __subsPricesCache;
   try{
-    const r = await fetch("/api/subscriptions-prices", { cache:"no-store" });
-    const j = await r.json();
+    const j = await fetchJson("/api/subscriptions-prices", { cache:"no-store" }, 10000, 1);
     __subsPricesCache = j || {};
     return __subsPricesCache;
   }catch(_){
@@ -1163,10 +1185,12 @@ function getSubPrice(prices, region, kind, tier, months){
   const R = String(region||"TR").toUpperCase();
   const m = String(months);
   if(kind==="psplus"){
-    return Number(prices?.[R]?.psplus?.[tier]?.[m]) || 0;
+    const row = prices && prices[R] && prices[R].psplus && prices[R].psplus[tier];
+    return Number(row && row[m]) || 0;
   }
   if(kind==="eaplay"){
-    return Number(prices?.[R]?.eaplay?.[m]) || 0;
+    const row = prices && prices[R] && prices[R].eaplay;
+    return Number(row && row[m]) || 0;
   }
   return 0;
 }
@@ -1175,10 +1199,12 @@ function getSubDiscountPrice(prices, region, kind, tier, months){
   if(Number(months) !== 12) return 0;
   const R = String(region||"TR").toUpperCase();
   if(kind==="psplus"){
-    return Number(prices?.[R]?.psplus?.[tier]?.discount12) || 0;
+    const row = prices && prices[R] && prices[R].psplus && prices[R].psplus[tier];
+    return Number(row && row.discount12) || 0;
   }
   if(kind==="eaplay"){
-    return Number(prices?.[R]?.eaplay?.discount12) || 0;
+    const row = prices && prices[R] && prices[R].eaplay;
+    return Number(row && row.discount12) || 0;
   }
   return 0;
 }
@@ -1844,7 +1870,7 @@ async function updateQuickSearchResults(){
 if(searchToggleEl){
   searchToggleEl.addEventListener("click",(e)=>{
     e.preventDefault();
-    const isOpen=searchWrapEl?.classList.contains("open");
+    const isOpen=!!(searchWrapEl && searchWrapEl.classList.contains("open"));
     setSearchOpen(!isOpen);
   });
 }
@@ -1879,7 +1905,7 @@ if(quickSearchGoEl){
     e.preventDefault();
     e.stopPropagation();
     __previousTabBeforeSearch = state.tab && state.tab !== "search" ? state.tab : (__previousTabBeforeSearch || "home");
-    state.search=(document.getElementById("search")?.value||"");
+    const _searchInput=document.getElementById("search"); state.search=(_searchInput&&_searchInput.value)||"";
     state.page=1;
     setActiveTab("search", {keepFilters:true, keepPage:false});
     load();
@@ -1902,7 +1928,7 @@ document.addEventListener("keydown",(e)=>{
   if(e.key==="Escape"){
     const gameModal=document.getElementById("gameModal");
     if(gameModal && gameModal.style.display !== "none") return;
-    if(state.tab === "search") searchCloseEl?.click();
+    if(state.tab === "search" && searchCloseEl) searchCloseEl.click();
     else setSearchOpen(false);
   }
 });
@@ -3473,7 +3499,7 @@ async function load(){
     state.search="";
     if(searchEl) searchEl.value=currentHeaderSearchValue;
   }
-  const meta=await fetch("/api/meta").then(r=>r.json());
+  const meta=await fetchJson("/api/meta", {cache:"no-store"}, 12000, 1);
   if(meta && meta.settings){
     applyEnabledRegions(meta.settings.enabledRegions);
   }
@@ -3484,12 +3510,12 @@ async function load(){
   setActiveTab(state.tab, {keepPage:true,keepUntil:true});
 
   if(meta){
-    state.whatsapp = meta.settings?.whatsappLink || state.whatsapp || "https://wa.me/+79659556300";
+    state.whatsapp = (meta.settings && meta.settings.whatsappLink) || state.whatsapp || "https://wa.me/+79659556300";
     state.discountRates = meta.discountRates || state.discountRates || {TR:[],UA:[],PL:[],IN:[]};
     state.topupCards = meta.topupCards || state.topupCards || {TR:[],PL:[],IN:[]};
-    state.useTurkeyTopupCards = !!meta.settings?.useTurkeyTopupCards;
-    state.useIndiaTopupCards = meta.settings?.useIndiaTopupCards !== false;
-    state.roundStep = Number(meta.settings?.roundStep || state.roundStep || 50);
+    state.useTurkeyTopupCards = !!(meta.settings && meta.settings.useTurkeyTopupCards);
+    state.useIndiaTopupCards = !(meta.settings && meta.settings.useIndiaTopupCards === false);
+    state.roundStep = Number((meta.settings && meta.settings.roundStep) || state.roundStep || 50);
   }
 
   if(state.tab==="search"){
@@ -3525,13 +3551,13 @@ async function load(){
     const totalCount = (state.tab==="allgames") ? (meta.allGamesTotal||0) : (state.tab==="discounts") ? (meta.total||0) : (state.tab==="preorders") ? (meta.preordersTotal||0) : 0;
     totalEl.textContent=`Найдено игр: ${totalCount}`;
   }
-  const whatsapp=meta.settings?.whatsappLink||"https://wa.me/+79659556300";
+  const whatsapp=(meta.settings && meta.settings.whatsappLink)||"https://wa.me/+79659556300";
   state.whatsapp = whatsapp;
   state.discountRates = meta.discountRates || {TR:[],UA:[],PL:[],IN:[]};
   state.topupCards = meta.topupCards || state.topupCards || {TR:[],PL:[],IN:[]};
-  state.useTurkeyTopupCards = !!meta.settings?.useTurkeyTopupCards;
-  state.useIndiaTopupCards = meta.settings?.useIndiaTopupCards !== false;
-  state.roundStep = Number(meta.settings?.roundStep || 50);
+  state.useTurkeyTopupCards = !!(meta.settings && meta.settings.useTurkeyTopupCards);
+  state.useIndiaTopupCards = !(meta.settings && meta.settings.useIndiaTopupCards === false);
+  state.roundStep = Number((meta.settings && meta.settings.roundStep) || 50);
   const showUntil=!!(state.tab==="discounts" && meta.hasAnyUntil && meta.hasAnyUntil[state.region]);
 
   // Discounts overview (no date selected, not "View All", and not searching)
@@ -3630,7 +3656,7 @@ async function load(){
   }else{
     apiPath = "/api/games?";
   }
-  const j=await fetch(apiPath+qs.toString()).then(r=>r.json());
+  const j=await fetchJson(apiPath+qs.toString(), {cache:"no-store"}, 18000, 1);
 
   // If user switched region and current page became empty, jump to last available page
   if(j && (j.total||0)>0 && (j.items||[]).length===0 && state.page>1){
@@ -3862,7 +3888,22 @@ document.addEventListener("keydown",(e)=>{
   if(e.key==="Escape") { closeCart(); closeWishlist(); closeRegionCompare(); }
 });
 
-load();
+function showCatalogLoadError(err){
+  try{ console.error("Playstore95 catalog load failed:", err); }catch(_e){}
+  const grid=document.getElementById("grid");
+  const pager=document.getElementById("pager");
+  const emptyBox=document.getElementById("emptyBox");
+  if(pager) pager.innerHTML="";
+  if(emptyBox) emptyBox.style.display="none";
+  if(grid){
+    grid.innerHTML='<div class="homeLoading" style="grid-column:1/-1;padding:28px 16px;text-align:center">Не удалось загрузить игры.<br><button type="button" id="catalogRetryBtn" class="btnDark" style="margin-top:12px">Повторить</button></div>';
+    const retry=document.getElementById("catalogRetryBtn");
+    if(retry) retry.onclick=()=>{ retry.disabled=true; load().catch(showCatalogLoadError); };
+  }
+}
+function startCatalogLoad(){ load().catch(showCatalogLoadError); }
+if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", startCatalogLoad);
+else startCatalogLoad();
 </script>
 <div id="gameModal" class="modalOverlay gameModalOverlayV2" style="display:none">
   <div class="gameModalV2" role="dialog" aria-modal="true" aria-label="Карточка игры">
