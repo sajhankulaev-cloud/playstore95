@@ -3,6 +3,7 @@ const https = require("https");
 const path = require("path");
 const express = require("express");
 const crypto = require("crypto");
+const zlib = require("zlib");
 const { AsyncLocalStorage } = require("async_hooks");
 let sharp = null;
 try{ sharp = require("sharp"); }catch(_e){ sharp = null; }
@@ -8937,6 +8938,415 @@ app.post("/api/admin/games/add", requireAdmin, async (req, res) => {
   }catch(e){
     res.status(500).json({ ok:false, error:String(e) });
   }
+});
+
+
+// ---------------- Admin: discount screenshots export ----------------
+// Generates real screenshots of the existing storefront game modal in headless Chromium.
+// The job runs in the background so a reverse-proxy timeout cannot interrupt a large export.
+const DISCOUNT_EXPORT_DIR = path.join(DATA_DIR, "discount_exports");
+try{ fs.mkdirSync(DISCOUNT_EXPORT_DIR, { recursive:true }); }catch(_e){}
+const discountScreenshotJobs = new Map();
+
+function crc32Buffer(buf){
+  if(!crc32Buffer.table){
+    const table = new Uint32Array(256);
+    for(let n=0;n<256;n++){
+      let c=n;
+      for(let k=0;k<8;k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      table[n]=c>>>0;
+    }
+    crc32Buffer.table=table;
+  }
+  let c=0xFFFFFFFF;
+  const table=crc32Buffer.table;
+  for(let i=0;i<buf.length;i++) c=table[(c ^ buf[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+
+function dosZipDateTime(d){
+  const dt = d instanceof Date ? d : new Date();
+  const year=Math.max(1980, dt.getFullYear());
+  const date=((year-1980)<<9) | ((dt.getMonth()+1)<<5) | dt.getDate();
+  const time=(dt.getHours()<<11) | (dt.getMinutes()<<5) | Math.floor(dt.getSeconds()/2);
+  return {date:date & 0xFFFF, time:time & 0xFFFF};
+}
+
+function makeZipBuffer(files){
+  const localParts=[];
+  const centralParts=[];
+  let offset=0;
+  const stamp=dosZipDateTime(new Date());
+  for(const f of files){
+    const nameBuf=Buffer.from(String(f.name || 'image.jpg'), 'utf8');
+    const raw=Buffer.isBuffer(f.data) ? f.data : Buffer.from(f.data || '');
+    const compressed=zlib.deflateRawSync(raw, { level:6 });
+    const crc=crc32Buffer(raw);
+    const local=Buffer.alloc(30);
+    local.writeUInt32LE(0x04034b50,0);
+    local.writeUInt16LE(20,4);
+    local.writeUInt16LE(0x0800,6); // UTF-8 names
+    local.writeUInt16LE(8,8);      // deflate
+    local.writeUInt16LE(stamp.time,10);
+    local.writeUInt16LE(stamp.date,12);
+    local.writeUInt32LE(crc,14);
+    local.writeUInt32LE(compressed.length,18);
+    local.writeUInt32LE(raw.length,22);
+    local.writeUInt16LE(nameBuf.length,26);
+    local.writeUInt16LE(0,28);
+    localParts.push(local,nameBuf,compressed);
+
+    const central=Buffer.alloc(46);
+    central.writeUInt32LE(0x02014b50,0);
+    central.writeUInt16LE(20,4);
+    central.writeUInt16LE(20,6);
+    central.writeUInt16LE(0x0800,8);
+    central.writeUInt16LE(8,10);
+    central.writeUInt16LE(stamp.time,12);
+    central.writeUInt16LE(stamp.date,14);
+    central.writeUInt32LE(crc,16);
+    central.writeUInt32LE(compressed.length,20);
+    central.writeUInt32LE(raw.length,24);
+    central.writeUInt16LE(nameBuf.length,28);
+    central.writeUInt16LE(0,30);
+    central.writeUInt16LE(0,32);
+    central.writeUInt16LE(0,34);
+    central.writeUInt16LE(0,36);
+    central.writeUInt32LE(0,38);
+    central.writeUInt32LE(offset,42);
+    centralParts.push(central,nameBuf);
+    offset += local.length + nameBuf.length + compressed.length;
+  }
+  const centralStart=offset;
+  const centralBuf=Buffer.concat(centralParts);
+  const end=Buffer.alloc(22);
+  end.writeUInt32LE(0x06054b50,0);
+  end.writeUInt16LE(0,4);
+  end.writeUInt16LE(0,6);
+  end.writeUInt16LE(files.length,8);
+  end.writeUInt16LE(files.length,10);
+  end.writeUInt32LE(centralBuf.length,12);
+  end.writeUInt32LE(centralStart,16);
+  end.writeUInt16LE(0,20);
+  return Buffer.concat(localParts.concat([centralBuf,end]));
+}
+
+function exportXml(v){
+  return String(v == null ? '' : v)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+}
+function exportSafeName(v){
+  return String(v || 'game').replace(/[\\/:*?"<>|]/g,' ').replace(/\s+/g,' ').trim().slice(0,90) || 'game';
+}
+function exportWrapText(v, maxChars, maxLines){
+  const words=String(v || '').trim().split(/\s+/).filter(Boolean);
+  if(!words.length) return [''];
+  const lines=[];
+  let cur='';
+  for(const word of words){
+    const next=cur ? (cur+' '+word) : word;
+    if(next.length <= maxChars || !cur){ cur=next; continue; }
+    lines.push(cur); cur=word;
+    if(lines.length >= maxLines-1) break;
+  }
+  if(lines.length < maxLines && cur) lines.push(cur);
+  const consumed=lines.join(' ').length;
+  if(lines.length === maxLines && String(v||'').trim().length > consumed){
+    lines[maxLines-1]=lines[maxLines-1].replace(/[.…]*$/,'')+'…';
+  }
+  return lines.slice(0,maxLines);
+}
+function formatRubExport(v){
+  const n=Math.max(0, Math.round(Number(v)||0));
+  return new Intl.NumberFormat('ru-RU').format(n)+' ₽';
+}
+function formatDiscountDateExport(v){
+  const raw=String(v || '').trim().split('T')[0];
+  const m=raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!m) return raw || '';
+  const months=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+  return Number(m[3])+' '+months[Math.max(0,Math.min(11,Number(m[2])-1))]+' '+m[1];
+}
+function exportRuLabel(v){
+  const ru=normalizeRuVal(v);
+  if(ru==='voice') return 'Русская озвучка';
+  if(ru==='text') return 'Русские субтитры';
+  if(ru==='none') return 'Русский отсутствует';
+  return 'Русский: неизвестно';
+}
+function exportFlagSvg(region, x, y){
+  const R=String(region||'TR').toUpperCase();
+  if(R==='UA') return `<g><rect x="${x}" y="${y}" width="74" height="48" rx="8" fill="#1e5aa8"/><path d="M${x} ${y+24}h74v16a8 8 0 0 1-8 8H${x+8}a8 8 0 0 1-8-8z" fill="#ffd700"/></g>`;
+  if(R==='PL') return `<g><rect x="${x}" y="${y}" width="74" height="48" rx="8" fill="#fff" stroke="#d1d5db"/><path d="M${x} ${y+24}h74v16a8 8 0 0 1-8 8H${x+8}a8 8 0 0 1-8-8z" fill="#dc143c"/></g>`;
+  if(R==='IN') return `<g><rect x="${x}" y="${y}" width="74" height="48" rx="8" fill="#ff9933"/><rect x="${x}" y="${y+16}" width="74" height="16" fill="#fff"/><path d="M${x} ${y+32}h74v8a8 8 0 0 1-8 8H${x+8}a8 8 0 0 1-8-8z" fill="#138808"/><circle cx="${x+37}" cy="${y+24}" r="6" fill="none" stroke="#000080" stroke-width="2"/></g>`;
+  return `<g><rect x="${x}" y="${y}" width="74" height="48" rx="8" fill="#e30a17"/><circle cx="${x+31}" cy="${y+24}" r="13" fill="#fff"/><circle cx="${x+36}" cy="${y+24}" r="10" fill="#e30a17"/><circle cx="${x+48}" cy="${y+24}" r="3" fill="#fff"/></g>`;
+}
+
+function buildDiscountExportIndex(region){
+  const R=String(region||'TR').toUpperCase();
+  const allDoc=readJson(ALL_GAMES_PATH,{items:[]});
+  const allItems=Array.isArray(allDoc.items)?allDoc.items:[];
+  const map=new Map();
+  for(const g of allItems){
+    for(const key of collectExactProductLookupKeys(g,R)){
+      const k=String(key||'').trim().toUpperCase();
+      if(k && !map.has(k)) map.set(k,g);
+    }
+  }
+  return map;
+}
+function findDiscountExportMainGame(index,g,region){
+  for(const key of collectExactProductLookupKeys(g,region)){
+    const hit=index.get(String(key||'').trim().toUpperCase());
+    if(hit) return hit;
+  }
+  return null;
+}
+function collectDiscountExportGames(region){
+  const R=String(region||'TR').toUpperCase();
+  if(!['TR','UA','PL','IN'].includes(R)) throw new Error('unsupported_region');
+  const store=readStore();
+  const doc=readJson(GAMES_PATH,{items:[]});
+  const rows=Array.isArray(doc.items)?doc.items:[];
+  const regionBaseIndex=(R==='PL'||R==='IN') ? buildAllGamesRegionPriceIndex(R) : null;
+  const mainIndex=buildDiscountExportIndex(R);
+  const out=[];
+  for(const g of rows){
+    const reg=publicDiscountRegionFor(g,R,regionBaseIndex);
+    if(!reg || !isDiscountActiveForRegion(reg)) continue;
+    const discPerc=Number(reg.discPerc||0)||0;
+    const storePrice=Number(reg.salePrice||0)||0;
+    if(discPerc<=0 || storePrice<=0) continue;
+    const main=findDiscountExportMainGame(mainIndex,g,R);
+    const meta=main || g;
+    const baseStorePrice=storePrice / Math.max(0.01, 1-(discPerc/100));
+    const finalPriceRub=calcRegionRub(store,R,storePrice);
+    const oldPriceRub=calcRegionRub(store,R,baseStorePrice);
+    out.push({
+      id:g.id || meta.id || '',
+      name:g.name || meta.name || 'Игра',
+      edition:g.edition || meta.edition || 'Standard Edition',
+      platform:g.platform || meta.platform || 'PS4 / PS5',
+      cover:g.cover || meta.cover || '',
+      ru:gameRuStatus(g,R) !== 'unknown' ? gameRuStatus(g,R) : gameRuStatus(meta,R),
+      players:normalizeGameMetaField(g.players) || normalizeGameMetaField(meta.players) || '1 - 4 игрока',
+      description:String(g.description || meta.description || '').trim(),
+      discPerc:Math.round(discPerc),
+      discountedUntil:reg.discountedUntil || virtualDiscountUntilFor(g,R) || '',
+      finalPriceRub,
+      oldPriceRub,
+      region:R
+    });
+  }
+  return out;
+}
+
+async function launchDiscountExportBrowser(){
+  let chromium=null;
+  try{ ({ chromium } = require('playwright')); }
+  catch(e){ throw new Error('Playwright не установлен. Выполните npm install на сервере.'); }
+
+  const launchCandidates=[
+    {},
+    {executablePath:'/usr/bin/chromium'},
+    {executablePath:'/usr/bin/chromium-browser'},
+    {executablePath:'/usr/bin/google-chrome'},
+    {executablePath:'/usr/bin/google-chrome-stable'}
+  ];
+  let lastErr=null;
+  for(const extra of launchCandidates){
+    if(extra.executablePath && !fs.existsSync(extra.executablePath)) continue;
+    try{
+      return await chromium.launch({
+        headless:true,
+        args:['--no-sandbox','--disable-dev-shm-usage','--disable-gpu'],
+        ...extra
+      });
+    }catch(e){ lastErr=e; }
+  }
+  throw new Error('Не удалось запустить Chromium для настоящих скриншотов. '+String(lastErr && lastErr.message || lastErr || ''));
+}
+
+async function prepareDiscountScreenshotPage(context, region){
+  const page=await context.newPage();
+  await page.setViewportSize({width:710,height:1000});
+  const base=`http://127.0.0.1:${PORT}/?tab=discounts&region=${encodeURIComponent(region)}`;
+  await page.goto(base,{waitUntil:'domcontentloaded',timeout:60000});
+  await page.waitForFunction(()=>typeof openGameModal==='function' && document.querySelector('.gameModalV2'),null,{timeout:30000});
+  return page;
+}
+
+async function renderDiscountCardJpeg(page, game){
+  const payload={
+    ...game,
+    description:String(game.description||'Описание игры'),
+    media:[], trailers:[], screenshots:[],
+    editions:[game],
+    __editionsLoaded:true
+  };
+
+  await page.evaluate(({g,region})=>{
+    try{
+      if(typeof state!=='undefined') state.region=region;
+      try{ localStorage.setItem('ps95_region',region); }catch(_e){}
+      openGameModal(g);
+
+      const modal=document.querySelector('.gameModalV2');
+      const overlay=document.getElementById('gameModal');
+      if(overlay){ overlay.style.display='flex'; overlay.style.alignItems='flex-start'; overlay.style.paddingTop='18px'; }
+      if(modal){
+        modal.style.transform='none';
+        modal.style.margin='0 auto';
+        modal.style.maxHeight='none';
+        modal.style.overflow='visible';
+      }
+      const media=document.getElementById('gmMediaSection'); if(media) media.style.display='none';
+      const editions=document.getElementById('gmEditionsSection'); if(editions) editions.style.display='none';
+      const desc=document.getElementById('gmDescription'); if(desc) desc.classList.add('isHidden');
+      const descWrap=document.getElementById('gmDescWrap'); if(descWrap) descWrap.style.display='';
+      const read=document.getElementById('gmReadMore'); if(read){ read.style.display=''; read.textContent='Читать Описание'; }
+      document.documentElement.style.background='#374151';
+      document.body.style.background='#374151';
+      document.body.style.margin='0';
+    }catch(e){ throw e; }
+  },{g:payload,region:String(game.region||'TR').toUpperCase()});
+
+  const cover=page.locator('#gmCoverWrap img');
+  if(await cover.count()){
+    await cover.first().evaluate(img=>img.complete ? true : new Promise(resolve=>{img.addEventListener('load',()=>resolve(true),{once:true});img.addEventListener('error',()=>resolve(true),{once:true});setTimeout(()=>resolve(true),8000);}));
+  }
+  await page.waitForTimeout(120);
+
+  const card=page.locator('.gameModalV2').first();
+  await card.waitFor({state:'visible',timeout:15000});
+  const box=await card.boundingBox();
+  if(!box) throw new Error('Не удалось определить область карточки игры.');
+  const pad=16;
+  const x=Math.max(0,box.x-pad);
+  const y=Math.max(0,box.y-pad);
+  const width=Math.min(710-x,box.width+(pad*2));
+  const height=box.height+(pad*2);
+  return await page.screenshot({type:'jpeg',quality:94,animations:'disabled',clip:{x,y,width,height}});
+}
+
+async function runDiscountScreenshotJob(jobId, opts){
+  const job=discountScreenshotJobs.get(jobId);
+  if(!job) return;
+  let browser=null;
+  let context=null;
+  let pages=[];
+  try{
+    let items=collectDiscountExportGames(opts.region);
+    if(Number.isFinite(opts.limit) && opts.limit>0) items=items.slice(0,opts.limit);
+    job.total=items.length;
+    job.status='running';
+    job.updatedAt=Date.now();
+    if(!items.length) throw new Error('В выбранном регионе нет активных скидок.');
+
+    browser=await launchDiscountExportBrowser();
+    context=await browser.newContext({
+      viewport:{width:710,height:1000},
+      deviceScaleFactor:2,
+      locale:'ru-RU',
+      userAgent:'Mozilla/5.0 (Linux; Android 13; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Mobile Safari/537.36'
+    });
+    const pageCount=Math.min(2,items.length);
+    for(let i=0;i<pageCount;i++) pages.push(await prepareDiscountScreenshotPage(context,opts.region));
+
+    const results=new Array(items.length);
+    let cursor=0;
+    const worker=async(page)=>{
+      while(true){
+        const idx=cursor++;
+        if(idx>=items.length) break;
+        const g=items[idx];
+        job.currentName=g.name;
+        try{
+          const data=await renderDiscountCardJpeg(page,g);
+          const num=String(idx+1).padStart(3,'0');
+          results[idx]={name:`${num} - ${exportSafeName(g.name)} - ${g.region}.jpg`,data};
+          job.done++;
+        }catch(e){
+          job.failed++;
+          job.errors.push(`${g.name}: ${e && e.message ? e.message : e}`);
+          // A broken page should not poison the rest of the export.
+          try{ await page.reload({waitUntil:'domcontentloaded',timeout:30000}); }catch(_e){}
+        }
+        job.updatedAt=Date.now();
+      }
+    };
+    await Promise.all(pages.map(worker));
+
+    const files=results.filter(Boolean);
+    if(!files.length) throw new Error('Не удалось создать ни одного настоящего скриншота.');
+    job.status='packing'; job.currentName='Упаковка ZIP'; job.updatedAt=Date.now();
+    const zip=makeZipBuffer(files);
+    const date=new Date().toISOString().slice(0,10);
+    const filename=`discount-screenshots-${opts.region}-${date}-${jobId.slice(0,6)}.zip`;
+    const filePath=path.join(DISCOUNT_EXPORT_DIR,filename);
+    fs.writeFileSync(filePath,zip);
+    job.filePath=filePath;
+    job.filename=filename;
+    job.status='ready';
+    job.currentName='';
+    job.size=zip.length;
+    job.updatedAt=Date.now();
+  }catch(e){
+    job.status='error';
+    job.error=e && e.message ? e.message : String(e);
+    job.updatedAt=Date.now();
+  }finally{
+    for(const p of pages){ try{ await p.close(); }catch(_e){} }
+    try{ if(context) await context.close(); }catch(_e){}
+    try{ if(browser) await browser.close(); }catch(_e){}
+  }
+}
+
+function cleanupDiscountExportJobs(){
+  const cutoff=Date.now()-(6*60*60*1000);
+  for(const [id,job] of discountScreenshotJobs){
+    if((job.updatedAt||job.createdAt||0) < cutoff){
+      try{ if(job.filePath && fs.existsSync(job.filePath)) fs.unlinkSync(job.filePath); }catch(_e){}
+      discountScreenshotJobs.delete(id);
+    }
+  }
+}
+
+app.post('/api/admin/discount-screenshots/start', requireAdmin, (req,res)=>{
+  try{
+    cleanupDiscountExportJobs();
+    const region=String(req.body && req.body.region || 'TR').toUpperCase();
+    if(!['TR','UA','PL','IN'].includes(region)) return res.status(400).json({ok:false,error:'Неизвестный регион'});
+    const running=Array.from(discountScreenshotJobs.values()).find(j=>j.status==='running'||j.status==='packing'||j.status==='queued');
+    if(running) return res.status(409).json({ok:false,error:'Генерация уже запущена',jobId:running.id});
+    const id=crypto.randomBytes(8).toString('hex');
+    const rawLimit=Number(req.body && req.body.limit || 0);
+    const limit=Number.isFinite(rawLimit)&&rawLimit>0 ? Math.min(5000,Math.floor(rawLimit)) : 0;
+    const job={id,region,status:'queued',total:0,done:0,failed:0,errors:[],currentName:'',createdAt:Date.now(),updatedAt:Date.now(),filePath:null,filename:null,size:0,error:null};
+    discountScreenshotJobs.set(id,job);
+    setImmediate(()=>runDiscountScreenshotJob(id,{region,limit}));
+    res.json({ok:true,jobId:id,region});
+  }catch(e){ res.status(500).json({ok:false,error:String(e)}); }
+});
+
+app.get('/api/admin/discount-screenshots/status', requireAdmin, (req,res)=>{
+  cleanupDiscountExportJobs();
+  const id=String(req.query.id||'');
+  const job=discountScreenshotJobs.get(id);
+  if(!job) return res.status(404).json({ok:false,error:'Задание не найдено'});
+  res.json({ok:true,id:job.id,region:job.region,status:job.status,total:job.total,done:job.done,failed:job.failed,currentName:job.currentName,error:job.error,filename:job.filename,size:job.size,errors:job.errors.slice(-10)});
+});
+
+app.get('/api/admin/discount-screenshots/download', requireAdmin, (req,res)=>{
+  cleanupDiscountExportJobs();
+  const id=String(req.query.id||'');
+  const job=discountScreenshotJobs.get(id);
+  if(!job || job.status!=='ready' || !job.filePath || !fs.existsSync(job.filePath)) return res.status(404).send('Архив ещё не готов или уже удалён.');
+  res.setHeader('Content-Type','application/zip');
+  res.setHeader('Content-Disposition',`attachment; filename="${job.filename}"`);
+  res.setHeader('Content-Length',String(fs.statSync(job.filePath).size));
+  fs.createReadStream(job.filePath).pipe(res);
 });
 
 app.get("/ps95_optovik", (req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
