@@ -611,6 +611,25 @@ button{ color:#0f172a !important; }
     <span class="small" id="gamesCount"></span>
   </div>
 
+  <div style="margin-top:14px;padding:14px;border:1px solid #dbe3ef;border-radius:14px;background:#f8fbff;">
+    <div style="font-weight:950;font-size:15px;">Скрины скидок для WhatsApp</div>
+    <div class="small" style="margin-top:4px;">Делает настоящие скриншоты карточек прямо из текущей витрины сайта, обрезает их до блока покупки и собирает в ZIP. Обычный сайт при этом не меняется.</div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px;">
+      <select id="discountScreensRegion" class="select" style="width:180px;">
+        <option value="TR">Турция (TR)</option>
+        <option value="UA">Украина (UA)</option>
+        <option value="PL">Польша (PL)</option>
+        <option value="IN">Индия (IN)</option>
+      </select>
+      <button class="btnDark" id="makeDiscountScreens" type="button">Сделать скрины скидок</button>
+      <a class="btnGhost" id="downloadDiscountScreens" href="#" style="display:none;text-decoration:none;">Скачать ZIP</a>
+      <span class="small" id="discountScreensStatus"></span>
+    </div>
+    <div id="discountScreensProgressWrap" style="display:none;margin-top:10px;max-width:620px;">
+      <div style="height:10px;border-radius:999px;background:#e5e7eb;overflow:hidden;"><div id="discountScreensProgress" style="height:100%;width:0%;background:#1762e8;transition:width .2s ease;"></div></div>
+    </div>
+  </div>
+
   <div id="gamesGroups" style="margin-top:12px;"></div>
 
 <!-- === Предзаказы (внутри блока «Игры на сайте») === -->
@@ -3137,9 +3156,80 @@ document.getElementById("btnPreImport").onclick=doImportPreorder;
 document.getElementById("btnAddPreorder").onclick=addPreorder;
 document.getElementById("btnCancelPreorderEdit").onclick=()=>endPreorderEdit(false);
 
+
+let __discountScreensPollTimer = null;
+async function pollDiscountScreens(jobId){
+  const statusEl=document.getElementById('discountScreensStatus');
+  const barWrap=document.getElementById('discountScreensProgressWrap');
+  const bar=document.getElementById('discountScreensProgress');
+  const btn=document.getElementById('makeDiscountScreens');
+  const dl=document.getElementById('downloadDiscountScreens');
+  try{
+    const r=await fetch('/api/admin/discount-screenshots/status?id='+encodeURIComponent(jobId),{cache:'no-store'});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok || !j.ok) throw new Error(j.error||('HTTP '+r.status));
+    const total=Number(j.total||0), done=Number(j.done||0), failed=Number(j.failed||0);
+    const processed=done+failed;
+    const pct=total>0?Math.min(100,Math.round(processed*100/total)):0;
+    if(barWrap) barWrap.style.display='block';
+    if(bar) bar.style.width=pct+'%';
+    if(j.status==='queued'){
+      statusEl.textContent='Подготовка…';
+    }else if(j.status==='running'){
+      statusEl.textContent=`Готово ${processed} из ${total}${failed?` • ошибок: ${failed}`:''}${j.currentName?` • ${j.currentName}`:''}`;
+    }else if(j.status==='packing'){
+      if(bar) bar.style.width='100%';
+      statusEl.textContent=`Создано ${done} из ${total}${failed?` • ошибок: ${failed}`:''} • упаковка ZIP…`;
+    }else if(j.status==='ready'){
+      if(bar) bar.style.width='100%';
+      statusEl.textContent=`Готово: ${done} изображений${failed?` • ошибок: ${failed}`:''}`;
+      dl.href='/api/admin/discount-screenshots/download?id='+encodeURIComponent(jobId);
+      dl.style.display='inline-flex';
+      btn.disabled=false;
+      return;
+    }else if(j.status==='error'){
+      statusEl.textContent='Ошибка: '+(j.error||'неизвестная ошибка');
+      btn.disabled=false;
+      return;
+    }
+    __discountScreensPollTimer=setTimeout(()=>pollDiscountScreens(jobId),1200);
+  }catch(e){
+    statusEl.textContent='Ошибка проверки: '+String(e.message||e);
+    btn.disabled=false;
+  }
+}
+async function startDiscountScreens(){
+  const btn=document.getElementById('makeDiscountScreens');
+  const statusEl=document.getElementById('discountScreensStatus');
+  const dl=document.getElementById('downloadDiscountScreens');
+  const barWrap=document.getElementById('discountScreensProgressWrap');
+  const bar=document.getElementById('discountScreensProgress');
+  const region=document.getElementById('discountScreensRegion').value||'TR';
+  if(__discountScreensPollTimer){clearTimeout(__discountScreensPollTimer);__discountScreensPollTimer=null;}
+  btn.disabled=true;
+  dl.style.display='none';
+  dl.removeAttribute('href');
+  statusEl.textContent='Запуск генерации…';
+  if(barWrap) barWrap.style.display='block';
+  if(bar) bar.style.width='0%';
+  try{
+    const r=await fetch('/api/admin/discount-screenshots/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({region})});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok || !j.ok){
+      if(r.status===409 && j.jobId){ statusEl.textContent='Генерация уже идёт — подключаюсь…'; return pollDiscountScreens(j.jobId); }
+      throw new Error(j.error||('HTTP '+r.status));
+    }
+    pollDiscountScreens(j.jobId);
+  }catch(e){
+    statusEl.textContent='Ошибка запуска: '+String(e.message||e);
+    btn.disabled=false;
+  }
+}
+
 document.getElementById("btnAllImport").onclick=doImportAllGames;
 document.getElementById("btnAddAllGame").onclick=addAllGame;
 const __fillMissingBtn=document.getElementById('fillMissingAllGames'); if(__fillMissingBtn) __fillMissingBtn.onclick=fillMissingAllGames;
+const __makeDiscountScreensBtn=document.getElementById('makeDiscountScreens'); if(__makeDiscountScreensBtn) __makeDiscountScreensBtn.onclick=startDiscountScreens;
 
 (function wireRuMirrors(){
   const pairs = [
