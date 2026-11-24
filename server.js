@@ -9153,7 +9153,7 @@ function collectDiscountExportGames(region){
         platform:g.platform || meta.platform || 'PS4 / PS5',
         cover:g.cover || meta.cover || '',
         ru:gameRuStatus(g,R) !== 'unknown' ? gameRuStatus(g,R) : gameRuStatus(meta,R),
-        players:normalizeGameMetaField(g.players) || normalizeGameMetaField(meta.players) || '1 - 4 игрока',
+        players:normalizeGameMetaField(g.players) || normalizeGameMetaField(meta.players) || '',
         description:String(g.description || meta.description || '').trim(),
         discPerc:Math.round(discPerc),
         discountedUntil:reg.discountedUntil || virtualDiscountUntilFor(g,R) || '',
@@ -9201,66 +9201,133 @@ async function launchDiscountExportBrowser(){
   throw new Error('Не удалось запустить Chromium для настоящих скриншотов. '+String(lastErr && lastErr.message || lastErr || ''));
 }
 
+function discountExportFlagDataUri(region){
+  const R=String(region||'TR').toUpperCase();
+  let svg='';
+  if(R==='UA') svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 60"><rect width="90" height="30" fill="#0057b7"/><rect y="30" width="90" height="30" fill="#ffd700"/></svg>`;
+  else if(R==='PL') svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 60"><rect width="90" height="30" fill="#fff"/><rect y="30" width="90" height="30" fill="#dc143c"/></svg>`;
+  else if(R==='IN') svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 60"><rect width="90" height="20" fill="#ff9933"/><rect y="20" width="90" height="20" fill="#fff"/><rect y="40" width="90" height="20" fill="#138808"/><circle cx="45" cy="30" r="7" fill="none" stroke="#000080" stroke-width="2"/><circle cx="45" cy="30" r="1.5" fill="#000080"/></svg>`;
+  else svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 60"><rect width="90" height="60" fill="#e30a17"/><circle cx="31" cy="30" r="15" fill="#fff"/><circle cx="35" cy="30" r="12" fill="#e30a17"/><polygon points="57,30 49.8,32.3 49.8,39.8 45.4,33.7 38.2,36 42.6,30 38.2,24 45.4,26.3 49.8,20.2 49.8,27.7" fill="#fff"/></svg>`;
+  return 'data:image/svg+xml;base64,'+Buffer.from(svg).toString('base64');
+}
+
+// Static artwork from the approved reference, without any game-specific text or cover.
+// Cache only the immutable artwork, never the price or game data.
+let discountPosterArtworkCache = null;
+function discountPosterArtwork(){
+  if(!discountPosterArtworkCache){
+    const file=path.join(__dirname,'public','img','discount-poster-background.png');
+    if(!fs.existsSync(file)) throw new Error('Не найден файл шаблона public/img/discount-poster-background.png.');
+    discountPosterArtworkCache='data:image/png;base64,'+fs.readFileSync(file).toString('base64');
+  }
+  return discountPosterArtworkCache;
+}
+
+function discountExportTemplate(game){
+  const title=exportXml(game.name||'Игра');
+  const edition=exportXml(game.edition||'Standard Edition');
+  const platform=exportXml(game.platform||'PS4 / PS5');
+  const region=exportXml(String(game.region||'TR').toUpperCase());
+  const rawCover=String(game.cover||'').trim();
+  const cover=exportXml(rawCover.startsWith('/') && !rawCover.startsWith('//') ? `http://127.0.0.1:${PORT}${rawCover}` : rawCover.startsWith('//') ? `https:${rawCover}` : rawCover);
+  const ruStatus=normalizeRuVal(game.ru);
+  const positiveRu=ruStatus==='voice'||ruStatus==='text';
+  const ru=exportXml(exportRuLabel(game.ru));
+  const players=exportXml(game.players||'Не указано');
+  const date=exportXml(formatDiscountDateExport(game.discountedUntil));
+  const price=exportXml(formatRubExport(game.finalPriceRub));
+  const oldPrice=exportXml(formatRubExport(game.oldPriceRub));
+  const discount='-'+Math.max(0,Math.round(Number(game.discPerc)||0))+'%';
+  const flag=discountExportFlagDataUri(game.region);
+  const artwork=discountPosterArtwork();
+  return `<!doctype html><html lang="ru"><head><meta charset="utf-8"><style>
+  *{box-sizing:border-box}html,body{margin:0;width:1080px;height:1080px;overflow:hidden;font-family:Arial,"Liberation Sans",sans-serif;color:#10234b;background:#dbe9f8}
+  .poster{position:relative;width:1080px;height:1080px;overflow:hidden;background-image:url('${artwork}');background-position:0 0;background-repeat:no-repeat;background-size:1080px 1080px}
+  .cover{position:absolute;left:65px;top:143px;width:428px;height:514px;border-radius:39px;overflow:hidden;background:linear-gradient(150deg,#dfeaf8,#b4cde9);display:flex;align-items:center;justify-content:center}
+  .cover img{display:block;width:100%;height:100%;object-fit:contain;object-position:center}
+  .field{position:absolute;display:flex;align-items:center;justify-content:flex-start;min-width:0;overflow:visible}
+  .field>span{display:block;min-width:0;max-width:100%;white-space:nowrap}
+  .title{left:531px;top:151px;width:513px;height:120px;font-weight:700;font-size:51px;line-height:1.08;letter-spacing:-1.1px;color:#091d45}
+  .title>span{white-space:normal;overflow-wrap:anywhere;max-height:none}
+  .platform{left:540px;top:286px;width:226px;height:64px;font-size:35px;font-weight:700;justify-content:center;color:#fff}
+  .region{position:absolute;left:807px;top:288px;width:154px;height:61px;border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 8px;background:linear-gradient(135deg,#edf4fd,#d5e1f2);font-size:33px;font-weight:700;color:#627087}
+  .region img{display:block;width:70px;height:46px;object-fit:contain;border-radius:10px}.region span{flex:1;text-align:center}
+  .edition{left:533px;top:366px;width:422px;height:66px;font-size:34px;line-height:1.1;font-weight:400;color:#505b71}
+  .edition>span{white-space:normal;overflow-wrap:anywhere}
+  .ru{left:542px;top:448px;width:347px;height:56px;font-size:33px;font-weight:700;color:#0b8e39;justify-content:center}
+  .ruNeutralMask{position:absolute;left:530px;top:442px;width:371px;height:69px;border-radius:18px;background:linear-gradient(140deg,#eef5fe,#d2e3f5);display:flex;align-items:center;justify-content:center;border:2px solid #a8bdd5}
+  .ruNeutral{width:347px;height:56px;display:flex;align-items:center;justify-content:center;padding:0 5px;font-size:31px;color:#526780;font-weight:600}
+  .ruNeutral>span{max-width:100%;white-space:nowrap}
+  .discount{left:73px;top:739px;width:171px;height:78px;justify-content:center;font-size:53px;font-weight:700;letter-spacing:-1px;color:#fff}
+  .date{left:285px;top:741px;width:326px;height:75px;font-size:28px;font-weight:600;color:#505c73;justify-content:center}
+  .price{left:633px;top:735px;width:234px;height:85px;justify-content:center;font-size:55px;font-weight:800;letter-spacing:-1px;color:#0750d7}
+  .old{left:872px;top:741px;width:151px;height:75px;font-size:35px;font-weight:600;color:#728097;justify-content:center}
+  .old>span{position:relative}.old>span:after{content:'';position:absolute;left:-3px;right:-3px;top:53%;height:3px;background:#728097}
+  .players{left:480px;top:838px;width:224px;height:60px;font-size:29px;font-weight:600;justify-content:center;color:#063fba}
+  .date>span,.players>span{white-space:nowrap}
+  </style></head><body><div class="poster">
+    <div class="cover"><img id="cover" src="${cover}" alt=""></div>
+    <div class="field title" data-fit="multi" data-min="15"><span>${title}</span></div>
+    <div class="field platform" data-fit data-min="18"><span>${platform}</span></div>
+    <div class="region"><img src="${flag}" alt=""><span>${region}</span></div>
+    <div class="field edition" data-fit="multi" data-min="16"><span>${edition}</span></div>
+    ${positiveRu ? `<div class="field ru" data-fit data-min="18"><span>${ru}</span></div>` : `<div class="ruNeutralMask"><div class="ruNeutral" data-fit data-min="18"><span>${ru}</span></div></div>`}
+    <div class="field discount" data-fit data-min="35"><span>${discount}</span></div>
+    <div class="field price" data-fit data-min="33"><span>${price}</span></div>
+    <div class="field old" data-fit data-min="20"><span>${oldPrice}</span></div>
+    <div class="field date" data-fit data-min="17"><span>${date ? 'До: '+date : 'Скидка активна'}</span></div>
+    <div class="field players" data-fit data-min="16"><span>${players}</span></div>
+  </div><script>
+  function fitAll(){
+    document.querySelectorAll('[data-fit]').forEach(function(el){
+      var inner=el.firstElementChild, fs=parseFloat(getComputedStyle(el).fontSize), min=Number(el.dataset.min||12);
+      while(fs>min && (inner.scrollWidth>el.clientWidth || inner.scrollHeight>el.clientHeight)){
+        fs-=1; el.style.fontSize=fs+'px';
+      }
+      if(inner.scrollWidth>el.clientWidth || inner.scrollHeight>el.clientHeight){
+        inner.style.overflow='hidden';
+        inner.style.maxHeight=el.clientHeight+'px';
+        if(el.dataset.fit==='multi'){
+          inner.style.display='-webkit-box'; inner.style.webkitBoxOrient='vertical';
+          inner.style.webkitLineClamp=String(Math.max(1,Math.floor(el.clientHeight/parseFloat(getComputedStyle(inner).lineHeight))));
+        }else{inner.style.textOverflow='ellipsis';}
+      }
+    });
+  }
+  fitAll();
+  </script></body></html>`;
+}
+
 async function prepareDiscountScreenshotPage(context, region){
   const page=await context.newPage();
-  await page.setViewportSize({width:710,height:1000});
-  const base=`http://127.0.0.1:${PORT}/?tab=discounts&region=${encodeURIComponent(region)}`;
-  await page.goto(base,{waitUntil:'domcontentloaded',timeout:60000});
-  await page.waitForFunction(()=>typeof openGameModal==='function' && document.querySelector('.gameModalV2'),null,{timeout:30000});
+  await page.setViewportSize({width:1080,height:1080});
+  await page.setContent('<!doctype html><html><body></body></html>',{waitUntil:'domcontentloaded'});
   return page;
 }
 
 async function renderDiscountCardJpeg(page, game){
-  const payload={
-    ...game,
-    description:String(game.description||'Описание игры'),
-    media:[], trailers:[], screenshots:[],
-    editions:[game],
-    __editionsLoaded:true
-  };
-
-  await page.evaluate(({g,region})=>{
-    try{
-      if(typeof state!=='undefined') state.region=region;
-      try{ localStorage.setItem('ps95_region',region); }catch(_e){}
-      openGameModal(g);
-
-      const modal=document.querySelector('.gameModalV2');
-      const overlay=document.getElementById('gameModal');
-      if(overlay){ overlay.style.display='flex'; overlay.style.alignItems='flex-start'; overlay.style.paddingTop='18px'; }
-      if(modal){
-        modal.style.transform='none';
-        modal.style.margin='0 auto';
-        modal.style.maxHeight='none';
-        modal.style.overflow='visible';
-      }
-      const media=document.getElementById('gmMediaSection'); if(media) media.style.display='none';
-      const editions=document.getElementById('gmEditionsSection'); if(editions) editions.style.display='none';
-      const desc=document.getElementById('gmDescription'); if(desc) desc.classList.add('isHidden');
-      const descWrap=document.getElementById('gmDescWrap'); if(descWrap) descWrap.style.display='';
-      const read=document.getElementById('gmReadMore'); if(read){ read.style.display=''; read.textContent='Читать Описание'; }
-      document.documentElement.style.background='#374151';
-      document.body.style.background='#374151';
-      document.body.style.margin='0';
-    }catch(e){ throw e; }
-  },{g:payload,region:String(game.region||'TR').toUpperCase()});
-
-  const cover=page.locator('#gmCoverWrap img');
+  const html=discountExportTemplate(game);
+  await page.setViewportSize({width:1080,height:1080});
+  await page.setContent(html,{waitUntil:'domcontentloaded',timeout:30000});
+  const cover=page.locator('#cover');
   if(await cover.count()){
-    await cover.first().evaluate(img=>img.complete ? true : new Promise(resolve=>{img.addEventListener('load',()=>resolve(true),{once:true});img.addEventListener('error',()=>resolve(true),{once:true});setTimeout(()=>resolve(true),8000);}));
-  }
-  await page.waitForTimeout(120);
-
-  const card=page.locator('.gameModalV2').first();
-  await card.waitFor({state:'visible',timeout:15000});
-  const box=await card.boundingBox();
-  if(!box) throw new Error('Не удалось определить область карточки игры.');
-  const pad=16;
-  const x=Math.max(0,box.x-pad);
-  const y=Math.max(0,box.y-pad);
-  const width=Math.min(710-x,box.width+(pad*2));
-  const height=box.height+(pad*2);
-  return await page.screenshot({type:'jpeg',quality:94,animations:'disabled',clip:{x,y,width,height}});
+    const loaded=await cover.evaluate(async img=>{
+      const wait=()=>img.complete ? Promise.resolve() : new Promise(resolve=>{img.addEventListener('load',resolve,{once:true});img.addEventListener('error',resolve,{once:true});setTimeout(resolve,10000);});
+      await wait();
+      if(!img.naturalWidth && img.getAttribute('src')){
+        const original=img.getAttribute('src');
+        img.removeAttribute('src');
+        img.src=original;
+        await wait();
+      }
+      if(!img.naturalWidth) return false;
+      if(typeof img.decode==='function') try{await img.decode();}catch(_e){}
+      return true;
+    });
+    if(!loaded) throw new Error('Не удалось загрузить оригинальную обложку.');
+  } else throw new Error('В шаблоне отсутствует обложка.');
+  await page.evaluate(async()=>{if(document.fonts) await document.fonts.ready; if(typeof fitAll==='function') fitAll();});
+  return await page.screenshot({type:'jpeg',quality:95,animations:'disabled',clip:{x:0,y:0,width:1080,height:1080}});
 }
 
 async function runDiscountScreenshotJob(jobId, opts){
@@ -9279,8 +9346,8 @@ async function runDiscountScreenshotJob(jobId, opts){
 
     browser=await launchDiscountExportBrowser();
     context=await browser.newContext({
-      viewport:{width:710,height:1000},
-      deviceScaleFactor:2,
+      viewport:{width:1080,height:1080},
+      deviceScaleFactor:1,
       locale:'ru-RU',
       userAgent:'Mozilla/5.0 (Linux; Android 13; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Mobile Safari/537.36'
     });
@@ -9313,7 +9380,7 @@ async function runDiscountScreenshotJob(jobId, opts){
     await Promise.all(pages.map(worker));
 
     const files=results.filter(Boolean);
-    if(!files.length) throw new Error('Не удалось создать ни одного настоящего скриншота.');
+    if(!files.length) throw new Error('Не удалось создать ни одной рекламной карточки.');
     job.status='packing'; job.currentName='Упаковка ZIP'; job.updatedAt=Date.now();
     const zip=makeZipBuffer(files);
     const date=new Date().toISOString().slice(0,10);
