@@ -9104,40 +9104,73 @@ function findDiscountExportMainGame(index,g,region){
   return null;
 }
 function collectDiscountExportGames(region){
-  const R=String(region||'TR').toUpperCase();
-  if(!['TR','UA','PL','IN'].includes(R)) throw new Error('unsupported_region');
+  const requested=String(region||'AUTO').toUpperCase();
+  const supported=['TR','UA','PL','IN'];
+  if(requested!=='AUTO' && !supported.includes(requested)) throw new Error('unsupported_region');
+
   const store=readStore();
   const doc=readJson(GAMES_PATH,{items:[]});
   const rows=Array.isArray(doc.items)?doc.items:[];
-  const regionBaseIndex=(R==='PL'||R==='IN') ? buildAllGamesRegionPriceIndex(R) : null;
-  const mainIndex=buildDiscountExportIndex(R);
+
+  // In AUTO mode only compare regions that are enabled for the public storefront.
+  // If the setting is absent, all supported regions remain eligible.
+  const enabled=(store && store.settings && store.settings.enabledRegions && typeof store.settings.enabledRegions==='object')
+    ? store.settings.enabledRegions : null;
+  const candidates=(requested==='AUTO')
+    ? supported.filter(R=>!enabled || enabled[R]!==false)
+    : [requested];
+  if(!candidates.length) throw new Error('no_enabled_regions');
+
+  const baseIndexes={};
+  const mainIndexes={};
+  for(const R of candidates){
+    baseIndexes[R]=(R==='PL'||R==='IN') ? buildAllGamesRegionPriceIndex(R) : null;
+    mainIndexes[R]=buildDiscountExportIndex(R);
+  }
+
   const out=[];
   for(const g of rows){
-    const reg=publicDiscountRegionFor(g,R,regionBaseIndex);
-    if(!reg || !isDiscountActiveForRegion(reg)) continue;
-    const discPerc=Number(reg.discPerc||0)||0;
-    const storePrice=Number(reg.salePrice||0)||0;
-    if(discPerc<=0 || storePrice<=0) continue;
-    const main=findDiscountExportMainGame(mainIndex,g,R);
-    const meta=main || g;
-    const baseStorePrice=storePrice / Math.max(0.01, 1-(discPerc/100));
-    const finalPriceRub=calcRegionRub(store,R,storePrice);
-    const oldPriceRub=calcRegionRub(store,R,baseStorePrice);
-    out.push({
-      id:g.id || meta.id || '',
-      name:g.name || meta.name || 'Игра',
-      edition:g.edition || meta.edition || 'Standard Edition',
-      platform:g.platform || meta.platform || 'PS4 / PS5',
-      cover:g.cover || meta.cover || '',
-      ru:gameRuStatus(g,R) !== 'unknown' ? gameRuStatus(g,R) : gameRuStatus(meta,R),
-      players:normalizeGameMetaField(g.players) || normalizeGameMetaField(meta.players) || '1 - 4 игрока',
-      description:String(g.description || meta.description || '').trim(),
-      discPerc:Math.round(discPerc),
-      discountedUntil:reg.discountedUntil || virtualDiscountUntilFor(g,R) || '',
-      finalPriceRub,
-      oldPriceRub,
-      region:R
-    });
+    let best=null;
+
+    for(const R of candidates){
+      const reg=publicDiscountRegionFor(g,R,baseIndexes[R]);
+      if(!reg || !isDiscountActiveForRegion(reg)) continue;
+      const discPerc=Number(reg.discPerc||0)||0;
+      const storePrice=Number(reg.salePrice||0)||0;
+      if(discPerc<=0 || storePrice<=0) continue;
+
+      const finalPriceRub=calcRegionRub(store,R,storePrice);
+      if(!Number.isFinite(finalPriceRub) || finalPriceRub<=0) continue;
+      const baseStorePrice=storePrice / Math.max(0.01, 1-(discPerc/100));
+      const oldPriceRub=calcRegionRub(store,R,baseStorePrice);
+      const main=findDiscountExportMainGame(mainIndexes[R],g,R);
+      const meta=main || g;
+
+      const candidate={
+        id:g.id || meta.id || '',
+        name:g.name || meta.name || 'Игра',
+        edition:g.edition || meta.edition || 'Standard Edition',
+        platform:g.platform || meta.platform || 'PS4 / PS5',
+        cover:g.cover || meta.cover || '',
+        ru:gameRuStatus(g,R) !== 'unknown' ? gameRuStatus(g,R) : gameRuStatus(meta,R),
+        players:normalizeGameMetaField(g.players) || normalizeGameMetaField(meta.players) || '1 - 4 игрока',
+        description:String(g.description || meta.description || '').trim(),
+        discPerc:Math.round(discPerc),
+        discountedUntil:reg.discountedUntil || virtualDiscountUntilFor(g,R) || '',
+        finalPriceRub,
+        oldPriceRub,
+        region:R
+      };
+
+      // AUTO = choose the lowest actual customer price in RUB for this game.
+      // A tiny deterministic tie-break keeps the result stable between runs.
+      if(!best || candidate.finalPriceRub < best.finalPriceRub ||
+         (candidate.finalPriceRub === best.finalPriceRub && supported.indexOf(R) < supported.indexOf(best.region))){
+        best=candidate;
+      }
+    }
+
+    if(best) out.push(best);
   }
   return out;
 }
@@ -9252,7 +9285,8 @@ async function runDiscountScreenshotJob(jobId, opts){
       userAgent:'Mozilla/5.0 (Linux; Android 13; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Mobile Safari/537.36'
     });
     const pageCount=Math.min(2,items.length);
-    for(let i=0;i<pageCount;i++) pages.push(await prepareDiscountScreenshotPage(context,opts.region));
+    const initialRegion=(items[0] && items[0].region) ? items[0].region : 'TR';
+    for(let i=0;i<pageCount;i++) pages.push(await prepareDiscountScreenshotPage(context,initialRegion));
 
     const results=new Array(items.length);
     let cursor=0;
@@ -9316,8 +9350,8 @@ function cleanupDiscountExportJobs(){
 app.post('/api/admin/discount-screenshots/start', requireAdmin, (req,res)=>{
   try{
     cleanupDiscountExportJobs();
-    const region=String(req.body && req.body.region || 'TR').toUpperCase();
-    if(!['TR','UA','PL','IN'].includes(region)) return res.status(400).json({ok:false,error:'Неизвестный регион'});
+    const region=String(req.body && req.body.region || 'AUTO').toUpperCase();
+    if(!['AUTO','TR','UA','PL','IN'].includes(region)) return res.status(400).json({ok:false,error:'Неизвестный регион'});
     const running=Array.from(discountScreenshotJobs.values()).find(j=>j.status==='running'||j.status==='packing'||j.status==='queued');
     if(running) return res.status(409).json({ok:false,error:'Генерация уже запущена',jobId:running.id});
     const id=crypto.randomBytes(8).toString('hex');
