@@ -9204,8 +9204,7 @@ async function launchDiscountExportBrowser(){
 function discountExportFlagDataUri(region){
   const R=String(region||'TR').toUpperCase();
   let svg='';
-  if(R==='UA') svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 60"><rect width="90" height="30" fill="#0057b7"/><rect y="30" width="90" height="30" fill="#ffd700"/></svg>`;
-  else if(R==='PL') svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 60"><rect width="90" height="30" fill="#fff"/><rect y="30" width="90" height="30" fill="#dc143c"/></svg>`;
+  if(R==='PL') svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 60"><rect width="90" height="30" fill="#fff"/><rect y="30" width="90" height="30" fill="#dc143c"/></svg>`;
   else if(R==='IN') svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 60"><rect width="90" height="20" fill="#ff9933"/><rect y="20" width="90" height="20" fill="#fff"/><rect y="40" width="90" height="20" fill="#138808"/><circle cx="45" cy="30" r="7" fill="none" stroke="#000080" stroke-width="2"/><circle cx="45" cy="30" r="1.5" fill="#000080"/></svg>`;
   else svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 60"><rect width="90" height="60" fill="#e30a17"/><circle cx="31" cy="30" r="15" fill="#fff"/><circle cx="35" cy="30" r="12" fill="#e30a17"/><polygon points="57,30 49.8,32.3 49.8,39.8 45.4,33.7 38.2,36 42.6,30 38.2,24 45.4,26.3 49.8,20.2 49.8,27.7" fill="#fff"/></svg>`;
   return 'data:image/svg+xml;base64,'+Buffer.from(svg).toString('base64');
@@ -9223,6 +9222,14 @@ function discountPosterArtwork(){
   return discountPosterArtworkCache;
 }
 
+// Reuse the actual storefront CSS for the CIS icon shown for UA.
+function discountExportCisFlagCss(){
+  const css=fs.readFileSync(path.join(__dirname,'public','styles.css'),'utf8');
+  const rules=css.match(/^\.regionFlag(?:Icon|CIS(?:::(?:before|after))?)\s*\{[^}]*\}/gm) || [];
+  if(rules.length!==4) throw new Error('Не найдены стили значка СНГ в public/styles.css.');
+  return rules.join('\n');
+}
+
 function discountExportTemplate(game){
   const title=exportXml(game.name||'Игра');
   const edition=exportXml(game.edition||'Standard Edition');
@@ -9238,7 +9245,12 @@ function discountExportTemplate(game){
   const price=exportXml(formatRubExport(game.finalPriceRub));
   const oldPrice=exportXml(formatRubExport(game.oldPriceRub));
   const discount='-'+Math.max(0,Math.round(Number(game.discPerc)||0))+'%';
-  const flag=discountExportFlagDataUri(game.region);
+  const cisFlag=region==='UA';
+  const flag=cisFlag ? '' : discountExportFlagDataUri(game.region);
+  const flagCss=cisFlag ? discountExportCisFlagCss() : '';
+  const flagHtml=cisFlag
+    ? '<div class="posterCisFlag"><span class="regionFlagIcon regionFlagCIS" aria-hidden="true"></span></div>'
+    : `<img src="${flag}" alt="">`;
   const artwork=discountPosterArtwork();
   return `<!doctype html><html lang="ru"><head><meta charset="utf-8"><style>
   *{box-sizing:border-box}html,body{margin:0;width:1080px;height:1080px;overflow:hidden;font-family:Arial,"Liberation Sans",sans-serif;color:#10234b;background:#dbe9f8}
@@ -9251,7 +9263,10 @@ function discountExportTemplate(game){
   .title>span{white-space:normal;overflow-wrap:anywhere;max-height:none}
   .platform{left:540px;top:286px;width:226px;height:64px;font-size:35px;font-weight:700;justify-content:center;color:#fff}
   .region{position:absolute;left:807px;top:288px;width:154px;height:61px;border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 8px;background:linear-gradient(135deg,#edf4fd,#d5e1f2);font-size:33px;font-weight:700;color:#627087}
-  .region img{display:block;width:70px;height:46px;object-fit:contain;border-radius:10px}.region span{flex:1;text-align:center}
+  .region img{display:block;width:70px;height:46px;object-fit:contain;border-radius:10px}.region>span{flex:1;text-align:center}
+  ${flagCss}
+  .posterCisFlag{width:70px;height:46px;flex:0 0 70px;display:flex;align-items:center;justify-content:center}
+  .posterCisFlag .regionFlagIcon{transform:scale(3)}
   .edition{left:533px;top:366px;width:422px;height:66px;font-size:34px;line-height:1.1;font-weight:400;color:#505b71}
   .edition>span{white-space:normal;overflow-wrap:anywhere}
   .ru{left:542px;top:448px;width:347px;height:56px;font-size:33px;font-weight:700;color:#0b8e39;justify-content:center}
@@ -9269,7 +9284,7 @@ function discountExportTemplate(game){
     <div class="cover"><img id="cover" src="${cover}" alt=""></div>
     <div class="field title" data-fit="multi" data-min="15"><span>${title}</span></div>
     <div class="field platform" data-fit data-min="18"><span>${platform}</span></div>
-    <div class="region"><img src="${flag}" alt=""><span>${region}</span></div>
+    <div class="region">${flagHtml}<span>${region}</span></div>
     <div class="field edition" data-fit="multi" data-min="16"><span>${edition}</span></div>
     ${positiveRu ? `<div class="field ru" data-fit data-min="18"><span>${ru}</span></div>` : `<div class="ruNeutralMask"><div class="ruNeutral" data-fit data-min="18"><span>${ru}</span></div></div>`}
     <div class="field discount" data-fit data-min="35"><span>${discount}</span></div>
