@@ -9256,7 +9256,7 @@ function discountExportTemplate(game){
   *{box-sizing:border-box}html,body{margin:0;width:1080px;height:1080px;overflow:hidden;font-family:Arial,"Liberation Sans",sans-serif;color:#10234b;background:#dbe9f8}
   .poster{position:relative;width:1080px;height:1080px;overflow:hidden;background-image:url('${artwork}');background-position:0 0;background-repeat:no-repeat;background-size:1080px 1080px}
   .cover{position:absolute;left:65px;top:143px;width:428px;height:514px;border-radius:39px;overflow:hidden;background:linear-gradient(150deg,#dfeaf8,#b4cde9);display:flex;align-items:center;justify-content:center}
-  .cover img{display:block;width:100%;height:100%;object-fit:contain;object-position:center}
+  .cover img{display:block;width:100%;height:100%;object-fit:cover;object-position:center}
   .field{position:absolute;display:flex;align-items:center;justify-content:flex-start;min-width:0;overflow:visible}
   .field>span{display:block;min-width:0;max-width:100%;white-space:nowrap}
   .title{left:531px;top:151px;width:513px;height:120px;font-weight:700;font-size:51px;line-height:1.08;letter-spacing:-1.1px;color:#091d45}
