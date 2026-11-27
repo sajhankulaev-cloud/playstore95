@@ -6904,11 +6904,12 @@ app.get("/api/bestsellers", async (req, res) => {
         for(const id of [game.regionalId,game.id])if(id && !products.has(id))products.set(id,game);
       }
     }
+    // PS Store determines the ranking, not the storefront's assortment.
+    // Exclude unmatched products before counting and paginating the results.
     const items=entries.map(e=>{
       const local=e.products.map(id=>products.get(id)).find(Boolean) || products.get(e.id);
-      if(local)return {...local,cover:local.cover||e.cover,name:region==='UA'?local.name:e.name||local.name};
-      return {id:e.id,name:e.name,cover:e.cover,officialUrl:'https://store.playstation.com/'+regionalOrder.locales[region]+'/'+(/^\d+$/.test(e.id)?'concept':'product')+'/'+encodeURIComponent(e.id)};
-    });
+      return local ? {...local,cover:local.cover||e.cover} : null;
+    }).filter(Boolean);
     const total = items.length;
     const pageItems = items.slice((page - 1) * perPage, page * perPage);
 
