@@ -75,6 +75,7 @@
       <button class="siteTab" type="button" role="tab" data-tab="discounts">Скидки</button>
       <button class="siteTab" type="button" role="tab" data-tab="allgames">Все игры</button>
       <button class="siteTab" type="button" role="tab" data-tab="subs">Подписки</button>
+      <button class="siteTab" type="button" role="tab" data-tab="calculator">Калькулятор</button>
     </div>
     <button class="tabsArrow tabsArrowRight" type="button" aria-label="Прокрутить вправо">›</button>
   </div>
@@ -105,6 +106,15 @@
   <div id="discountTabs" class="discountTabs" aria-label="Блоки скидок"></div>
   <div id="allDeals" class="allDeals" aria-label="All Deals"></div>
   <div id="emptyBox" class="card" style="display:none;padding:12px;margin-top:14px;">Игры еще не добавлены</div>
+  <section id="priceCalculator" aria-labelledby="calcTitle">
+    <h1 id="calcTitle">Калькулятор</h1>
+    <form id="calcForm">
+      <label for="calcAmount">Сумма в PS Store</label>
+      <div class="calcInput"><input id="calcAmount" type="text" inputmode="decimal" maxlength="16" autocomplete="off" placeholder="0,00"><span id="calcCurrency"></span></div>
+      <button type="submit" class="calcSubmit">Рассчитать</button>
+      <div class="calcTotal"><span>Цена в рублях</span><output id="calcResult" for="calcAmount" aria-live="polite">—</output></div>
+    </form>
+  </section>
   <div class="grid" id="grid"></div>
   <div class="pager" id="pager"></div>
 </div>
@@ -482,6 +492,7 @@ function setActiveTab(tab, opts={}){
 
   // Let CSS react to current section (hide counters/sort on non-game pages)
   document.body.dataset.tab = tab;
+  if(tab==="calculator")document.getElementById("calcCurrency").textContent={TR:"TL",UA:"UAH",PL:"PLN",IN:"INR",US:"USD"}[state.region];
 
   if(tab !== "search" && !state.search){
     try{ setSearchOpen(false); }catch(_){ }
@@ -3207,6 +3218,35 @@ async function renderTopupPage(){
   });
 }
 
+const calcAmount=document.getElementById('calcAmount');
+const calcResult=document.getElementById('calcResult');
+let calcRequest=0;
+function refreshCalculator(){
+  document.getElementById('calcCurrency').textContent={TR:'TL',UA:'UAH',PL:'PLN',IN:'INR',US:'USD'}[state.region];
+  if(calcAmount.value.trim()) calculatePrice();
+}
+async function calculatePrice(){
+  const version=++calcRequest;
+  const region=state.region;
+  const amount=calcAmount.value.trim().replace(/[ \u00a0\u202f]/g,'');
+  if(!/^\d{1,7}(?:[.,]\d{1,2})?$/.test(amount) || !(Number(amount.replace(',','.'))>0)){
+    calcResult.textContent='Введите положительную сумму, например 999,99.';
+    calcAmount.focus();
+    return;
+  }
+  calcResult.textContent='Считаем…';
+  try{
+    const response=await fetch('/api/calculator?'+new URLSearchParams({region,amount}),{cache:'no-store'});
+    const data=await response.json();
+    if(version!==calcRequest || region!==state.region)return;
+    calcResult.textContent=response.ok ? (data.rub===null?'Расчёт для этого региона пока недоступен':fmtRub(data.rub)) : (data.error||'Не удалось рассчитать цену');
+  }catch{
+    if(version===calcRequest && region===state.region)calcResult.textContent='Не удалось получить цену. Попробуйте ещё раз.';
+  }
+}
+document.getElementById('calcForm').onsubmit=event=>{event.preventDefault();calculatePrice()};
+calcAmount.oninput=()=>{calcRequest++;calcResult.textContent='—'};
+
 async function load(){
   // keep filters selected across pagination
   document.getElementById("region").value=state.region;
@@ -3235,7 +3275,7 @@ async function load(){
   }
   populateGenreFilters(meta && meta.genres);
   // Apply active tab UI (do not reset page when loading)
-  const knownTabs = new Set(["home","preorders","new","discounts","allgames","subs","topup","bestsellers","multiplayer","search"]);
+  const knownTabs = new Set(["home","preorders","new","discounts","allgames","subs","topup","bestsellers","multiplayer","search","calculator"]);
   if(!knownTabs.has(state.tab)) state.tab="home";
   if(!gamePageId)setActiveTab(state.tab, {keepPage:true,keepUntil:true});
 
@@ -3249,6 +3289,7 @@ async function load(){
   }
 
   if(gamePageId){await renderGamePage();return;}
+  if(state.tab==="calculator"){refreshCalculator();return;}
   if(state.tab==="search"){
     setSearchOpen(true, {page:true});
   }
@@ -3598,7 +3639,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   if(regionCompareClose) regionCompareClose.onclick=(e)=>{ e.preventDefault(); closeRegionCompare(); };
   if(regionCompareModal) regionCompareModal.addEventListener("click",(e)=>{ if(e.target===regionCompareModal) closeRegionCompare(); });
 
-  const knownTabs2 = new Set(["home","preorders","new","discounts","allgames","subs","bestsellers","multiplayer","search"]);
+  const knownTabs2 = new Set(["home","preorders","new","discounts","allgames","subs","bestsellers","multiplayer","search","calculator"]);
   if(!knownTabs2.has(state.tab)) state.tab="home";
   if(!gamePageId)setActiveTab(state.tab,{keepPage:true});
   initTabsUI();
