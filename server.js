@@ -3477,6 +3477,24 @@ function calcRegionRub(store, region, price){
 }
 
 
+app.get('/api/calculator', (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  const {region, amount} = req.query;
+  if(!['TR','UA','PL','IN','US'].includes(region) || typeof amount !== 'string' ||
+     !/^\d{1,7}(?:[.,]\d{1,2})?$/.test(amount)) {
+    return res.status(400).json({error:'Введите сумму с точностью до двух знаков.'});
+  }
+  const price = Number(amount.replace(',', '.'));
+  if(price <= 0 || price > 1000000) return res.status(400).json({error:'Введите сумму больше нуля и не более 1 000 000.'});
+  const store = readStore();
+  if(!store.settings.enabledRegions[region]) return res.status(400).json({error:'Регион недоступен.'});
+  const configured = shouldUseTopupCards(store, region)
+    ? store.topupCards[region]?.length > 0
+    : store.rates[region]?.some(rule => rule.rate > 0);
+  const rub = configured ? calcRegionRub(store, region, price) : 0;
+  return res.json({rub:rub > 0 ? rub : null});
+});
+
 // --- parsing helpers
 function extractTitle(html){
   const m = html.match(/<title[^>]*>([^<]+)<\/title>/i);
