@@ -1,3 +1,4 @@
+const {englishEdition}=require('./lib/edition-name');
 const fs = require("fs");
 const https = require("https");
 const path = require("path");
@@ -1355,17 +1356,22 @@ async function refreshPsBestSellersCache(locale, opts = {}){
   return readPsBestSellersCache();
 }
 
+const rankRefreshes=new Map();
+function refreshRanks(key,load){
+  if(rankRefreshes.has(key))return;
+  rankRefreshes.set(key,true);
+  Promise.resolve().then(load).catch(()=>{}).finally(()=>{
+    const timer=setTimeout(()=>rankRefreshes.delete(key),60000);
+    timer.unref();
+  });
+}
 async function getPsBestSellersDoc(locale){
   const loc = String(locale || "en-tr").trim();
   let cache = readPsBestSellersCache();
   const updated = cache.updatedAt ? Date.parse(cache.updatedAt) : 0;
   const fresh = cache.locale === loc && ((Array.isArray(cache.order) && cache.order.length) || (Array.isArray(cache.titles) && cache.titles.length)) && Number.isFinite(updated) && (Date.now() - updated < PS_BESTSELLERS_TTL_MS);
   if(fresh) return cache;
-  try{
-    cache = await withTimeout(refreshPsBestSellersCache(loc, { pages:10 }), 12000);
-  }catch(_e){
-    cache = readPsBestSellersCache();
-  }
+  refreshRanks('bestsellers:'+loc,()=>refreshPsBestSellersCache(loc,{pages:10}));
   if(cache && cache.locale === loc && ((Array.isArray(cache.order) && cache.order.length) || (Array.isArray(cache.titles) && cache.titles.length))) return cache;
   return { updatedAt:null, locale:loc, order:[], titles:PS_BESTSELLERS_FALLBACK_TITLES };
 }
@@ -2729,12 +2735,26 @@ app.use((req, _res, next)=> requestContext.run({ wholesale:isWholesaleHttpReques
 // visitors counter (admin-only display)
 app.use((req, _res, next)=>{ recordVisit(req); next(); });
 
+// Grid cards fetch the full product only when the customer opens its page.
+app.use(['/api/games','/api/allgames','/api/newreleases','/api/preorders',
+  '/api/search','/api/bestsellers','/api/multiplayer','/api/subgames'],(req,res,next)=>{
+  if(req.method==='GET' && req.query.view==='cards'){
+    const sendJson=res.json.bind(res);
+    res.json=payload=>{
+      if(!Array.isArray(payload?.items))return sendJson(payload);
+      const items=payload.items.map(({description,mediaGallery,editions,...card})=>card);
+      return sendJson({...payload,items});
+    };
+  }
+  next();
+});
+
 function isAllowedRemoteImageUrl(raw){
   try{
     const u = new URL(String(raw || ""));
     if(u.protocol !== "https:") return false;
     const host = u.hostname.toLowerCase();
-    return host.endsWith("playstation.com") || host.endsWith("playstation.net") || host.includes("playstation");
+    return !u.username && !u.password && !u.port && /(^|\.)playstation\.(com|net)$/.test(host);
   }catch(_e){
     return false;
   }
@@ -2754,6 +2774,7 @@ async function fetchRemoteImageBuffer(url, redirectsLeft=3){
         res.resume();
         try{
           const next = new URL(res.headers.location, url).href;
+          if(!isAllowedRemoteImageUrl(next))return reject(new Error("invalid redirect"));
           return resolve(fetchRemoteImageBuffer(next, redirectsLeft - 1));
         }catch(e){ return reject(e); }
       }
@@ -2783,10 +2804,11 @@ async function fetchRemoteImageBuffer(url, redirectsLeft=3){
   });
 }
 
+const pendingImages=new Map();
 app.get("/api/optimized-image", async (req, res)=>{
   try{
     const remoteUrl = String(req.query.u || "");
-    const width = Math.max(80, Math.min(700, parseInt(String(req.query.w || "322"), 10) || 322));
+    const width = Math.max(80, Math.min(1920, parseInt(String(req.query.w || "322"), 10) || 322));
     if(!isAllowedRemoteImageUrl(remoteUrl)) return res.status(400).send("bad image url");
 
     const accept = String(req.headers.accept || "").toLowerCase();
@@ -2801,33 +2823,24 @@ app.get("/api/optimized-image", async (req, res)=>{
       return fs.createReadStream(filePath).pipe(res);
     }
 
-    const original = await fetchRemoteImageBuffer(remoteUrl);
-    let output = original;
-    let contentType = "image/jpeg";
-
-    if(sharp && canWebp){
-      output = await sharp(original, { failOn:"none" })
-        .resize({ width, height:width, fit:"cover", withoutEnlargement:true })
-        .webp({ quality:82, effort:4 })
-        .toBuffer();
-      contentType = "image/webp";
+    async function prepareImage(){
+      const original=await fetchRemoteImageBuffer(remoteUrl);
+      const output=ext==='webp'?await sharp(original,{failOn:'none'})
+        .resize({width,withoutEnlargement:true}).webp({quality:80,effort:3}).toBuffer():original;
+      const temporary=filePath+'.'+crypto.randomUUID()+'.tmp';
+      try{await fs.promises.writeFile(temporary,output);await fs.promises.rename(temporary,filePath);}
+      catch{await fs.promises.unlink(temporary).catch(()=>{});}
+      return output;
     }
-
-    try{ fs.writeFileSync(filePath, output); }catch(_e){}
+    if(!pendingImages.has(key))pendingImages.set(key,prepareImage().finally(()=>pendingImages.delete(key)));
+    const output=await pendingImages.get(key);
+    const contentType=ext==='webp'?'image/webp':'image/jpeg';
     res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
     res.setHeader("Content-Type", contentType);
     return res.send(output);
   }catch(e){
     const msg = e && e.message ? e.message : String(e || "");
     console.error("optimized image error:", msg);
-    // Sony CDN can occasionally time out from the Node.js process even when
-    // the same image is reachable directly from the user's browser. In that
-    // case do not leave a broken thumbnail: fall back to the original CDN URL.
-    const remoteUrl = String(req.query.u || "");
-    if(isAllowedRemoteImageUrl(remoteUrl) && (msg === "remote_timeout" || msg === "ECONNRESET" || msg.startsWith("remote_status_"))){
-      res.setHeader("Cache-Control", "no-store");
-      return res.redirect(302, remoteUrl);
-    }
     return res.status(502).send("image optimize failed");
   }
 });
@@ -2893,7 +2906,13 @@ function publicDataSignature(paths){
   }catch(_e){ return String(Date.now()); }
 }
 function writeJson(p, obj) {
-  fs.writeFileSync(p, JSON.stringify(obj, null, 2), "utf-8");
+  if (p === ALL_GAMES_PATH || p === path.join(DATA_DIR,'ea-overrides.json')) {
+    const temporary = p + "." + process.pid + ".tmp";
+    fs.writeFileSync(temporary, JSON.stringify(obj, null, 2), "utf-8");
+    fs.renameSync(temporary, p);
+  } else {
+    fs.writeFileSync(p, JSON.stringify(obj, null, 2), "utf-8");
+  }
   __publicJsonCache.delete(p);
 }
 
@@ -3200,12 +3219,12 @@ function readStore() {
   if(!s.settings.enabledRegions || typeof s.settings.enabledRegions !== "object") {
     s.settings.enabledRegions = { TR:true, UA:true, PL:true, IN:true };
   }
-  for(const _r of ["TR","UA","PL","IN"]){
+  for(const _r of ["TR","UA","PL","IN","US"]){
     if(typeof s.settings.enabledRegions[_r] === "undefined") s.settings.enabledRegions[_r] = true;
     else s.settings.enabledRegions[_r] = !!s.settings.enabledRegions[_r];
   }
   // Never allow a configuration with no public region at all.
-  if(!["TR","UA","PL","IN"].some(_r => s.settings.enabledRegions[_r])) s.settings.enabledRegions.TR = true;
+  if(!["TR","UA","PL","IN","US"].some(_r => s.settings.enabledRegions[_r])) s.settings.enabledRegions.TR = true;
   if(!s.topupCards || typeof s.topupCards !== "object") s.topupCards = defaultTopupCards();
   const _defaultTopupCards = defaultTopupCards();
   for(const _r of ["TR","PL","IN"]){
@@ -3283,7 +3302,7 @@ function readStore() {
     const legacy = Number(s.settings && s.settings.wholesaleRateReduction);
     const fallbackReduction = Number.isFinite(legacy) && legacy >= 0 ? legacy : 0;
     s.wholesaleRates = {};
-    for(const _r of ["TR","UA","PL","IN"]){
+    for(const _r of ["TR","UA","PL","IN","US"]){
       const reductionRaw = Number(reductions[_r]);
       const reduction = Number.isFinite(reductionRaw) && reductionRaw >= 0 ? reductionRaw : fallbackReduction;
       s.wholesaleRates[_r] = (Array.isArray(s.rates && s.rates[_r]) ? s.rates[_r] : []).map(rule => ({
@@ -3291,7 +3310,7 @@ function readStore() {
       }));
     }
   }
-  for(const _r of ["TR","UA","PL","IN"]){
+  for(const _r of ["TR","UA","PL","IN","US"]){
     if(!Array.isArray(s.wholesaleRates[_r])) s.wholesaleRates[_r] = JSON.parse(JSON.stringify((s.rates && s.rates[_r]) || []));
     s.wholesaleRates[_r] = s.wholesaleRates[_r]
       .map(r => ({ min:Number(r.min), max:(r.max===null||r.max===""||typeof r.max==="undefined")?null:Number(r.max), rate:Number(r.rate) }))
@@ -3397,11 +3416,49 @@ function calcTopupCardsRub(cards, price){
   return rawPrice * (bestRub / bestSum);
 }
 
+const regionalOrder=require('./lib/official-order');
+const eaDiscount=require('./lib/ea-price');
+const eaFile=path.join(DATA_DIR,'ea-overrides.json');
+let eaOverrides=readJson(eaFile,{});
+function eaStatus(game){
+  return Object.fromEntries(Object.keys(eaDiscount.currencies).map(r=>[r,eaDiscount.eligible(game,r,eaOverrides)]));
+}
+function saveEaChanges(game,changes){
+  const pairs=Object.entries(changes||{}).filter(([r,v])=>Object.hasOwn(eaDiscount.currencies,r)&&typeof v==='boolean');
+  if(!pairs.length)return;
+  const next={...eaOverrides};
+  for(const [r,v] of pairs){
+    for(const id of new Set([game.id,game.productIds?.[r]].filter(Boolean)))next[id]={...next[id],[r]:v};
+  }
+  writeJson(eaFile,next);eaOverrides=next;
+}
+function memberPrice(game,region,price,store,discount){
+  if(discount>0 || !eaDiscount.eligible(game,region,eaOverrides))return {};
+  const byId=readActiveDiscountsIndex().byId;
+  const scheduled=byId.get(String(game.productIds?.[region]))||byId.get(String(game.id));
+  if(isDiscountActiveForRegion(game.regions?.[region]) || isDiscountActiveForRegion(scheduled?.regions?.[region]))return {};
+  return eaDiscount.publicPrice(game,region,price,store,calcRegionRub,discount,eaOverrides);
+}
+function rankOf(ranks,game,region){
+  return ranks.get(String(game.conceptId)) ?? ranks.get(game.productIds?.[region]) ?? ranks.get(String(game.id)) ?? 999999;
+}
+function discountGroups(game){
+  const dates=new Map();
+  for(const [region,offer] of Object.entries(game.regions||{})){
+    if(!(offer?.discPerc>0))continue;
+    const date=String(offer.discountedUntil||'').match(/^\d{4}-\d{2}-\d{2}/)?.[0] || null;
+    if(!dates.has(date))dates.set(date,[]);
+    dates.get(date).push(region);
+  }
+  if(!dates.size)dates.set(null,[]);
+  return dates;
+}
 function calcRegionRub(store, region, price){
   const R = String(region || "TR").toUpperCase();
   const p = Number(price || 0);
   const step = Number(store && store.settings && store.settings.roundStep || 50);
   if(!Number.isFinite(p) || p <= 0) return 0;
+  if(R==="US" && !store.rates?.US?.some(rule=>rule.rate>0 && p>=rule.min && (rule.max==null || p<rule.max)))return 0;
   let rub = 0;
   const usesTopupCards = shouldUseTopupCards(store, R);
   if(usesTopupCards){
@@ -4462,7 +4519,7 @@ app.get("/api/meta", (req, res) => {
   const preorders = readJsonCachedPublic(PREORDERS_PATH, { updatedAt:null, items:[] });
   const hasAnyUntil = { TR:false, UA:false, PL:false, IN:false };
   for (const g of (games.items||[])) {
-    for (const r of ["TR","UA","PL","IN"]) {
+    for (const r of ["TR","UA","PL","IN","US"]) {
       if (virtualDiscountUntilFor(g, r)) hasAnyUntil[r]=true;
     }
   }
@@ -4508,53 +4565,24 @@ function buildCurrentPublicCartItem(raw, region, source, ctx){
   let discPerc = 0;
   let discountedUntil = null;
 
-  if(source === 'all'){
-    const dg = (raw.id && discountsIndex.byId.get(String(raw.id))) || null;
-    if(dg){
-      if(R === 'PL' || R === 'IN'){
-        const dreg = publicDiscountRegionFor(dg, R, regionBaseIndex);
-        if(dreg && isDiscountActiveForRegion((dg.regions && dg.regions.TR) ? dg.regions.TR : dreg)){
-          const n = Number(dreg.salePrice || 0);
-          if(Number.isFinite(n) && n > 0){
-            storePrice = n;
-            discPerc = Number(dreg.discPerc || 0) || 0;
-            discountedUntil = dreg.discountedUntil || null;
-          }
-        }
-      }else if(dg.regions && dg.regions[R] && isDiscountActiveForRegion(dg.regions[R])){
-        const dreg = dg.regions[R];
-        discPerc = Number(dreg.discPerc || 0) || 0;
-        discountedUntil = dreg.discountedUntil || null;
-        const dPrice = Number(dreg.salePrice || 0);
-        if(Number.isFinite(dPrice) && dPrice > 0){
-          storePrice = dPrice;
-        }else if(discPerc > 0 && Number.isFinite(baseStorePrice) && baseStorePrice > 0){
-          storePrice = Math.max(0, baseStorePrice * (1 - discPerc/100));
-        }
-      }
-    }
-  }else if(source === 'discount'){
-    if(R === 'PL' || R === 'IN'){
-      reg = publicDiscountRegionFor(raw, R, regionBaseIndex);
-    }
-    if(!reg || !isDiscountActiveForRegion((R === 'PL' || R === 'IN') ? (raw.regions && raw.regions.TR) : reg)) return null;
-    storePrice = Number(reg.salePrice || 0);
-    baseStorePrice = storePrice;
-    discPerc = Number(reg.discPerc || 0) || 0;
-    discountedUntil = reg.discountedUntil || null;
-  }
+  const indexed=discountsIndex.byId.get(String(raw.id));
+  const active=publicDiscountRegionFor(indexed,R) || publicDiscountRegionFor(raw,R);
+  if(active){
+    discPerc=Number(active.discPerc);
+    discountedUntil=active.discountedUntil || null;
+    baseStorePrice=Number(active.originalPrice) || baseStorePrice;
+    storePrice=Number(active.salePrice) || baseStorePrice*(1-discPerc/100);
+  }else if(source==='discount')return null;
 
   if(!Number.isFinite(storePrice) || storePrice <= 0) return null;
 
   const rub = calcRegionRub(store, R, storePrice);
-  const trSub = (raw.regions && raw.regions.TR && raw.regions.TR.sub) ? String(raw.regions.TR.sub) : "";
-  const uaSub = (raw.regions && raw.regions.UA && raw.regions.UA.sub) ? String(raw.regions.UA.sub) : "";
-  const anySub = trSub || uaSub;
+  const anySub = raw.regions?.[R]?.sub || "";
 
   return {
     id: raw.id,
     name: raw.name || '',
-    edition: anySub ? 'Standard Edition' : (raw.edition || 'Standard Edition'),
+    edition: englishEdition(raw),
     sub: anySub,
     platform: raw.platform || 'PS4 / PS5',
     cover: raw.cover || '',
@@ -4562,6 +4590,7 @@ function buildCurrentPublicCartItem(raw, region, source, ctx){
     discountedUntil,
     storePrice,
     finalPriceRub: rub,
+        ...memberPrice(raw,R,storePrice,store,discPerc),
     oldPriceRub: (source !== 'preorder' && discPerc > 0 && Number.isFinite(baseStorePrice) && baseStorePrice > 0) ? calcRegionRub(store, R, baseStorePrice) : 0,
     conceptId: conceptForGame(raw, conceptIndex),
     isPreorder: source === 'preorder' || isFutureReleaseDateYMD(raw.releaseDate)
@@ -4673,9 +4702,7 @@ function readActiveDiscountsIndex(){
   const byId = new Map();
   for(const g of items){
     if(!g || !g.regions) continue;
-    const tr = g.regions.TR;
-    const ua = g.regions.UA;
-    if(!isDiscountActiveForRegion(tr) && !isDiscountActiveForRegion(ua)) continue;
+    if(!Object.values(g.regions).some(isDiscountActiveForRegion))continue;
     if(g.id) byId.set(String(g.id).trim(), g);
     if(g.productIds && typeof g.productIds === 'object'){
       for(const v of Object.values(g.productIds)){
@@ -4845,48 +4872,17 @@ function findIndexedRegionBaseReg(index, g, region){
   return null;
 }
 
-function publicDiscountRegionFor(g, region, regionBaseIndex){
-  const R = String(region || 'TR').toUpperCase();
-  const ownReg = (g && g.regions && g.regions[R]) ? g.regions[R] : null;
-  if(R !== 'PL' && R !== 'IN') return ownReg;
-
-  const trReg = (g && g.regions && g.regions.TR) ? g.regions.TR : null;
-
-  // If the discount row already contains a real region-specific PL/IN sale price,
-  // use it directly. Regional PlayStation discounts can differ from Turkey, so
-  // applying TR's percentage to a PL/IN regular price is only a fallback.
-  const ownSale = ownReg ? Number(ownReg.salePrice || 0) : 0;
-  const ownDisc = ownReg ? Number(ownReg.discPerc || 0) : 0;
-  if(ownReg && Number.isFinite(ownSale) && ownSale > 0 && ownDisc > 0 && isDiscountActiveForRegion(ownReg)){
-    return ownReg;
-  }
-
-  const discPerc = trReg ? Number(trReg.discPerc || 0) : 0;
-  const baseReg = findIndexedRegionBaseReg(regionBaseIndex, g, R) || ownReg;
-  const basePrice = baseReg ? Number(baseReg.salePrice || 0) : 0;
-
-  if(baseReg && Number.isFinite(basePrice) && basePrice > 0 && isDiscountActiveForRegion(trReg) && discPerc > 0){
-    const discounted = Math.max(0, Math.round((basePrice * (1 - discPerc / 100)) * 100) / 100);
-    return Object.assign({}, baseReg, {
-      salePrice: discounted,
-      discPerc,
-      discountedUntil: trReg.discountedUntil || null,
-      ru: (g && g.regions && g.regions.TR && g.regions.TR.ru) ? g.regions.TR.ru : (baseReg.ru || 'none'),
-      sub: (g && g.regions && g.regions.TR && g.regions.TR.sub) ? g.regions.TR.sub : (baseReg.sub || '')
-    });
-  }
-  return ownReg;
+function publicDiscountRegionFor(game, region){
+  const offer = game?.regions?.[String(region || 'TR').toUpperCase()];
+  return isDiscountActiveForRegion(offer) ? offer : null;
 }
 
-function virtualDiscountUntilFor(g, region){
-  const R = String(region || 'TR').toUpperCase();
-  if(R === 'PL' || R === 'IN'){
-    const trReg = g && g.regions ? g.regions.TR : null;
-    return isDiscountActiveForRegion(trReg) ? (trReg.discountedUntil || '') : '';
-  }
-  return (g && g.regions && g.regions[R]) ? (g.regions[R].discountedUntil || '') : '';
+function virtualDiscountUntilFor(game, region){
+  return publicDiscountRegionFor(game,region)?.discountedUntil || '';
 }
 
+const {addon,gameOnly,standard}=require('./lib/catalog-visibility');
+const {rankedTitles}=require('./lib/title-search');
 function smartMatch(name, q){
   const nq0 = normText(q);
   if(!nq0) return true;
@@ -5035,7 +5031,7 @@ app.get("/api/discount-dates", (req, res) => {
   try {
     const region = String(req.query.region || "TR").toUpperCase();
     const gamesDoc = readJsonCachedPublic(GAMES_PATH, { updatedAt:null, items:[] });
-    const all = Array.isArray(gamesDoc.items) ? gamesDoc.items : [];
+    const all = (gamesDoc.items || []).filter(gameOnly);
     const norm = (v) => String(v || "").split("T")[0];
 
     const counts = {};
@@ -5088,16 +5084,13 @@ function attachPublicEditions(items){
     if(!groups.has(key)) groups.set(key, []);
     groups.get(key).push(it);
   }
-  for(const it of items){
-    const conceptKey = String(it.conceptId || '').trim();
-    const titleKey = normText(baseTitleForRank(it.name || '')) || normText(it.name || '');
-    const key = conceptKey ? `c:${conceptKey}` : `t:${titleKey}`;
-    const group = (groups.get(key) || []).slice().sort((a,b)=>{
+  for(const group of groups.values()){
+    group.sort((a,b)=>{
       const pa=editionPriority(a.edition || a.name), pb=editionPriority(b.edition || b.name);
       if(pa!==pb) return pa-pb;
       return (Number(a.finalPriceRub||0)-Number(b.finalPriceRub||0)) || String(a.name||'').localeCompare(String(b.name||''));
     });
-    it.editions = group.map(e=>({
+    const editions = group.map(e=>({
       id:e.id,
       name:e.name,
       edition:e.edition || 'Standard Edition',
@@ -5118,6 +5111,7 @@ function attachPublicEditions(items){
       releaseDate:e.releaseDate || null,
       isPreorder:!!e.isPreorder
     }));
+    for(const it of group)it.editions=editions;
   }
   return items;
 }
@@ -5126,9 +5120,6 @@ app.get("/api/games", async (req, res) => {
   try {
     const store = readStore();
     const region = String(req.query.region || "TR").toUpperCase();
-    // Default sorting on Discounts must match the public "Все игры" page.
-    // Use India Browse order as the canonical source while TR ordering is unstable on PS Store.
-    const locale = PS_BROWSE_CANONICAL_LOCALE;
     const sort = String(req.query.sort || "pop");
     const page = Math.max(1, parseInt(String(req.query.page || "1"), 10));
     let perPage = 24;
@@ -5143,24 +5134,14 @@ app.get("/api/games", async (req, res) => {
     const language = String(req.query.language || req.query.lang || "").trim();
     const until = String(req.query.until || req.query.discountedUntil || "").trim();
 
-    if(!q && (sort === "pop" || !sort)){
-      try{ await withTimeout(warmupPsBrowseCache(locale, 6), 2500); }catch(_e){}
-    }
+    const popularity=regionalOrder.load(region,'browse').ranks;
 
-    const psRankDoc = readPsBrowseCache();
-    const psRanksById = (psRankDoc && psRankDoc.locale === locale && psRankDoc.ranksById) ? psRankDoc.ranksById : {};
-    const psRanksByName = (psRankDoc && psRankDoc.locale === locale && psRankDoc.ranksByName) ? psRankDoc.ranksByName : {};
-    const normKey = (s) => normText(String(s || ""));
-    const firstFinite = (...vals) => {
-      for (const v of vals) {
-        const n = Number(v);
-        if (Number.isFinite(n)) return n;
-      }
-      return 999999;
-    };
 
     const gamesDoc = readJsonCachedPublic(GAMES_PATH, { updatedAt:null, items:[] });
-    let all = Array.isArray(gamesDoc.items) ? gamesDoc.items : [];
+    const catalog = readJsonCachedPublic(ALL_GAMES_PATH, {items:[]});
+    const catalogIds = new Set((catalog.items || []).filter(gameOnly).flatMap(g=>collectExactProductLookupKeys(g,region)));
+    let all = (gamesDoc.items || []).filter(gameOnly).filter(g=>collectExactProductLookupKeys(g,region).some(id=>catalogIds.has(id)));
+
     if (q) all = all.filter(x => smartMatch(x.name || "", q));
     if (platform) all = all.filter(x => platformPass(x, platform));
     if (genres.length) all = all.filter(x => genrePass(x.genres || "", genres));
@@ -5255,15 +5236,13 @@ app.get("/api/games", async (req, res) => {
       if (!Number.isFinite(storePrice) || storePrice <= 0) return null;
 
       const rub = calcRegionRub(store, region, storePrice);
-      const trSub = (g.regions && g.regions.TR && g.regions.TR.sub) ? String(g.regions.TR.sub) : "";
-      const uaSub = (g.regions && g.regions.UA && g.regions.UA.sub) ? String(g.regions.UA.sub) : "";
-      const anySub = trSub || uaSub;
+      const anySub = g.regions?.[region]?.sub || "";
       const conceptId = conceptForGame(g, conceptIndex);
 
       const base = {
         id: g.id,
         name: g.name,
-        edition: anySub ? "Standard Edition" : (g.edition || "Standard Edition"),
+        edition: englishEdition(g),
         ru: gameRuStatus(g, (typeof R !== 'undefined' ? R : (typeof region !== 'undefined' ? region : 'TR'))),
         // Subscription is not tied to a region in the UI (one badge for the game).
         // Prefer TR value (admin currently sets it there), fallback to UA.
@@ -5282,18 +5261,12 @@ app.get("/api/games", async (req, res) => {
         discountedUntil: reg ? (reg.discountedUntil || null) : null,
         storePrice: storePrice,
         finalPriceRub: rub,
+        ...memberPrice(g,region,storePrice,store,reg?.discPerc),
         oldPriceRub: (Number(reg && reg.discPerc || 0) > 0 ? calcRegionRub(store, region, (storePrice / Math.max(0.01, (1 - (Number(reg.discPerc||0)/100))))) : 0),
         conceptId,
         popRank: g.popRank || 999999,
         _sourceOrder: sourceIndex,
-        psRank: firstFinite(
-          psRanksById[String(conceptId || "").trim()],
-          psRanksById[String(g.id || "").trim()],
-          psRanksById[String((g.regions && g.regions.TR && (g.regions.TR.id || g.regions.TR.productId || g.regions.TR.storeId)) || "").trim()],
-          psRanksById[String((g.regions && g.regions.UA && (g.regions.UA.id || g.regions.UA.productId || g.regions.UA.storeId)) || "").trim()],
-          psRanksByName[normKey(g.name)],
-          psRanksByName[normKey(baseTitleForRank(g.name))]
-        )
+        psRank: rankOf(popularity,g,region)
       };
 
       if(q) base._score = relevanceScore(g.name || "", q);
@@ -5349,6 +5322,14 @@ app.get("/api/games", async (req, res) => {
   }
 });
 
+
+require('./lib/game-page').registerGamePage(app,{
+  files:{all:ALL_GAMES_PATH,preorder:PREORDERS_PATH,new:NEW_RELEASES_PATH,discount:GAMES_PATH},
+  read:readJsonCachedPublic,signature:publicDataSignature,price:buildCurrentPublicCartItem,ruStatus:gameRuStatus,
+  indexPage:path.join(__dirname,'public','index.html'),
+  context:region=>({store:readStore(),descIndex:buildDescriptionIndex(),conceptIndex:buildConceptIndex(),
+    discountsIndex:readActiveDiscountsIndex(),regionBaseIndex:['PL','IN'].includes(region)?buildAllGamesRegionPriceIndex(region):null})
+});
 
 app.get("/api/game-editions", (req, res) => {
   try{
@@ -5456,13 +5437,11 @@ app.get("/api/game-editions", (req, res) => {
       const discPerc = reg ? Number(reg.discPerc || 0) : 0;
       const rub = calcRegionRub(store, region, storePrice);
       const baseStorePrice = discPerc > 0 ? (storePrice / Math.max(0.01, (1 - (discPerc/100)))) : storePrice;
-      const trSub = (g.regions && g.regions.TR && g.regions.TR.sub) ? String(g.regions.TR.sub) : "";
-      const uaSub = (g.regions && g.regions.UA && g.regions.UA.sub) ? String(g.regions.UA.sub) : "";
-      const anySub = trSub || uaSub;
+      const anySub = g.regions?.[region]?.sub || "";
       const item = {
         id: g.id,
         name: g.name,
-        edition: anySub ? "Standard Edition" : (g.edition || "Standard Edition"),
+        edition: englishEdition(g),
         ru: gameRuStatus(g, (typeof R !== 'undefined' ? R : (typeof region !== 'undefined' ? region : 'TR'))),
         sub: anySub,
         platform: g.platform || "PS4 / PS5",
@@ -5479,6 +5458,7 @@ app.get("/api/game-editions", (req, res) => {
         discountedUntil: reg ? (reg.discountedUntil || null) : null,
         storePrice,
         finalPriceRub: rub,
+        ...memberPrice(g,region,storePrice,store,discPerc),
         oldPriceRub: (discPerc > 0 ? calcRegionRub(store, region, baseStorePrice) : 0),
         conceptId: cid,
         releaseDate: g.releaseDate || null,
@@ -5614,7 +5594,7 @@ app.post("/api/admin/rates/adjust", requireAdmin, (req, res) => {
   const region = String(req.body && req.body.region || "TR").toUpperCase();
   const type = String(req.body && req.body.type || "main");
   const delta = Number(req.body && req.body.delta);
-  if(!["TR","UA","PL","IN"].includes(region)) return res.status(400).json({ ok:false, error:"bad_region" });
+  if(!["TR","UA","PL","IN","US"].includes(region)) return res.status(400).json({ ok:false, error:"bad_region" });
   if(!["main","wholesale","discount"].includes(type)) return res.status(400).json({ ok:false, error:"bad_type" });
   if(!Number.isFinite(delta) || delta === 0 || Math.abs(delta) > 20) return res.status(400).json({ ok:false, error:"bad_delta" });
   const bucket = type === "discount" ? store.discountRates : (type === "wholesale" ? store.wholesaleRates : store.rates);
@@ -5698,7 +5678,7 @@ app.put("/api/admin/settings", requireAdmin, (req, res) => {
   if(req.body.enabledRegions !== undefined){
     const src = (req.body.enabledRegions && typeof req.body.enabledRegions === "object") ? req.body.enabledRegions : {};
     const enabledRegions = {};
-    for(const _r of ["TR","UA","PL","IN"]) enabledRegions[_r] = !!src[_r];
+    for(const _r of ["TR","UA","PL","IN","US"]) enabledRegions[_r] = !!src[_r];
     if(!Object.values(enabledRegions).some(Boolean)){
       return res.status(400).json({ ok:false, error:"at_least_one_region_required" });
     }
@@ -5782,17 +5762,14 @@ app.get("/api/admin/games/list", requireAdmin, (req, res) => {
   const items = Array.isArray(doc.items) ? doc.items : [];
   res.json({
     updatedAt: doc.updatedAt || null,
-    items: items.map(g=>{
-      const until = (g?.regions?.TR?.discountedUntil) || (g?.regions?.UA?.discountedUntil) || null;
-      return {
+    items: items.flatMap(g=>Array.from(discountGroups(g),([until,regions])=>({
         id: g.id,
         name: g.name,
         platform: g.platform || "",
         cover: g.cover || null,
         popRank: g.popRank || 0,
-        discountedUntil: until
-      };
-    })
+        discountedUntil: until,discountRegions:regions,edition:g.edition,isAddon:addon(g),eaRegions:eaStatus(g)
+    })))
   });
 });
 
@@ -5821,7 +5798,7 @@ app.get("/api/admin/games/:id", requireAdmin, (req, res) => {
       if(ind) out.regions.IN = Object.assign({}, out.regions.IN || {}, ind);
     }catch(_e){}
 
-    res.json({ ok:true, item: out });
+    res.json({ ok:true, item: {...out,eaRegions:eaStatus(out)} });
   }catch(e){
     res.status(500).json({ ok:false, error:String(e) });
   }
@@ -5853,7 +5830,7 @@ app.put("/api/admin/games/:id", requireAdmin, (req, res) => {
     const dateOrNull = (v)=>{
       const s = (v===null || typeof v === "undefined") ? null : String(v).trim();
       if(!s) return null;
-      return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : null;
+      return s.match(/^\d{4}-\d{2}-\d{2}/)?.[0] || null;
     };
 
     const next = Object.assign({}, cur);
@@ -5914,6 +5891,7 @@ app.put("/api/admin/games/:id", requireAdmin, (req, res) => {
     // Basic safety: id stays immutable
     next.id = cur.id;
 
+    saveEaChanges(next,body.eaChanges);
     items[idx] = next;
     writeJson(GAMES_PATH, { updatedAt: new Date().toISOString(), items });
     res.json({ ok:true, item: next });
@@ -5957,10 +5935,13 @@ app.delete("/api/admin/games/by-discount-date", requireAdmin, (req, res) => {
     const keep = [];
     const removed = [];
     for(const g of items){
-      const until = (g?.regions?.TR?.discountedUntil) || (g?.regions?.UA?.discountedUntil) || null;
-      const match = wantNone ? (!until) : (String(until) === date);
-      if(match) removed.push(g);
-      else keep.push(g);
+      const dates=discountGroups(g);
+      if(!dates.has(date)){keep.push(g);continue}
+      removed.push(g);
+      if(dates.size>1){
+        for(const region of dates.get(date))Object.assign(g.regions[region],{salePrice:0,discPerc:0,discountedUntil:null});
+        keep.push(g);
+      }
     }
 
     keep.forEach((g, idx)=>{ g.popRank = idx+1; });
@@ -6048,7 +6029,7 @@ app.get("/api/admin/allgames/list", requireAdmin, (req, res) => {
   const items = Array.isArray(doc.items) ? doc.items : [];
   res.json({
     updatedAt: doc.updatedAt || null,
-    items
+    items:items.map(g=>({id:g.id,name:g.name,edition:g.edition,platform:g.platform,productIds:g.productIds,isAddon:addon(g),eaRegions:eaStatus(g)}))
   });
 
 });
@@ -6651,7 +6632,7 @@ app.get("/api/subgames", async (req, res) => {
     const sub = String(req.query.sub || "").trim().toLowerCase();
 
     const doc = readJson(ALL_GAMES_PATH, { updatedAt:null, items:[] });
-    let all = Array.isArray(doc.items) ? doc.items : [];
+    let all = (Array.isArray(doc.items) ? doc.items : []).filter(gameOnly);
 
     if(sub){
       all = all.filter(g => {
@@ -6669,17 +6650,21 @@ app.get("/api/subgames", async (req, res) => {
       const rub = calcRegionRub(store, region, storePrice);
 
       return {
+        conceptId:g.conceptId,
         id: g.id,
         name: g.name,
-        edition: g.edition || "Standard Edition",
+        edition: englishEdition(g),
         platform: g.platform || "PS4 / PS5",
         cover: g.cover || "",
         finalPriceRub: rub,
+        ...memberPrice(g,region,storePrice,store,0),
         sub: (reg && reg.sub) || "",
         regions: g.regions || {},
       };
     });
 
+    const ranks=regionalOrder.load(region,"browse").ranks;
+    items.sort((a,b)=>rankOf(ranks,a,region)-rankOf(ranks,b,region));
     res.json({ ok:true, items });
   } catch (e) {
     res.status(500).json({ ok:false, error:String(e && e.message || e) });
@@ -6714,7 +6699,7 @@ function buildPublicAllGamesItems(region){
   const store = readStore();
   const R = String(region || "TR").toUpperCase();
   const doc = readJsonCachedPublic(ALL_GAMES_PATH, { updatedAt:null, items:[] });
-  const all = Array.isArray(doc.items) ? doc.items : [];
+  const all = (Array.isArray(doc.items) ? doc.items : []).filter(gameOnly);
   const rules = store.rates[R] || [];
   const step = store.settings.roundStep || 50;
   const discountsIndex = readActiveDiscountsIndex();
@@ -6744,14 +6729,12 @@ function buildPublicAllGamesItems(region){
     }
 
     const rub = calcRegionRub(store, R, storePrice);
-    const trSub = (g.regions && g.regions.TR && g.regions.TR.sub) ? String(g.regions.TR.sub) : "";
-    const uaSub = (g.regions && g.regions.UA && g.regions.UA.sub) ? String(g.regions.UA.sub) : "";
-    const anySub = trSub || uaSub;
+    const anySub = g.regions?.[R]?.sub || "";
 
     return {
       id: g.id,
       name: g.name,
-      edition: anySub ? "Standard Edition" : (g.edition || "Standard Edition"),
+      edition: englishEdition(g),
       ru: gameRuStatus(g, (typeof R !== 'undefined' ? R : (typeof region !== 'undefined' ? region : 'TR'))),
       sub: anySub,
       platform: g.platform || "PS4 / PS5",
@@ -6764,6 +6747,7 @@ function buildPublicAllGamesItems(region){
       discountedUntil,
       storePrice,
       finalPriceRub: rub,
+        ...memberPrice(g,R,storePrice,store,discPerc),
       oldPriceRub: (discPerc > 0 ? calcRegionRub(store, R, baseStorePrice) : 0),
       conceptId: conceptForGame(g, conceptIndex),
       popRank: g.popRank || 999999,
@@ -6802,8 +6786,8 @@ function buildPublicAllGamesItems(region){
 function buildPublicItemsFromDocForBestsellers(region, filePath, sourceTab){
   const store = readStore();
   const R = String(region || "TR").toUpperCase();
-  const doc = readJson(filePath, { updatedAt:null, items:[] });
-  const all = Array.isArray(doc) ? doc : (Array.isArray(doc.items) ? doc.items : []);
+  const doc = readJsonCachedPublic(filePath, { updatedAt:null, items:[] });
+  const all = (Array.isArray(doc) ? doc : (Array.isArray(doc.items) ? doc.items : [])).filter(gameOnly);
   const rules = store.rates[R] || [];
   const step = store.settings.roundStep || 50;
   const discountsIndex = readActiveDiscountsIndex();
@@ -6835,15 +6819,14 @@ function buildPublicItemsFromDocForBestsellers(region, filePath, sourceTab){
     }
 
     const rub = calcRegionRub(store, R, storePrice);
-    const trSub = (g.regions && g.regions.TR && g.regions.TR.sub) ? String(g.regions.TR.sub) : "";
-    const uaSub = (g.regions && g.regions.UA && g.regions.UA.sub) ? String(g.regions.UA.sub) : "";
-    const anySub = trSub || uaSub;
+    const anySub = g.regions?.[R]?.sub || "";
     const cid = conceptForGame(g, conceptIndex);
 
     return {
+      regionalId:g.productIds?.[R],
       id: g.id,
       name: g.name,
-      edition: anySub ? "Standard Edition" : (g.edition || "Standard Edition"),
+      edition: englishEdition(g),
       ru: gameRuStatus(g, (typeof R !== 'undefined' ? R : (typeof region !== 'undefined' ? region : 'TR'))),
       sub: anySub,
       platform: g.platform || "PS4 / PS5",
@@ -6856,6 +6839,7 @@ function buildPublicItemsFromDocForBestsellers(region, filePath, sourceTab){
       discountedUntil,
       storePrice,
       finalPriceRub: rub,
+        ...memberPrice(g,R,storePrice,store,discPerc),
       oldPriceRub: (discPerc > 0 ? calcRegionRub(store, R, baseStorePrice) : 0),
       conceptId: cid,
       popRank: g.popRank || 999999,
@@ -6873,93 +6857,20 @@ function buildPublicItemsFromDocForBestsellers(region, filePath, sourceTab){
 app.get("/api/bestsellers", async (req, res) => {
   try{
     const region = String(req.query.region || "TR").toUpperCase();
-    const locale = "en-tr";
-    const perPage = Math.max(1, Math.min(100, Number(req.query.perPage || req.query.limit || 10)));
-    const page = Math.max(1, Number(req.query.page || 1));
-    const doc = await getPsBestSellersDoc(locale);
-
-    const sourceItems = [
-      ...buildPublicItemsFromDocForBestsellers(region, ALL_GAMES_PATH, "allgames"),
-      ...buildPublicItemsFromDocForBestsellers(region, PREORDERS_PATH, "preorders"),
-      ...buildPublicItemsFromDocForBestsellers(region, NEW_RELEASES_PATH, "new")
-    ];
-
-    const titleList = ((doc && Array.isArray(doc.titles) && doc.titles.length) ? doc.titles : PS_BESTSELLERS_FALLBACK_TITLES);
-    let psEntries = [];
-    if(doc && Array.isArray(doc.entries) && doc.entries.length){
-      psEntries = doc.entries.map(e => ({ id:String(e.id || "").trim(), title:String(e.title || "").trim() }));
-    }else{
-      const ids = (doc && Array.isArray(doc.order)) ? doc.order : [];
-      const max = Math.max(ids.length, titleList.length);
-      for(let i=0; i<max; i++){
-        psEntries.push({ id:String(ids[i] || "").trim(), title:String(titleList[i] || "").trim() });
+    const perPage=Math.max(1,Math.min(100,Number(req.query.perPage||req.query.limit||10)));
+    const page=Math.max(1,Number(req.query.page||1));
+    const {entries}=regionalOrder.load(region,'best');
+    const products=new Map();
+    for(const [file,tab] of [[ALL_GAMES_PATH,'allgames'],[PREORDERS_PATH,'preorders'],[NEW_RELEASES_PATH,'new']]){
+      for(const game of buildPublicItemsFromDocForBestsellers(region,file,tab)){
+        for(const id of [game.regionalId,game.id])if(id && !products.has(id))products.set(id,game);
       }
     }
-    psEntries = psEntries.filter(e => e.id || e.title);
-
-    const sourcePriority = { allgames:0, preorders:1, new:2 };
-    const used = new Set();
-    const items = [];
-
-    for(let rank=0; rank<psEntries.length; rank++){
-      const psEntry = psEntries[rank];
-      let best = null;
-      let bestScore = -1;
-      const psEdition = editionKeyForRank(psEntry.title || "", "");
-      const psBase = normText(baseTitleForRank(psEntry.title || ""));
-      const candidates = [];
-      for(const it of sourceItems){
-        const uniqueKey = String(it.id || "") || `${String(it.conceptId||"")}|${fullTitleKeyForRank(it.name||"")}|${it.sourceTab||""}`;
-        if(used.has(uniqueKey)) continue;
-        const score = bestsellerMatchScore(it, psEntry);
-        if(score < 0) continue;
-        candidates.push({ it, score });
-      }
-
-      // If there is at least one item with the same base title and the same
-      // edition as the official PS Store entry, only choose from those. This
-      // fixes cases like FC 26 Standard Edition being replaced by Icons Edition.
-      const exactEditionCandidates = candidates.filter(c => {
-        const itemBase = normText(baseTitleForRank(c.it && c.it.name || ""));
-        const itemEdition = editionKeyForRank(c.it && c.it.name, c.it && c.it.edition);
-        return itemBase && psBase && itemBase === psBase && itemEdition === psEdition;
-      });
-      const pool = exactEditionCandidates.length ? exactEditionCandidates : candidates;
-      for(const c of pool){
-        const it = c.it;
-        const score = c.score;
-        if(!best || score > bestScore || (score === bestScore && ((sourcePriority[it.sourceTab] ?? 9) < (sourcePriority[best.sourceTab] ?? 9)))){
-          best = it;
-          bestScore = score;
-        }
-      }
-      if(best){
-        const uniqueKey = String(best.id || "") || `${String(best.conceptId||"")}|${fullTitleKeyForRank(best.name||"")}|${best.sourceTab||""}`;
-        used.add(uniqueKey);
-        items.push(Object.assign({}, best));
-      }
-    }
-
-    // Safety fallback for old/partial caches: include any remaining base-title matches in PS rank order.
-    if(!items.length){
-      const titleRank = new Map();
-      titleList.forEach((title, i) => {
-        const key = normText(baseTitleForRank(title));
-        if(key && !titleRank.has(key)) titleRank.set(key, i + 1);
-      });
-      const seenConcepts = new Set();
-      for(const it of sourceItems
-        .map(it => Object.assign({}, it, { _bestRank:titleRank.get(normText(baseTitleForRank(it.name || ""))) || 999999 }))
-        .filter(it => Number(it._bestRank) < 999999)
-        .sort((a,b) => (a._bestRank||999999) - (b._bestRank||999999) || (sourcePriority[a.sourceTab] ?? 9) - (sourcePriority[b.sourceTab] ?? 9) || String(a.name||"").localeCompare(String(b.name||"")))){
-        const key = String(it.conceptId || "").trim() || normText(baseTitleForRank(it.name || "")) || String(it.id || "");
-        if(seenConcepts.has(key)) continue;
-        seenConcepts.add(key);
-        const { _bestRank, ...clean } = it;
-        items.push(clean);
-      }
-    }
-
+    const items=entries.map(e=>{
+      const local=e.products.map(id=>products.get(id)).find(Boolean) || products.get(e.id);
+      if(local)return {...local,cover:e.cover||local.cover,name:region==='UA'?local.name:e.name||local.name};
+      return {id:e.id,name:e.name,cover:e.cover,officialUrl:'https://store.playstation.com/'+regionalOrder.locales[region]+'/'+(/^\d+$/.test(e.id)?'concept':'product')+'/'+encodeURIComponent(e.id)};
+    });
     const total = items.length;
     const pageItems = items.slice((page - 1) * perPage, page * perPage);
 
@@ -6973,9 +6884,6 @@ app.get("/api/allgames", async (req, res) => {
   try {
     const store = readStore();
     const region = String(req.query.region || "TR").toUpperCase();
-    // Sorting for all regions must be identical. We use India Browse order as the
-    // canonical ranking source while TR ordering is unstable on PS Store.
-    const locale = PS_BROWSE_CANONICAL_LOCALE;
     const sort = String(req.query.sort || "pop");
     const page = Math.max(1, parseInt(String(req.query.page || "1"), 10));
     const perPage = 24;
@@ -6987,28 +6895,11 @@ app.get("/api/allgames", async (req, res) => {
 
     // For PS browse-like ordering, prefill ranks for the first pages so the order matches
     // https://store.playstation.com/en-in/pages/browse immediately.
-    if(!q && (sort === "pop" || !sort)){
-      try{ await withTimeout(warmupPsBrowseCache(locale, 6), 2500); }catch(_e){}
-    }
+    const popularity=regionalOrder.load(region,'browse').ranks;
 
-    // PlayStation browse ordering cache (used as "relevance" / default order)
-    // We store both ranks by product/concept id and by normalized title.
-    const psRankDoc = readPsBrowseCache();
-    const psRanksById = (psRankDoc && psRankDoc.locale === locale && psRankDoc.ranksById) ? psRankDoc.ranksById : {};
-    const psRanksByName = (psRankDoc && psRankDoc.locale === locale && psRankDoc.ranksByName) ? psRankDoc.ranksByName : {};
-    const normKey = (s) => normText(String(s || ""));
-    // IMPORTANT: PS ranks may legitimately be 0 for the first item.
-    // Avoid using `||` with Number(...) because 0 would be treated as falsy.
-    const firstFinite = (...vals) => {
-      for (const v of vals) {
-        const n = Number(v);
-        if (Number.isFinite(n)) return n;
-      }
-      return 999999;
-    };
 
     const doc = readJsonCachedPublic(ALL_GAMES_PATH, { updatedAt:null, items:[] });
-    let all = Array.isArray(doc.items) ? doc.items : [];
+    let all = (Array.isArray(doc.items) ? doc.items : []).filter(standard);
     if (q) all = all.filter(x => smartMatch(x.name || "", q));
     if (platform) all = all.filter(x => platformPass(x, platform));
     if (genres.length) all = all.filter(x => genrePass(x.genres || "", genres));
@@ -7036,48 +6927,19 @@ app.get("/api/allgames", async (req, res) => {
       // Find matching discounted entry by exact product/version id only.
       const dg = (g.id && discountsIndex.byId.get(String(g.id))) || null;
 
-      // If discounted entry exists and is active for this region — override price + discount meta.
-      // For PL/IN there is no separate PS Store discount feed: use the TR discount percent
-      // from data/games.json and apply it to the PL/IN regular price from all_games.json,
-      // exactly like the public Discounts page does.
-      let discPerc = 0;
-      let discountedUntil = null;
-      let storePrice = baseStorePrice;
-      if(dg){
-        if(region === "PL" || region === "IN"){
-          const trDiscountReg = dg.regions && dg.regions.TR ? dg.regions.TR : null;
-          if(isDiscountActiveForRegion(trDiscountReg)){
-            const dreg = publicDiscountRegionFor(dg, region, regionBaseIndex);
-            const dPrice = Number(dreg && dreg.salePrice || 0);
-            if(Number.isFinite(dPrice) && dPrice > 0){
-              storePrice = dPrice;
-              discPerc = Number(dreg.discPerc || trDiscountReg.discPerc || 0) || 0;
-              discountedUntil = dreg.discountedUntil || trDiscountReg.discountedUntil || null;
-            }
-          }
-        }else if(dg.regions && dg.regions[region] && isDiscountActiveForRegion(dg.regions[region])){
-          const dreg = dg.regions[region];
-          discPerc = Number(dreg.discPerc || 0) || 0;
-          discountedUntil = dreg.discountedUntil || null;
-          const dPrice = Number(dreg.salePrice || 0);
-          if(Number.isFinite(dPrice) && dPrice > 0){
-            storePrice = dPrice;
-          }else if(discPerc > 0){
-            // Fallback: compute discounted price from base price if missing
-            storePrice = Math.max(0, baseStorePrice * (1 - (discPerc/100)));
-          }
-        }
-      }
+      const active=publicDiscountRegionFor(dg,region) || publicDiscountRegionFor(g,region);
+      const discPerc=Number(active?.discPerc || 0);
+      const discountedUntil=active?.discountedUntil || null;
+      const storePrice=Number(active?.salePrice) || (active?baseStorePrice*(1-discPerc/100):baseStorePrice);
 
       const rub = calcRegionRub(store, region, storePrice);
-      const trSub = (g.regions && g.regions.TR && g.regions.TR.sub) ? String(g.regions.TR.sub) : "";
-      const uaSub = (g.regions && g.regions.UA && g.regions.UA.sub) ? String(g.regions.UA.sub) : "";
-      const anySub = trSub || uaSub;
+      const anySub = g.regions?.[region]?.sub || "";
 
       const base = {
         id: g.id,
         name: g.name,
-        edition: anySub ? "Standard Edition" : (g.edition || "Standard Edition"),
+        psProductType: g.psProductType,
+        edition: englishEdition(g),
         ru: gameRuStatus(g, (typeof R !== 'undefined' ? R : (typeof region !== 'undefined' ? region : 'TR'))),
         sub: anySub,
         platform: g.platform || "PS4 / PS5",
@@ -7094,6 +6956,7 @@ app.get("/api/allgames", async (req, res) => {
         discountedUntil,
         storePrice: storePrice,
         finalPriceRub: rub,
+        ...memberPrice(g,region,storePrice,store,discPerc),
         oldPriceRub: (discPerc > 0 ? calcRegionRub(store, region, baseStorePrice) : 0),
         conceptId: conceptForGame(g, conceptIndex),
         popRank: g.popRank || 999999,
@@ -7104,18 +6967,7 @@ app.get("/api/allgames", async (req, res) => {
         // IMPORTANT: match by base title too, because PS Browse often shows a single tile
         // for the game (e.g. "EA SPORTS FC™ 26") while our library stores per-edition items
         // (e.g. "EA SPORTS FC™ 26 Standard Edition PS4 & PS5").
-        psRank: firstFinite(
-          // 1) Prefer conceptId (stable across editions and matches PS browse tiles)
-          psRanksById[String(g.conceptId || "").trim()],
-          // 2) Fallback: legacy internal id (older saves)
-          psRanksById[String(g.id||"").trim()],
-          // 3) Fallback: region-specific product ids (if stored there)
-          psRanksById[String((g.regions && g.regions.TR && (g.regions.TR.id || g.regions.TR.productId || g.regions.TR.storeId)) || "").trim()],
-          psRanksById[String((g.regions && g.regions.UA && (g.regions.UA.id || g.regions.UA.productId || g.regions.UA.storeId)) || "").trim()],
-          // 4) Fallback: title match
-          psRanksByName[normKey(g.name)],
-          psRanksByName[normKey(baseTitleForRank(g.name))]
-        )
+        psRank: rankOf(popularity,g,region)
       };
 
       if(q) base._score = relevanceScore(g.name || "", q);
@@ -7159,92 +7011,12 @@ app.get("/api/allgames", async (req, res) => {
       });
     }
 
-    // Keep editions together (e.g. Standard/Deluxe/Ultimate should go one after another)
-    // We do this after sorting so we preserve the selected sort order at the group level.
-    if(!q){
-      const editionPriority = (name)=>{
-        const s = String(name||"");
-        // Treat common PS Store naming variants as the same "edition" bucket.
-        // (e.g. "Digital Deluxe Edition" should group with "Deluxe Edition".)
-        if(/\bstandard\b/i.test(s) && /\bedition\b/i.test(s)) return 0;
-        if(/\bdigital\s+deluxe\b/i.test(s)) return 1;
-        if(/\bdeluxe\b/i.test(s) && /\bedition\b/i.test(s)) return 1;
-        if(/\bultimate\b/i.test(s) && /\bedition\b/i.test(s)) return 2;
-        if(/\bgold\b/i.test(s) && /\bedition\b/i.test(s)) return 3;
-        if(/\bcomplete\b/i.test(s) && /\bedition\b/i.test(s)) return 4;
-        if(/\bdefinitive\b/i.test(s) && /\bedition\b/i.test(s)) return 5;
-        if(/\bcollector'?s\b/i.test(s)) return 6;
-        // Bundles/packs should still be kept with the base title, but after editions.
-        if(/\bbundle\b/i.test(s) || /\bpack\b/i.test(s)) return 8;
-        return 9;
-      };
-      // Use the same base-title normalizer that we use for PS Browse rank matching.
-      // This is more aggressive and handles cases like "Digital Deluxe Edition",
-      // "Cross-Gen Bundle", etc., so editions don't get split into different groups.
-      const baseTitle = (name)=> baseTitleForRank(name);
-
-      const groups = new Map();
-      for(let i=0;i<computed.length;i++){
-        const it = computed[i];
-        const key = normKey(baseTitle(it.name||"")) || normKey(it.name||"") || String(it.id||"");
-        const g = groups.get(key) || { firstIndex: i, items: [] };
-        g.items.push(it);
-        groups.set(key, g);
-      }
-      const orderedGroups = Array.from(groups.values()).sort((a,b)=> a.firstIndex - b.firstIndex);
-      computed = orderedGroups.flatMap(g => {
-        const items = g.items;
-        if(items.length <= 1) return items;
-        return items.slice().sort((a,b)=>{
-          const pa = editionPriority(a.name);
-          const pb = editionPriority(b.name);
-          if(pa !== pb) return pa - pb;
-          // then prefer PS browse rank (if present) and then name
-          const ra = Number(a.psRank||999999);
-          const rb = Number(b.psRank||999999);
-          if(ra !== rb) return ra - rb;
-          return String(a.name||"").localeCompare(String(b.name||""));
-        });
-      });
-    }
-
-    attachPublicEditions(computed);
-
-    // Only on the public "Все игры" page: show the base edition per game.
-    // Search must keep returning all editions, so this is disabled when q is present.
-    // Versions of the same game are identified only by the main conceptId.
-    if(!q){
-      const isStandardEdition = (it)=> String((it && it.edition) || "").trim().toLowerCase() === "standard edition";
-      const priceForBasePick = (it)=> {
-        const n = Number(it && it.finalPriceRub);
-        return Number.isFinite(n) ? n : 999999999;
-      };
-      const groups = new Map();
-      for(let i=0;i<computed.length;i++){
-        const it = computed[i];
-        const key = String((it && it.conceptId) || "").trim();
-        const g = groups.get(key) || { firstIndex:i, items:[] };
-        g.items.push(it);
-        groups.set(key, g);
-      }
-      computed = Array.from(groups.values()).sort((a,b)=> a.firstIndex - b.firstIndex).flatMap(g => {
-        const items = g.items || [];
-        if(items.length <= 1) return items;
-
-        // If exact "Standard Edition" exists, show every exact Standard Edition entry.
-        // Do not treat titles like "Eclipse Standard Edition" as a Standard Edition.
-        const standards = items.filter(isStandardEdition);
-        if(standards.length) return standards;
-
-        // If there is no exact Standard Edition, show the cheapest edition of this conceptId.
-        const cheapest = items.slice().sort((a,b)=>
-          (priceForBasePick(a)-priceForBasePick(b)) ||
-          String(a.name||"").localeCompare(String(b.name||""))
-        )[0];
-        return cheapest ? [cheapest] : [];
-      }).filter(Boolean);
-    }
-
+    const displayed = new Set();
+    computed = computed.filter(game=>{
+      const key=game.conceptId || normText(baseTitleForRank(game.name)) || game.id;
+      if(displayed.has(key))return false;
+      displayed.add(key);return true;
+    });
     const total = computed.length;
     const startIdx = (page - 1) * perPage;
     const items = computed.slice(startIdx, startIdx + perPage).map(({ _sourceOrder, psRank, _score, ...rest }) => rest);
@@ -7324,7 +7096,7 @@ app.get("/api/game-regions", (req, res) => {
     const enabledRegions = (store.settings && store.settings.enabledRegions && typeof store.settings.enabledRegions === 'object')
       ? store.settings.enabledRegions
       : { TR:true, UA:true, PL:true, IN:true };
-    const order = ['UA','TR','PL','IN'].filter(R => enabledRegions[R] !== false);
+    const order = ['UA','TR','PL','IN','US'].filter(R => enabledRegions[R] !== false);
     const exactProductIds = new Set();
     for(const key of collectExactProductLookupKeys(g, activeRegion)){
       if(key) exactProductIds.add(String(key).trim());
@@ -7385,7 +7157,7 @@ app.get("/api/game-regions", (req, res) => {
         active:R===activeRegion,
         id:g.id,
         name:g.name || '',
-        edition:g.edition || 'Standard Edition',
+        edition:englishEdition(g),
         platform:g.platform || 'PS4 / PS5',
         cover:g.cover || '',
         ru: gameRuStatus(g, R),
@@ -7417,8 +7189,9 @@ app.get("/api/newreleases", async (req, res) => {
     const genres = String(req.query.genres || req.query.genre || "").split(",").map(x=>x.trim()).filter(Boolean);
     const language = String(req.query.language || req.query.lang || "").trim();
 
+    const popularity=regionalOrder.load(region,'browse').ranks;
     const nrDoc = readNewReleasesDoc();
-    let all = Array.isArray(nrDoc.items) ? nrDoc.items : [];
+    let all = (Array.isArray(nrDoc.items) ? nrDoc.items : []).filter(gameOnly);
     if(q) all = all.filter(x => smartMatch(x.name || "", q));
     if(platform) all = all.filter(x => platformPass(x, platform));
     if(genres.length) all = all.filter(x => genrePass(x.genres || "", genres));
@@ -7454,15 +7227,13 @@ app.get("/api/newreleases", async (req, res) => {
       if(!Number.isFinite(storePrice) || storePrice <= 0) return null;
 
       const rub = calcRegionRub(store, region, storePrice);
-      const trSub = (g.regions && g.regions.TR && g.regions.TR.sub) ? String(g.regions.TR.sub) : "";
-      const uaSub = (g.regions && g.regions.UA && g.regions.UA.sub) ? String(g.regions.UA.sub) : "";
-      const anySub = trSub || uaSub;
+      const anySub = g.regions?.[region]?.sub || "";
       const cid = String(g.conceptId||"").trim();
-      const psRank = Number(g._newReleaseRank || g.newReleaseRank || idx + 1) || (idx + 1);
+      const psRank = rankOf(popularity,g,region);
       const base = {
         id: g.id,
         name: g.name,
-        edition: anySub ? "Standard Edition" : (g.edition || "Standard Edition"),
+        edition: englishEdition(g),
         ru: gameRuStatus(regionMetaGame, region),
         sub: anySub,
         platform: g.platform || "PS4 / PS5",
@@ -7479,6 +7250,7 @@ app.get("/api/newreleases", async (req, res) => {
         discountedUntil: null,
         storePrice: storePrice,
         finalPriceRub: rub,
+        ...memberPrice(g,region,storePrice,store,0),
         oldPriceRub: 0,
         conceptId: conceptForGame(g, conceptIndex),
         isNewRelease: true,
@@ -7505,7 +7277,7 @@ app.get("/api/newreleases", async (req, res) => {
       computed.sort((a,b)=> (a.psRank||999999)-(b.psRank||999999) || String(a.name||"").localeCompare(String(b.name||"")));
     }
 
-    if(!q){
+    if(!q && sort!=="pop"){
       const groups = new Map();
       for(let i=0;i<computed.length;i++){
         const it = computed[i];
@@ -7544,8 +7316,7 @@ app.get("/api/preorders", async (req, res) => {
   try{
     const store = readStore();
     const region = String(req.query.region || "TR").toUpperCase();
-    // Sorting must be одинаковой для TR и UA: используем порядок TR как канонический.
-    const locale = "en-tr";
+    const normKey = normText;
     const sort = String(req.query.sort || "pop");
     const page = Math.max(1, parseInt(String(req.query.page || "1"), 10));
     const perPage = 24;
@@ -7555,24 +7326,11 @@ app.get("/api/preorders", async (req, res) => {
     const genres = String(req.query.genres || req.query.genre || "").split(",").map(x=>x.trim()).filter(Boolean);
     const language = String(req.query.language || req.query.lang || "").trim();
 
-    if(!q && (sort === "pop" || !sort)){
-      try{ await withTimeout(warmupPsPreordersCache(locale, 6), 2500); }catch(_e){}
-    }
+    const popularity=regionalOrder.load(region,'browse').ranks;
 
-    const psRankDoc = readPsPreordersCache();
-    const psRanksById = (psRankDoc && psRankDoc.locale === locale && psRankDoc.ranksById) ? psRankDoc.ranksById : {};
-    const psRanksByName = (psRankDoc && psRankDoc.locale === locale && psRankDoc.ranksByName) ? psRankDoc.ranksByName : {};
-    const normKey = (s) => normText(String(s || ""));
-    const firstFinite = (...vals) => {
-      for (const v of vals) {
-        const n = Number(v);
-        if (Number.isFinite(n)) return n;
-      }
-      return 999999;
-    };
 
     const doc = readJson(PREORDERS_PATH, { updatedAt:null, items:[] });
-    let all = Array.isArray(doc.items) ? doc.items : [];
+    let all = (Array.isArray(doc.items) ? doc.items : []).filter(gameOnly);
     if (q) all = all.filter(x => smartMatch(x.name || "", q));
     if (platform) all = all.filter(x => platformPass(x, platform));
     if (genres.length) all = all.filter(x => genrePass(x.genres || "", genres));
@@ -7590,14 +7348,12 @@ app.get("/api/preorders", async (req, res) => {
 
       const rub = calcRegionRub(store, region, storePrice);
 
-      const trSub = (g.regions && g.regions.TR && g.regions.TR.sub) ? String(g.regions.TR.sub) : "";
-      const uaSub = (g.regions && g.regions.UA && g.regions.UA.sub) ? String(g.regions.UA.sub) : "";
-      const anySub = trSub || uaSub;
+      const anySub = g.regions?.[region]?.sub || "";
 
       const base = {
         id: g.id,
         name: g.name,
-        edition: anySub ? "Standard Edition" : (g.edition || "Standard Edition"),
+        edition: englishEdition(g),
         ru: gameRuStatus(g, (typeof R !== 'undefined' ? R : (typeof region !== 'undefined' ? region : 'TR'))),
         sub: anySub,
         platform: g.platform || "PS4 / PS5",
@@ -7614,23 +7370,13 @@ app.get("/api/preorders", async (req, res) => {
         discountedUntil: null,
         storePrice: storePrice,
         finalPriceRub: rub,
+        ...memberPrice(g,region,storePrice,store,0),
         oldPriceRub: 0,
         conceptId: conceptForGame(g, conceptIndex),
         popRank: g.popRank || 999999,
         releaseDate: g.releaseDate || null,
         isPreorder: isFutureReleaseDateYMD(g.releaseDate),
-        psRank: firstFinite(
-          // 1) Prefer conceptId (stable across editions and matches PS browse tiles)
-          psRanksById[String(g.conceptId || "").trim()],
-          // 2) Fallback: legacy internal id (older saves)
-          psRanksById[String(g.id||"" ).trim()],
-          // 3) Fallback: region store ids (some imports keep PS ids here)
-          psRanksById[String(((g.regions&&g.regions.TR)&&(g.regions.TR.id||g.regions.TR.productId||g.regions.TR.storeId))||"").trim()],
-          psRanksById[String(((g.regions&&g.regions.UA)&&(g.regions.UA.id||g.regions.UA.productId||g.regions.UA.storeId))||"").trim()],
-          // 4) Title matching
-          psRanksByName[normKey(g.name)],
-          psRanksByName[normKey(baseTitleForRank(g.name))]
-        )
+        psRank: rankOf(popularity,g,region)
       };
       if(q) base._score = relevanceScore(g.name || "", q);
       return base;
@@ -7654,7 +7400,7 @@ app.get("/api/preorders", async (req, res) => {
     }
 
     // Keep editions together for preorders too
-    if(!q){
+    if(!q && sort!=="pop"){
       const editionPriority = (name)=>{
         const s = String(name||"");
         if(/\bstandard\b/i.test(s) && /\bedition\b/i.test(s)) return 0;
@@ -7751,7 +7497,9 @@ app.get("/api/multiplayer", (req, res) => {
       const prev = seen.get(key);
       if(!prev || (priority[it.sourceTab] ?? 9) < (priority[prev.sourceTab] ?? 9)) seen.set(key, it);
     }
+    const popularity=regionalOrder.load(region,"browse").ranks;
     let items = Array.from(seen.values()).sort((a,b)=>
+      rankOf(popularity,a,region)-rankOf(popularity,b,region) ||
       (priority[a.sourceTab] ?? 9) - (priority[b.sourceTab] ?? 9) ||
       (a.popRank || 999999) - (b.popRank || 999999) ||
       String(a.name||'').localeCompare(String(b.name||''), 'ru')
@@ -7774,7 +7522,7 @@ app.get("/api/admin/allgames/:id", requireAdmin, (req, res) => {
     const items = Array.isArray(doc.items) ? doc.items : [];
     const g = items.find(x => String(x.id) === id);
     if(!g) return res.status(404).json({ ok:false, error:"not_found" });
-    res.json({ ok:true, item: g });
+    res.json({ ok:true, item: {...g,eaRegions:eaStatus(g)} });
   }catch(e){
     res.status(500).json({ ok:false, error:String(e) });
   }
@@ -7848,7 +7596,7 @@ app.post("/api/admin/allgames/add", requireAdmin, (req, res) => {
       return next;
     };
 
-    const newItem = normalize(body);
+    const newItem = psImportRoutes.attachImport(normalize(body),body.psImport,body.psEdits||body.regions);
     if(idx >= 0) items[idx] = newItem;
     else items.unshift(newItem);
 
@@ -7940,6 +7688,7 @@ app.put("/api/admin/allgames/:id", requireAdmin, (req, res) => {
 
     next.id = cur.id;
 
+    saveEaChanges(next,body.eaChanges);
     items[idx] = next;
     writeJson(ALL_GAMES_PATH, { updatedAt: new Date().toISOString(), items });
     res.json({ ok:true, item: next });
@@ -8025,7 +7774,7 @@ app.get("/api/admin/preorders/:id", requireAdmin, (req, res) => {
     const items = Array.isArray(doc.items) ? doc.items : [];
     const g = items.find(x => String(x.id) === id);
     if(!g) return res.status(404).json({ ok:false, error:"not_found" });
-    res.json({ ok:true, item: g });
+    res.json({ ok:true, item: {...g,eaRegions:eaStatus(g)} });
   }catch(e){
     res.status(500).json({ ok:false, error:String(e) });
   }
@@ -8097,7 +7846,7 @@ app.post("/api/admin/preorders/add", requireAdmin, (req, res) => {
       return next;
     };
 
-    const newItem = normalize(body);
+    const newItem = psImportRoutes.attachImport(normalize(body),body.psImport,body.psEdits||body.regions);
     if(idx >= 0) items[idx] = newItem;
     else items.unshift(newItem);
 
@@ -8186,6 +7935,7 @@ app.put("/api/admin/preorders/:id", requireAdmin, (req, res) => {
     next.regions.IN.sub = next.regions.TR.sub;
 
     next.id = cur.id;
+    saveEaChanges(next,body.eaChanges);
     items[idx] = next;
     writeJson(PREORDERS_PATH, { updatedAt: new Date().toISOString(), items });
     res.json({ ok:true, item: next });
@@ -8373,493 +8123,8 @@ return { ruVoice: ruVoice2, ruText: ruText2, ru: (ruVoice2 ? "voice" : (ruText2 
 }
 
 
-app.post("/api/admin/import", requireAdmin, async (req, res) => {
-  try{
-    const url = String(req.body.url || "").trim();
-    if(!url) return res.status(400).json({ ok:false, error:"url_required" });
-
-    const m = url.match(/\/product\/([A-Z0-9_-]{10,})/i);
-    const productId = m ? m[1].toUpperCase() : null;
-
-    // Use locale from provided URL if present (en-tr, tr-tr, etc.)
-    const locMatch = url.match(/store\.playstation\.com\/([a-z]{2}-[a-z]{2})\//i);
-    const inputLocale = locMatch ? locMatch[1].toLowerCase() : null;
-
-    // IMPORTANT: Admin now provides the UA product link (ru-ua). We must still fetch TR pricing/discounts.
-    // UA link is the source of truth for title/edition/platform, TR is the source of TR price/discount/date.
-    const makeUrl = (locale, pid) => pid ? `https://store.playstation.com/${locale}/product/${pid}` : url;
-
-    const uaLocale = UA_LOCALE;
-    const isUaInput = (inputLocale === uaLocale);
-
-    // UA page: use provided URL directly when UA link is given
-    let uaProductId = productId;
-    let uaU = isUaInput ? url : makeUrl(uaLocale, uaProductId);
-
-    // TR page: default to same productId, but some titles have different IDs per region.
-    const trLocale = TR_LOCALE;
-    let trProductId = productId;
-    let trU = makeUrl(trLocale, trProductId);
-
-    // Try Playwright first (best for anti-bot / dynamic pages). If browsers are missing (common on Windows),
-    // fall back to plain HTTP fetch so import still works without downloading Playwright browsers.
-    let chromium = null;
-    try{
-      ({ chromium } = require("playwright"));
-    }catch(e){
-      chromium = null;
-    }
-
-    const headersForLocale = (locale) => {
-      const loc = String(locale||"").toLowerCase();
-      if(loc === "ru-ua") return {
-        "accept-language": "ru-UA,ru;q=0.9,uk-UA;q=0.8,en;q=0.7",
-      };
-      if(loc === "en-tr") return {
-        "accept-language": "en-TR,en;q=0.9,tr-TR;q=0.8,tr;q=0.7",
-      };
-      // reasonable default
-      return { "accept-language": "en-US,en;q=0.9" };
-    };
-
-    async function fetchHtmlHttp(u, locale){
-      let status = 0;
-      try{
-        const ac = new AbortController();
-        const t = setTimeout(()=>ac.abort(), 90000);
-        const resp = await fetch(u, {
-          redirect: "follow",
-          signal: ac.signal,
-          headers: {
-            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36",
-            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "cache-control": "no-cache",
-            "pragma": "no-cache",
-            ...headersForLocale(locale),
-          }
-        });
-        clearTimeout(t);
-        status = resp.status;
-        const html = await resp.text();
-        // Even without Playwright we can still detect subscription badges and (for TR) RU localization from HTML.
-        const sub = extractSubFromHtml(html);
-        let ruInfo = { ru:"none", ruVoice:false, ruText:false };
-        const loc = String(locale||"").toLowerCase();
-        if(loc.startsWith("tr")){
-          ruInfo = extractRuFromHtmlTR(html);
-        }
-        return { status, html, ruInfo: { ...ruInfo, sub } };
-      }catch(e){
-        return { status, html:"", ruInfo:{ru:"none",ruVoice:false,ruText:false, sub:""}, error:String(e?.message||e) };
-      }
-    }
-
-    async function fetchHtml(u, page, locale){
-      if(!page) return await fetchHtmlHttp(u, locale);
-      let status = 0;
-      try{
-        const resp = await page.goto(u, { waitUntil:"domcontentloaded", timeout: 90000 });
-        status = resp ? resp.status() : 0;
-        await page.waitForTimeout(1800);
-        const html = await page.content();
-        const ruInfo = await extractRuInfoFromPage(page);
-        return { status, html, ruInfo };
-      }catch(e){
-        return { status, html:"", ruInfo:{ru:"none",ruVoice:false,ruText:false}, error:String(e?.message||e) };
-      }
-    }
-
-    let browser = null, context = null, pageTR = null, pageUA = null;
-    let tr = {status:0, html:""}, ua = {status:0, html:""};
-
-    const tryWithPlaywright = async () => {
-      browser = await chromium.launch({ headless: true });
-      context = await browser.newContext({
-        userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36",
-        viewport: { width: 1280, height: 720 }
-      });
-      pageTR = await context.newPage();
-      pageUA = await context.newPage();
-    };
-
-    if(chromium){
-      try{
-        await tryWithPlaywright();
-      }catch(e){
-        // Playwright is installed but browsers are missing / blocked => fallback to HTTP
-        chromium = null;
-      }
-    }
-
-    // 3 попытки (часть игр иногда отдаёт пусто/блок)
-    for(let attempt=1; attempt<=3; attempt++){
-      tr = await fetchHtml(trU, pageTR, trLocale);
-      ua = await fetchHtml(uaU, pageUA, uaLocale);
-      const trBlocked = !tr.html || looksBlocked(tr.html);
-      const uaBlocked = !ua.html || looksBlocked(ua.html);
-      if(!trBlocked && !uaBlocked) break;
-      await new Promise(r=>setTimeout(r, 800*attempt));
-    }
-
-    if(pageTR) await pageTR.close().catch(()=>{});
-    if(pageUA) await pageUA.close().catch(()=>{});
-    if(context) await context.close().catch(()=>{});
-    if(browser) await browser.close().catch(()=>{});
-
-    function parse(html, expectedSku){
-      if(!html || looksBlocked(html)) return { blocked:true };
-      const jsonLd = extractJsonLd(html);
-      const platSet = new Set();
-      for(const v of extractPlatformsFromJsonLd(jsonLd)) platSet.add(v);
-      for(const v of extractPlatformsFromHtml(html)) platSet.add(v);
-      // Platform detection should use the SKU we are currently parsing (TR/UA IDs can differ).
-      const platform = finalizePlatform(platSet, expectedSku || productId);
-      const h1 = extractH1(html) || extractTitle(html);
-      const nameRaw0 = extractOg(html, "og:title") || extractOg(html, "twitter:title") || h1;
-      const nameRaw = (nameRaw0 && looksBlocked(nameRaw0)) ? null : nameRaw0;
-      let coverRaw = extractOg(html, "og:image") || extractOg(html, "twitter:image") || extractAnyImage(jsonLd);
-      if(!coverRaw){
-        coverRaw = extractImgByAlt(html, h1) || extractFirstHeroImage(html);
-      }
-      const offer = extractOfferPrice(jsonLd, expectedSku);
-      const name = nameRaw ? String(nameRaw).replace(/\s+/g," ").trim() : null;
-      const cover = coverRaw ? canonicalPsMediaUrl(String(coverRaw).trim(),'image') : null;
-      const discPerc = extractDiscountPercent(html);
-      const edition = extractEdition(jsonLd, nameRaw0, html);
-      const conceptId = extractConceptIdFromProductHtml(html, expectedSku || productId);
-      const releaseDate = extractReleaseDate(html, jsonLd);
-      const meta = extractGameMeta(html, jsonLd);
-      const genres = extractPsGenresFromHtml(html);
-      // Discount end date: pull from Store (one region is enough; we later copy TR->UA)
-      const until = (discPerc && discPerc > 0) ? (extractDiscountedUntil(html, jsonLd) || extractUntilDate(html)) : null;
-      return { blocked:false, name, edition, cover, platform, conceptId: conceptId || null, salePrice: (offer && Number.isFinite(offer.price) ? offer.price : null), currency: offer ? offer.currency : null, discPerc: discPerc || 0, discountedUntil: until || null, releaseDate: releaseDate || null, players: meta.players || null, size: meta.size || null, rating: meta.rating, ratingCount: extractRatingCount(html), publisher: extractPublisher(html, jsonLd), mediaGallery: extractPsMediaGalleryForProduct(html, expectedSku || productId), genres: genres || "" };
-    }
-
-	    let parsedTR = parse(tr.html, productId);
-    if(tr.ruInfo && tr.ruInfo.ru) parsedTR.ru = tr.ruInfo.ru;
-    if(tr.ruInfo && tr.ruInfo.sub) parsedTR.sub = tr.ruInfo.sub;
-    // HTTP fallback may not have ruInfo.sub (older cache) — detect from HTML too.
-    if(!parsedTR.sub) parsedTR.sub = extractSubFromHtml(tr.html);
-    // Don't blindly overwrite edition when a subscription marker is detected.
-    // Subscription detection can be noisy and must not erase Deluxe/Ultimate editions.
-    // Only default to Standard Edition when edition is missing.
-    if(parsedTR.sub && (!parsedTR.edition || !String(parsedTR.edition).trim())) parsedTR.edition = "Standard Edition";
-
-    let parsedUA = parse(ua.html, uaProductId || productId);
-    // Gallery must be tied to the exact Product ID, not merely the Concept ID.
-    // Some Call of Duty releases share one concept and Sony can expose mixed concept media.
-    try{
-      const exactMedia = await fetchExactPsMediaForGame({
-        id: productId,
-        productIds: { TR: productId, UA: (uaProductId || productId) }
-      });
-      if(exactMedia.length){
-        parsedTR.mediaGallery = exactMedia;
-        parsedUA.mediaGallery = exactMedia;
-      }else{
-        parsedTR.mediaGallery = [];
-        parsedUA.mediaGallery = [];
-      }
-    }catch(_e){
-      parsedTR.mediaGallery = [];
-      parsedUA.mediaGallery = [];
-    }
-    if(ua.ruInfo && ua.ruInfo.ru) parsedUA.ru = ua.ruInfo.ru;
-    if(ua.ruInfo && ua.ruInfo.sub) parsedUA.sub = ua.ruInfo.sub;
-    if(!parsedUA.sub) parsedUA.sub = extractSubFromHtml(ua.html);
-
-    // If UA has a more specific edition name (e.g., Deluxe/Ultimate) and TR ended up with a generic/default
-    // value, prefer UA's edition for consistency.
-    try {
-      const trEd = parsedTR && parsedTR.edition ? String(parsedTR.edition).trim() : "";
-      const uaEd = parsedUA && parsedUA.edition ? String(parsedUA.edition).trim() : "";
-      const trIsGeneric = !trEd || /^standard edition$/i.test(trEd);
-      const uaIsSpecific = !!uaEd && !/^standard edition$/i.test(uaEd);
-      if(trIsGeneric && uaIsSpecific) parsedTR.edition = uaEd;
-    } catch(_) {}
-
-    // TR region: when admin provides a UA link, the TR productId can be different.
-    // If TR page looks wrong or has no price/currency, resolve TR productId via TR search by UA title.
-    const trLooksWrong = (p, html) => {
-      const n = (p && p.name) ? String(p.name) : "";
-      if(n.trim() === "PlayStation") return true;
-      if(/Похоже, вы искали/i.test(n)) return true;
-      if(!p || p.blocked) return true;
-      if(p.salePrice == null || p.currency == null) return true;
-      if(html && /\/search\//i.test(html) && (!p.salePrice && !p.currency)) return true;
-      return false;
-    };
-
-    if(isUaInput && trLooksWrong(parsedTR, tr.html) && parsedUA && parsedUA.name){
-      const tail = (uaProductId && uaProductId.includes("_00-")) ? uaProductId.split("_00-")[1] : "";
-      const prefix = uaProductId ? uaProductId.split("-")[0] : "";
-      const searchUrl = `https://store.playstation.com/${trLocale}/search/${encodeURIComponent(parsedUA.name)}`;
-      const sr = await fetchHtmlHttp(searchUrl, trLocale);
-      const found = [];
-      if(sr && sr.html){
-        const reProd = new RegExp(`/${trLocale}/product/([A-Z0-9_-]{10,})`, "gi");
-        let mm;
-        while((mm = reProd.exec(sr.html))){
-          const id = mm[1].toUpperCase();
-          if(!found.includes(id)) found.push(id);
-        }
-      }
-      const scoreId = (id) => {
-        let sc = 0;
-        if(prefix && id.startsWith(prefix + "-")) sc += 100;
-        if(tail && id.includes("_00-" + tail)) sc += 250;
-        if(/_00-[A-Z0-9]{5,}/.test(id)) sc += 10;
-        return sc;
-      };
-      let bestId = null, bestScore = -1;
-      for(const id of found){
-        const sc = scoreId(id);
-        if(sc > bestScore){ bestScore = sc; bestId = id; }
-      }
-      if(bestId && bestId !== trProductId){
-        trProductId = bestId;
-        trU = `https://store.playstation.com/${trLocale}/product/${trProductId}`;
-        tr = await fetchHtmlHttp(trU, trLocale);
-        parsedTR = parse(tr.html, trProductId);
-        if(tr.ruInfo && tr.ruInfo.ru) parsedTR.ru = tr.ruInfo.ru;
-        if(tr.ruInfo && tr.ruInfo.sub) parsedTR.sub = tr.ruInfo.sub;
-        if(!parsedTR.sub) parsedTR.sub = extractSubFromHtml(tr.html);
-        if(parsedTR.sub) parsedTR.edition = "Standard Edition";
-      }
-    }
-
-    // UA region: some titles have a different productId than TR.
-    // If UA page looks like a "not found/search" page OR price is missing,
-    // try to resolve the correct UA productId via UA search by title, then refetch UA page.
-    const uaLooksWrong = (p, html) => {
-      const n = (p && p.name) ? String(p.name) : "";
-      if(/Похоже, вы искали/i.test(n)) return true;
-      if(n.trim() === "PlayStation") return true;
-      if(!p || p.blocked) return true;
-      if(p.salePrice == null) return true;
-      // Extra heuristic: search/landing pages often contain "/search/" in canonical
-      if(html && /\/search\//i.test(html) && (!p.salePrice && !p.currency)) return true;
-      return false;
-    };
-
-    // Helper: collect product IDs from a PS Store HTML page.
-    const extractProductIdsFromHtml = (html, locale) => {
-      const ids = [];
-      if(!html) return ids;
-      const reProd = new RegExp(`/${String(locale)}/product/([A-Z0-9_-]{10,})`, "gi");
-      let mm;
-      while((mm = reProd.exec(html))){
-        const id = mm[1].toUpperCase();
-        if(!ids.includes(id)) ids.push(id);
-      }
-      return ids;
-    };
-
-    if(uaLooksWrong(parsedUA, ua.html) && parsedTR && parsedTR.name){
-      const tail = (productId && productId.includes("_00-")) ? productId.split("_00-")[1] : "";
-      const prefix = productId ? productId.split("-")[0] : "";
-
-      // 1) Try resolving by title (most human-friendly)
-      const searchUrlByTitle = `https://store.playstation.com/${uaLocale}/search/${encodeURIComponent(parsedTR.name)}`;
-      const srTitle = await fetchHtmlHttp(searchUrlByTitle, uaLocale);
-      let found = extractProductIdsFromHtml(srTitle && srTitle.html ? srTitle.html : "", uaLocale);
-
-      // 2) If title search yields nothing (sometimes PS Store renders results client-side),
-      // try searching by the content tail (the part after _00-), which often appears in URLs.
-      if((!found || !found.length) && tail){
-        const searchUrlByTail = `https://store.playstation.com/${uaLocale}/search/${encodeURIComponent(tail)}`;
-        const srTail = await fetchHtmlHttp(searchUrlByTail, uaLocale);
-        found = extractProductIdsFromHtml(srTail && srTail.html ? srTail.html : "", uaLocale);
-      }
-
-      const scoreId = (id) => {
-        let sc = 0;
-        if(prefix && id.startsWith(prefix + "-")) sc += 100;
-        if(tail && id.includes("_00-" + tail)) sc += 200;
-        // Prefer IDs that look like base games (heuristic)
-        if(/_00-[A-Z0-9]{5,}/.test(id)) sc += 10;
-        return sc;
-      };
-
-      let bestId = null, bestScore = -1;
-      for(const id of found){
-        const sc = scoreId(id);
-        if(sc > bestScore){ bestScore = sc; bestId = id; }
-      }
-
-      if(bestId && bestId !== uaProductId){
-        uaProductId = bestId;
-        uaU = `https://store.playstation.com/${uaLocale}/product/${uaProductId}`;
-        // refetch UA product page (one more request)
-        ua = await fetchHtml(uaU, pageUA, uaLocale);
-        parsedUA = parse(ua.html, uaProductId);
-        if(ua.ruInfo && ua.ruInfo.ru) parsedUA.ru = ua.ruInfo.ru;
-        if(ua.ruInfo && ua.ruInfo.sub) parsedUA.sub = ua.ruInfo.sub;
-        if(!parsedUA.sub) parsedUA.sub = extractSubFromHtml(ua.html);
-      }
-    }
-    
-
-    // Discount percent: prefer the percent computed from this exact product/version price.
-    // PS Store pages can contain several editions at once; taking the maximum textual percent
-    // makes bundles show Standard Edition's discount (for example 80% instead of 60%).
-    let exactDiscFromBase = 0;
-    try{
-      const allDocForImport = readJson(ALL_GAMES_PATH, { items:[] });
-      const allItemsForImport = Array.isArray(allDocForImport.items) ? allDocForImport.items : [];
-      const trPidForImport = String(trProductId || productId || "").toUpperCase();
-      const baseItemForImport = allItemsForImport.find(x => {
-        const id = String(x && x.id || "").toUpperCase();
-        const trPid = String(x && x.productIds && x.productIds.TR || "").toUpperCase();
-        return trPidForImport && (id === trPidForImport || trPid === trPidForImport);
-      });
-      const baseTR = baseItemForImport && baseItemForImport.regions && baseItemForImport.regions.TR ? Number(baseItemForImport.regions.TR.salePrice || 0) : 0;
-      const saleTR = parsedTR && Number.isFinite(Number(parsedTR.salePrice)) ? Number(parsedTR.salePrice) : 0;
-      exactDiscFromBase = computeDiscountPercentFromPrices(baseTR, saleTR);
-    }catch(_e){}
-
-    const bestDisc = exactDiscFromBase > 0
-      ? exactDiscFromBase
-      : ((parsedTR && !parsedTR.blocked && Number.isFinite(parsedTR.discPerc) && parsedTR.discPerc > 0)
-          ? parsedTR.discPerc
-          : ((parsedUA && !parsedUA.blocked && Number.isFinite(parsedUA.discPerc) && parsedUA.discPerc > 0)
-              ? parsedUA.discPerc
-              : 0));
-    if(parsedTR) parsedTR.discPerc = bestDisc;
-    if(parsedUA) parsedUA.discPerc = bestDisc;
-
-    // Copy discount end date from one region to the other (TR preferred)
-    const bestUntil = (parsedTR && parsedTR.discountedUntil) ? parsedTR.discountedUntil
-                    : ((parsedUA && parsedUA.discountedUntil) ? parsedUA.discountedUntil : null);
-    if(bestUntil){
-      if(parsedTR) parsedTR.discountedUntil = bestUntil;
-      if(parsedUA) parsedUA.discountedUntil = bestUntil;
-    }else{
-      if(parsedTR) parsedTR.discountedUntil = null;
-      if(parsedUA) parsedUA.discountedUntil = null;
-    }
-
-    // Ensure REAL title: if TR title missing/blocked, try chihiro API by productId (only for /product/)
-    if((!parsedTR.name || looksBlocked(parsedTR.name)) && (trProductId || productId)){
-      // Use the same locale we used to fetch the product page.
-      const t = await fetchChihiroTitle((trProductId || productId), trLocale);
-      if(t) parsedTR.name = t;
-    }
-    if((!parsedUA.name || looksBlocked(parsedUA.name)) && (uaProductId || productId)){
-      const t = await fetchChihiroTitle((uaProductId || productId), uaLocale);
-      if(t) parsedUA.name = t;
-    }
-
-    // Title policy (per request): the "main" game title in admin should come from TR.
-    // We do NOT copy UA title into TR. Instead, if TR title is missing, we try a few TR/neutral locales.
-    if(parsedTR && (!parsedTR.name || looksBlocked(parsedTR.name)) && (trProductId || productId)){
-      const pidForTitle = (trProductId || productId);
-      const tryLocales = [trLocale, "en-tr", "tr-tr", "en-us", "en-gb"];
-      for(const loc of tryLocales){
-        const t = await fetchChihiroTitle(pidForTitle, loc);
-        if(t){ parsedTR.name = t; break; }
-      }
-      if(!parsedTR.name){
-        // Last resort: scrape product pages from alt locales for a title.
-        const t2 = await fetchTitleFromAltLocales(pidForTitle);
-        if(t2) parsedTR.name = t2;
-      }
-    }
-    // UA: if missing, we may still fill it from other locales, but TR remains the source for admin title.
-    if(parsedUA && (!parsedUA.name || looksBlocked(parsedUA.name)) && (uaProductId || productId)){
-      const pidForTitle = (uaProductId || productId);
-      const tryLocales = [uaLocale, "ru-ua", "uk-ua", "en-us", "en-gb"];
-      for(const loc of tryLocales){
-        const t = await fetchChihiroTitle(pidForTitle, loc);
-        if(t){ parsedUA.name = t; break; }
-      }
-      if(!parsedUA.name){
-        const t2 = await fetchTitleFromAltLocales(pidForTitle);
-        if(t2) parsedUA.name = t2;
-      }
-    }
-
-    
-    // --- PL / IN prices for admin import forms.
-    // Normal/preorder imports use the regular regional price.
-    // The discount form explicitly requests the CURRENT discounted PL/IN price.
-    const discountMode = !!req.body.discountMode;
-    let parsedPL = { blocked:false, salePrice:null, currency:'PLN' };
-    let parsedIN = { blocked:false, salePrice:null, currency:'INR' };
-    let plProductId = productId || null;
-    let inProductId = productId || null;
-    const regionalTitle = (parsedUA && parsedUA.name) || (parsedTR && parsedTR.name) || '';
-    try{
-      const foundPL = discountMode ? await resolveRegionalDiscountPrice(productId, regionalTitle, PL_LOCALE) : await resolveRegionalRegularPrice(productId, regionalTitle, PL_LOCALE);
-      if(foundPL){ parsedPL.salePrice=Number(foundPL.price); parsedPL.currency=foundPL.currency||'PLN'; parsedPL.discPerc=Number(foundPL.discPerc||0); plProductId=foundPL.productId||plProductId; }
-    }catch(_e){}
-    try{
-      const foundIN = discountMode ? await resolveRegionalDiscountPrice(productId, regionalTitle, IN_LOCALE) : await resolveRegionalRegularPrice(productId, regionalTitle, IN_LOCALE);
-      if(foundIN){ parsedIN.salePrice=Number(foundIN.price); parsedIN.currency=foundIN.currency||'INR'; parsedIN.discPerc=Number(foundIN.discPerc||0); inProductId=foundIN.productId||inProductId; }
-    }catch(_e){}
-
-    // --- Platform: prefer explicit TR/UA; if ambiguous, confirm via Chihiro in other locales.
-    let bestPlatform = (parsedTR && parsedTR.platform) ? parsedTR.platform : null;
-    if(parsedUA && parsedUA.platform){
-      if(!bestPlatform) bestPlatform = parsedUA.platform;
-      else if(bestPlatform !== "PS4 / PS5" && parsedUA.platform === "PS4 / PS5") bestPlatform = parsedUA.platform;
-    }
-    // If still ambiguous, try Chihiro in other locales for a reliable platform list.
-    if(productId && (!bestPlatform || bestPlatform === "PS4 / PS5")){
-      const altPlat = await fetchPlatformsFromAltLocales(productId);
-      if(altPlat) bestPlatform = altPlat;
-    }
-    if(bestPlatform){
-      if(parsedTR) parsedTR.platform = bestPlatform;
-      if(parsedUA) parsedUA.platform = bestPlatform;
-    }
-
-    // --- RU localization rule:
-    // For скидки (legacy): RU is determined from UA and mirrored to TR.
-    // For "Все игры": admin wants RU separately for TR and UA.
-    // The admin UI can send { ruSeparate: true } to keep both values.
-    const ruSeparate = !!req.body.ruSeparate;
-    if(!ruSeparate){
-      try{
-        const uaRu = normalizeRuVal((parsedUA && parsedUA.ru) ? parsedUA.ru : "none");
-        if(parsedUA) parsedUA.ru = uaRu;
-        if(parsedTR) parsedTR.ru = uaRu;
-      }catch(_e){}
-    }else{
-      try{
-        if(parsedTR) parsedTR.ru = normalizeRuVal((parsedTR && parsedTR.ru) ? parsedTR.ru : "none");
-        if(parsedUA) parsedUA.ru = normalizeRuVal((parsedUA && parsedUA.ru) ? parsedUA.ru : "none");
-      }catch(_e){}
-    }
-// If still no real title - do NOT allow import
-    const realTitle = parsedTR && !parsedTR.blocked ? parsedTR.name : null;
-    if(!realTitle){
-      // TITLE missing is allowed now
-
-    }
-
-    const ok = parsedTR && !parsedTR.blocked;
-
-    res.json({
-      ok,
-      // Back-compat: keep old field
-      productId,
-      // New: explicit product IDs per region (TR/UA can differ for the same game)
-      productIds: {
-        TR: (trProductId || productId || null),
-        UA: (uaProductId || productId || null),
-        PL: (plProductId || productId || null),
-        IN: (inProductId || productId || null),
-      },
-      urls:{ TR: trU, UA: uaU, PL: plProductId ? `https://store.playstation.com/${PL_LOCALE}/product/${plProductId}` : null, IN: inProductId ? `https://store.playstation.com/${IN_LOCALE}/product/${inProductId}` : null },
-      status:{ TR: tr.status||null, UA: ua.status||null, PL: parsedPL.salePrice ? 200 : null, IN: parsedIN.salePrice ? 200 : null },
-      errors:{ TR: tr.error||null, UA: ua.error||null, PL:null, IN:null },
-      parsed:{ TR: parsedTR, UA: parsedUA, PL: parsedPL, IN: parsedIN }
-    });
-  }catch(e){
-    res.status(500).json({ ok:false, error:String(e) });
-  }
-});
+const psImportRoutes=require('./lib/ps-routes');
+psImportRoutes.register(app,{auth:requireAdmin,read:readJson,readCached:readJsonCachedPublic,write:writeJson,files:{all:ALL_GAMES_PATH,new:NEW_RELEASES_PATH,preorder:PREORDERS_PATH,discount:GAMES_PATH}});
 
 app.post("/api/admin/games/add", requireAdmin, async (req, res) => {
   try{
@@ -8923,6 +8188,7 @@ app.post("/api/admin/games/add", requireAdmin, async (req, res) => {
     next.regions.IN.ru = next.regions.TR.ru;
     next.regions.PL.sub = next.regions.TR.sub;
     next.regions.IN.sub = next.regions.TR.sub;
+    psImportRoutes.attachImport(next,g.psImport,g.psEdits||g.regions);
     items.push(next);
 
     // Also (re)apply any known PS browse ranks to existing items using the cache.
@@ -9543,7 +8809,8 @@ app.get("/api/search", async (req, res) => {
 
     // Apply search + platform filters
     // Match by name + edition to make sure queries like "gta premium" work.
-    if(q) items = items.filter(x => smartMatch([x.name, x.edition].filter(Boolean).join(" "), q));
+    if(q) items = rankedTitles(items,q,smartMatch);
+    else items = items.filter(gameOnly);
     if(platform) items = items.filter(x => platformPass(x, platform));
     if(genres.length) items = items.filter(x => genrePass(x.genres || "", genres));
     if(language) items = items.filter(x => languagePass(x, language, region));
@@ -9580,14 +8847,13 @@ app.get("/api/search", async (req, res) => {
       }
 
       const rub = calcRegionRub(store, region, storePrice);
-      const trSub = (g.regions && g.regions.TR && g.regions.TR.sub) ? String(g.regions.TR.sub) : "";
-      const uaSub = (g.regions && g.regions.UA && g.regions.UA.sub) ? String(g.regions.UA.sub) : "";
-      const anySub = trSub || uaSub;
+      const anySub = g.regions?.[region]?.sub || "";
 
       const base = {
         id: g.id,
-        name: g.name,
-        edition: anySub ? "Standard Edition" : (g.edition || "Standard Edition"),
+        name: g.names?.en || g.name,
+        isAddon: addon(g),
+        edition: englishEdition(g),
         ru: gameRuStatus(g, (typeof R !== 'undefined' ? R : (typeof region !== 'undefined' ? region : 'TR'))),
         sub: anySub,
         platform: g.platform || "PS4 / PS5",
@@ -9603,6 +8869,7 @@ app.get("/api/search", async (req, res) => {
         discountedUntil,
         storePrice,
         finalPriceRub: rub,
+        ...memberPrice(g,region,storePrice,store,discPerc),
         conceptId: conceptForGame(g, conceptIndex),
         popRank: g.popRank || 999999,
         isNewRelease: (g._src === "new") || isGameInNewReleases(g, newReleaseKeys, conceptIndex),
@@ -9610,7 +8877,7 @@ app.get("/api/search", async (req, res) => {
         releaseDate: g.releaseDate || null,
         isPreorder: ((g._src === "pre") || !!g.isPreorder) && isFutureReleaseDateYMD(g.releaseDate)
       };
-      if(q) base._score = relevanceScore([g.name, g.edition].filter(Boolean).join(" "), q);
+      if(q) base._score = g._score;
       return base;
     });
     computed = computed.filter(Boolean);
