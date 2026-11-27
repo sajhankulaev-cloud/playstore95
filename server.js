@@ -6868,7 +6868,7 @@ app.get("/api/bestsellers", async (req, res) => {
     }
     const items=entries.map(e=>{
       const local=e.products.map(id=>products.get(id)).find(Boolean) || products.get(e.id);
-      if(local)return {...local,cover:e.cover||local.cover,name:region==='UA'?local.name:e.name||local.name};
+      if(local)return {...local,cover:local.cover||e.cover,name:region==='UA'?local.name:e.name||local.name};
       return {id:e.id,name:e.name,cover:e.cover,officialUrl:'https://store.playstation.com/'+regionalOrder.locales[region]+'/'+(/^\d+$/.test(e.id)?'concept':'product')+'/'+encodeURIComponent(e.id)};
     });
     const total = items.length;
