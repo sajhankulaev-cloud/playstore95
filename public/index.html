@@ -3026,7 +3026,7 @@ async function renderDiscountOverview(){
   try{
     const [dj, bj] = await Promise.all([
       fetch(`/api/discount-dates?region=${encodeURIComponent(state.region)}`).then(r=>r.json()),
-      fetch(`/api/discount-banners`).then(r=>r.json()).catch(()=>({}))
+      fetch(`/api/discount-banners`, {cache:"no-store"}).then(r=>r.json()).catch(()=>({}))
     ]);
     dates = (dj && dj.dates) ? dj.dates : [];
     banners = (bj && bj.banners) ? bj.banners : (bj||{});
