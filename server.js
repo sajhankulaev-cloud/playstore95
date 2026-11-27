@@ -4517,8 +4517,9 @@ app.get("/api/meta", (req, res) => {
   const games = readJsonCachedPublic(GAMES_PATH, { updatedAt:null, items:[] });
   const allGames = readJsonCachedPublic(ALL_GAMES_PATH, { updatedAt:null, items:[] });
   const preorders = readJsonCachedPublic(PREORDERS_PATH, { updatedAt:null, items:[] });
-  const hasAnyUntil = { TR:false, UA:false, PL:false, IN:false };
-  for (const g of (games.items||[])) {
+  const hasAnyUntil = { TR:false, UA:false, PL:false, IN:false, US:false };
+  const discountGames=(games.items||[]).filter(g=>!discountIsAddon(g));
+  for (const g of discountGames) {
     for (const r of ["TR","UA","PL","IN","US"]) {
       if (virtualDiscountUntilFor(g, r)) hasAnyUntil[r]=true;
     }
@@ -4529,7 +4530,7 @@ app.get("/api/meta", (req, res) => {
     topupCards: store.topupCards || defaultTopupCards(),
     updatedAt: { games: games.updatedAt || null },
     hasAnyUntil,
-    total: Array.isArray(games.items) ? games.items.length : 0,
+    total: discountGames.length,
     allGamesTotal: Array.isArray(allGames.items) ? allGames.items.length : 0,
     preordersTotal: Array.isArray(preorders.items) ? preorders.items.length : 0,
     genres: collectPublicGenres(),
@@ -4882,6 +4883,39 @@ function virtualDiscountUntilFor(game, region){
 }
 
 const {addon,gameOnly,standard}=require('./lib/catalog-visibility');
+// Discount rows may be lightweight copies without the product type. Resolve
+// the type against the main catalog by exact SKU/internal id, never conceptId.
+function discountCatalogTypes(){
+  const doc=readJsonCachedPublic(ALL_GAMES_PATH,{items:[]});
+  if(discountCatalogTypes._doc===doc) return discountCatalogTypes._index;
+  const ids=new Map(), conflicts=new Set();
+  const catalog=Array.isArray(doc.items)?doc.items:[];
+  for(const game of catalog){
+    const value=addon(game);
+    const keys=collectExactProductLookupKeys(game,'US');
+    for(const id of keys){
+      if(conflicts.has(id))continue;
+      if(ids.has(id) && ids.get(id)!==value){ids.delete(id);conflicts.add(id);}
+      else ids.set(id,value);
+    }
+  }
+  const direct=new Map(catalog.filter(g=>g.id).map(g=>[String(g.id).trim(),addon(g)]));
+  const index={ids,direct,catalog};
+  discountCatalogTypes._doc=doc;discountCatalogTypes._index=index;
+  return index;
+}
+function discountIsAddon(game,index=discountCatalogTypes()){
+  if(addon(game))return true;
+  const id=String(game.id||'').trim();
+  if(index.direct.has(id))return index.direct.get(id);
+  const types=new Set(collectExactProductLookupKeys(game,'US').filter(k=>index.ids.has(k)).map(k=>index.ids.get(k)));
+  return types.size===1 && types.has(true);
+}
+function publicDiscountGameRows(doc,region){
+  const types=discountCatalogTypes();
+  const catalogIds=new Set(types.catalog.filter(gameOnly).flatMap(g=>collectExactProductLookupKeys(g,region)));
+  return (doc.items||[]).filter(g=>!discountIsAddon(g,types) && collectExactProductLookupKeys(g,region).some(id=>catalogIds.has(id)));
+}
 const {rankedTitles}=require('./lib/title-search');
 function smartMatch(name, q){
   const nq0 = normText(q);
@@ -5031,14 +5065,16 @@ app.get("/api/discount-dates", (req, res) => {
   try {
     const region = String(req.query.region || "TR").toUpperCase();
     const gamesDoc = readJsonCachedPublic(GAMES_PATH, { updatedAt:null, items:[] });
-    const all = (gamesDoc.items || []).filter(gameOnly);
+    const all = publicDiscountGameRows(gamesDoc,region);
     const norm = (v) => String(v || "").split("T")[0];
 
     const counts = {};
     for (const g of all) {
       // Дату скидки берём из данных игры по выбранному региону
-      const until = norm(virtualDiscountUntilFor(g, region));
-      if (!until) continue;
+      const offer=publicDiscountRegionFor(g,region);
+      const price=Number(offer?.salePrice||0);
+      const until=norm(offer?.discountedUntil);
+      if (!until || !Number.isFinite(price) || price<=0) continue;
       counts[until] = (counts[until] || 0) + 1;
     }
 
@@ -5138,9 +5174,7 @@ app.get("/api/games", async (req, res) => {
 
 
     const gamesDoc = readJsonCachedPublic(GAMES_PATH, { updatedAt:null, items:[] });
-    const catalog = readJsonCachedPublic(ALL_GAMES_PATH, {items:[]});
-    const catalogIds = new Set((catalog.items || []).filter(gameOnly).flatMap(g=>collectExactProductLookupKeys(g,region)));
-    let all = (gamesDoc.items || []).filter(gameOnly).filter(g=>collectExactProductLookupKeys(g,region).some(id=>catalogIds.has(id)));
+    let all = publicDiscountGameRows(gamesDoc,region);
 
     if (q) all = all.filter(x => smartMatch(x.name || "", q));
     if (platform) all = all.filter(x => platformPass(x, platform));
@@ -5768,7 +5802,7 @@ app.get("/api/admin/games/list", requireAdmin, (req, res) => {
         platform: g.platform || "",
         cover: g.cover || null,
         popRank: g.popRank || 0,
-        discountedUntil: until,discountRegions:regions,edition:g.edition,isAddon:addon(g),eaRegions:eaStatus(g)
+        discountedUntil: until,discountRegions:regions,edition:g.edition,isAddon:discountIsAddon(g),eaRegions:eaStatus(g)
     })))
   });
 });
@@ -5923,6 +5957,8 @@ app.delete("/api/admin/games/by-discount-date", requireAdmin, (req, res) => {
     const dateRaw = String(req.query.date || "").trim();
     if(!dateRaw) return res.status(400).json({ ok:false, error:"date_required" });
 
+    const kind=String(req.query.kind||'game');
+    if(!['game','addon'].includes(kind)) return res.status(400).json({ok:false,error:'bad_kind'});
     const wantNone = dateRaw.toLowerCase() === "none";
     const date = wantNone ? null : dateRaw;
     if(!wantNone && !/^\d{4}-\d{2}-\d{2}$/.test(date)){
@@ -5935,6 +5971,7 @@ app.delete("/api/admin/games/by-discount-date", requireAdmin, (req, res) => {
     const keep = [];
     const removed = [];
     for(const g of items){
+      if(discountIsAddon(g)!==(kind==='addon')){keep.push(g);continue;}
       const dates=discountGroups(g);
       if(!dates.has(date)){keep.push(g);continue}
       removed.push(g);
@@ -6164,6 +6201,7 @@ app.post("/api/admin/discounts/refresh_from_ps", requireAdmin, async (req, res) 
         cover: base.cover ? String(base.cover) : null,
         platform: base.platform ? String(base.platform) : "PS4 / PS5",
         edition: base.edition ? String(base.edition) : null,
+        psProductType: addon(base) ? 'addon' : (base.psProductType || 'edition'),
         conceptId: base.conceptId ? String(base.conceptId) : null,
         productIds: base.productIds && typeof base.productIds === "object" ? base.productIds : null,
         popRank: Number.isFinite(base.popRank) ? base.popRank : 1000000000,
@@ -8829,13 +8867,13 @@ app.get("/api/search", async (req, res) => {
       const baseStorePrice = reg ? Number(reg.salePrice || 0) : 0;
       if(!Number.isFinite(baseStorePrice) || baseStorePrice <= 0) return null;
 
-      const dg = (g.id && discountsIndex.byId.get(String(g.id))) || null;
+      const dg = (g.id && discountsIndex.byId.get(String(g.id))) || (addon(g) && discountsIndex.byId.get(String(g.productIds?.[region]||''))) || null;
 
       let discPerc = 0;
       let discountedUntil = null;
       let storePrice = baseStorePrice;
-      if(dg && dg.regions && dg.regions[region] && isDiscountActiveForRegion(dg.regions[region])){
-        const dreg = dg.regions[region];
+      const dreg=publicDiscountRegionFor(dg,region) || (addon(g)?publicDiscountRegionFor(g,region):null);
+      if(dreg){
         discPerc = Number(dreg.discPerc || 0) || 0;
         discountedUntil = dreg.discountedUntil || null;
         const dPrice = Number(dreg.salePrice || 0);
@@ -8869,6 +8907,7 @@ app.get("/api/search", async (req, res) => {
         discountedUntil,
         storePrice,
         finalPriceRub: rub,
+        ...(addon(g) && discPerc>0 ? {oldPriceRub:calcRegionRub(store,region,Number(dreg?.originalPrice) || baseStorePrice)} : {}),
         ...memberPrice(g,region,storePrice,store,discPerc),
         conceptId: conceptForGame(g, conceptIndex),
         popRank: g.popRank || 999999,

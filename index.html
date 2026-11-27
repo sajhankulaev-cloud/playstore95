@@ -1,0 +1,3710 @@
+<!doctype html><html lang="ru"><head>
+<link rel="preload" href="/fonts/orbitron-latin.woff2" as="font" type="font/woff2" crossorigin>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>PlayStore 95 — Скидки</title><link rel="stylesheet" href="/styles.css"/><link rel="stylesheet" href="/game-page.css"><link rel="stylesheet" href="/storefront-theme.css"><script src="/product-caption.js" defer></script><script src="/game-page.js" defer></script></head>
+<body>
+
+  <canvas id="snowCanvas" class="snowCanvas" aria-hidden="true"></canvas>
+
+<div class="topbar"><div class="container topbarInner">
+  <div class="topbarHeader">
+    <a href="/" class="brand" aria-label="PlayStore 95 — главная">
+		<span class="brandIcon" aria-hidden="true"></span>
+		<span class="brandTextWrap"><span class="brandText"><span class="brandFull">PlayStore </span><span class="brandShort">PS</span><span class="brandNumber">95</span></span><span class="brandWholesaleLabel">Оптовый</span></span>
+	</a>
+  <div class="filters">
+    <div class="colorA">Регион:</div>
+    <div class="regionPicker" id="regionPicker">
+      <button class="regionPickerBtn" id="regionPickerBtn" aria-label="Выбрать регион" type="button" aria-haspopup="listbox" aria-expanded="false">
+        <span class="regionPickerFlag" id="regionPickerFlag"><span class="regionFlagIcon regionFlagTR" aria-hidden="true"></span></span>
+        <span class="regionPickerText" id="regionPickerText" data-code="TR">TR</span>
+        <svg class="regionPickerArrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="regionPickerMenu" id="regionPickerMenu" role="listbox" aria-hidden="true">
+        <button class="regionPickerOption" type="button" role="option" data-region="TR"><span class="regionFlagIcon regionFlagTR" aria-hidden="true"></span><span>TR</span></button>
+        <button class="regionPickerOption" type="button" role="option" data-region="UA"><span class="regionFlagIcon regionFlagCIS" aria-hidden="true"></span><span>UA</span></button>
+        <button class="regionPickerOption" type="button" role="option" data-region="PL"><span class="regionFlagIcon regionFlagPL" aria-hidden="true"></span><span>PL</span></button>
+        <button class="regionPickerOption" type="button" role="option" data-region="IN"><span class="regionFlagIcon regionFlagIN" aria-hidden="true"></span><span>IN</span></button>
+        <button class="regionPickerOption" type="button" role="option" data-region="US"><span class="regionFlagIcon regionFlagUS" aria-hidden="true"></span><span>USA</span></button>
+      </div>
+    </div>
+    <select id="region" class="selecColor1 regionNativeSelect" aria-hidden="true" tabindex="-1"><option value="TR" class="colValue">TR</option><option value="UA" class="colValue">UA</option><option value="PL" class="colValue">PL</option><option value="IN" class="colValue">IN</option><option value="US" class="colValue">USA</option></select>
+  </div>
+    <div class="headerActions">
+      <div class="searchWrap" id="searchWrap">
+        <button class="searchToggle" id="searchToggle" type="button" aria-label="Поиск">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M10 4a6 6 0 104.472 10.03l4.249 4.249a1 1 0 001.414-1.414l-4.249-4.249A6 6 0 0010 4zm0 2a4 4 0 110 8 4 4 0 010-8z"></path>
+          </svg>
+        </button>
+        <div class="searchPanel" id="searchPanel" aria-hidden="true">
+          <div class="searchInputRow">
+            <input id="search" class="input searchInput" placeholder="Поиск по названию" autocomplete="off"/>
+            <button class="searchClose" id="searchClose" type="button" aria-label="Закрыть поиск">×</button>
+          </div>
+          <div class="quickSearchBox" id="quickSearchBox" aria-hidden="true">
+            <div class="quickSearchHead">
+              <div class="quickSearchTitle">Быстрые результаты</div>
+              <button class="quickSearchGo" id="quickSearchGo" type="button" aria-label="Открыть страницу поиска">→</button>
+            </div>
+            <div class="quickSearchScroller" id="quickSearchResults"></div>
+          </div>
+        </div>
+      </div>
+    <button class="wishToggle" id="wishToggle" type="button" aria-label="Список желаемого">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z"></path></svg>
+      <span class="wishCount" id="wishCount" aria-hidden="true">0</span>
+    </button>
+      <button class="cartToggle" id="cartToggle" type="button" aria-label="Корзина">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M7 4H5L4 6v2h2l2.6 8.6c.2.8.9 1.4 1.8 1.4h7.8c.9 0 1.6-.6 1.8-1.4L23 8H7.4L7 6h15V4H7zm3.1 15a1.9 1.9 0 110 3.8 1.9 1.9 0 010-3.8zm9 0a1.9 1.9 0 110 3.8 1.9 1.9 0 010-3.8z"></path>
+        </svg>
+        <span class="cartCount" id="cartCount" aria-hidden="true">0</span>
+      </button>
+    </div>
+  </div>
+</div></div>
+
+<div class="container navContainer">
+  <div class="siteTabsShell" aria-label="Навигация по разделам">
+    <button class="tabsArrow tabsArrowLeft" type="button" aria-label="Прокрутить влево">‹</button>
+    <div class="siteTabs" id="siteTabs" role="tablist">
+      <button class="siteTab" type="button" role="tab" data-tab="home">Главная</button>
+      <button class="siteTab" type="button" role="tab" data-tab="preorders">Предзаказы</button>
+      <button class="siteTab" type="button" role="tab" data-tab="new">Новинки</button>
+      <button class="siteTab" type="button" role="tab" data-tab="discounts">Скидки</button>
+      <button class="siteTab" type="button" role="tab" data-tab="allgames">Все игры</button>
+      <button class="siteTab" type="button" role="tab" data-tab="subs">Подписки</button>
+    </div>
+    <button class="tabsArrow tabsArrowRight" type="button" aria-label="Прокрутить вправо">›</button>
+  </div>
+</div>
+
+<main id="gamePage" class="container detailPage" hidden></main>
+<!--<button class="backToTop" id="backToTop" type="button" aria-label="Наверх">↑</button>-->
+
+<div class="container">
+  <div class="resultsBar" aria-label="Результаты">
+    <div class="catalogControls">
+      <button id="filterOpen" class="catalogControlBtn" type="button">
+        <span>Фильтры</span>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M16 5v4M4 17h2M10 17h10M8 15v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+      <div class="sortControl" id="sortControl">
+        <button id="sortOpen" class="catalogControlBtn catalogControlBtn--sort" type="button" aria-expanded="false">
+          <span id="sortCurrentLabel">По популярности</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div id="sortMenu" class="sortMenu" aria-hidden="true"></div>
+      </div>
+      <select id="sort" class="sortSelect sortSelectHidden" aria-label="Сортировка">
+        <!-- options are injected dynamically based on active tab -->
+      </select>
+    </div>
+  </div>
+  <div id="discountTabs" class="discountTabs" aria-label="Блоки скидок"></div>
+  <div id="allDeals" class="allDeals" aria-label="All Deals"></div>
+  <div id="emptyBox" class="card" style="display:none;padding:12px;margin-top:14px;">Игры еще не добавлены</div>
+  <div class="grid" id="grid"></div>
+  <div class="pager" id="pager"></div>
+</div>
+
+<div id="filterOverlay" class="filterOverlay" aria-hidden="true">
+  <div class="filterBackdrop" id="filterBackdrop"></div>
+  <aside class="filterDrawer" role="dialog" aria-modal="true" aria-label="Фильтры">
+    <div class="filterDrawerHead">
+      <h2>Фильтры</h2>
+      <button id="filterClose" class="filterClose" type="button" aria-label="Закрыть">×</button>
+    </div>
+    <div class="filterGroup">
+      <div class="filterGroupTitle">Платформа:</div>
+      <div class="filterChips" id="filterPlatforms">
+        <label class="filterChip"><input type="checkbox" value="PS4"><span>PS4</span></label>
+        <label class="filterChip"><input type="checkbox" value="PS5"><span>PS5</span></label>
+        <label class="filterChip"><input type="checkbox" value="VR2"><span>VR2</span></label>
+      </div>
+    </div>
+    <div class="filterGroup">
+      <div class="filterGroupTitle">Игроки:</div>
+      <div class="filterChips filterChips--players" id="filterPlayers">
+        <label class="filterChip"><input type="checkbox" value="1-2"><span>1-2 игрока</span></label>
+        <label class="filterChip"><input type="checkbox" value="1-4"><span>1-4 игрока</span></label>
+        <label class="filterChip"><input type="checkbox" value="1-5"><span>1-5 игроков</span></label>
+        <label class="filterChip"><input type="checkbox" value="1-6"><span>1-6 игроков</span></label>
+        <label class="filterChip"><input type="checkbox" value="1-8"><span>1-8 игроков</span></label>
+      </div>
+    </div>
+    <div class="filterGroup">
+      <div class="filterGroupTitle">Язык:</div>
+      <div class="filterChips filterChips--language" id="filterLanguages">
+        <label class="filterChip"><input type="checkbox" value="voice"><span>Полностью на русском</span></label>
+        <label class="filterChip"><input type="checkbox" value="text"><span>С русскими субтитрами</span></label>
+        <label class="filterChip"><input type="checkbox" value="none"><span>Без русского перевода</span></label>
+      </div>
+    </div>
+    <div class="filterGroup">
+      <div class="filterGroupTitle">Жанры:</div>
+      <div class="filterChips filterChips--genres" id="filterGenres"></div>
+    </div>
+    <div class="filterDrawerFooter">
+      <button id="filterClear" class="filterClearBtn" type="button">Сбросить</button>
+      <button id="filterApply" class="filterApplyBtn" type="button">Применить</button>
+    </div>
+  </aside>
+</div>
+
+<script>
+
+// Open wholesale storefront. Keep the same UI, but mark all public API calls
+// so server-side price calculations use wholesale settings.
+const __isWholesaleStorefront = window.location.pathname === "/ps95_optovik" || window.location.pathname.startsWith("/ps95_optovik/");
+const __storefrontBasePath = __isWholesaleStorefront ? "/ps95_optovik" : "/";
+if(__isWholesaleStorefront){
+  document.body.classList.add("wholesaleStorefront");
+  const __brand = document.querySelector("a.brand");
+  if(__brand) __brand.setAttribute("href", "/ps95_optovik");
+  const __nativeFetch = window.fetch.bind(window);
+  window.fetch = function(input, init){
+    try{
+      const raw = (typeof input === "string") ? input : (input && input.url ? input.url : "");
+      const u = new URL(raw, window.location.href);
+      if(u.origin === window.location.origin && u.pathname.startsWith("/api/") && !u.pathname.startsWith("/api/admin/")){
+        u.searchParams.set("wholesale", "1");
+        if(typeof input === "string") input = u.pathname + u.search + u.hash;
+        else input = new Request(u.href, input);
+      }
+    }catch(_e){}
+    return __nativeFetch(input, init);
+  };
+}
+
+const gamePagePath=location.pathname.match(/^\/(?:ps95_optovik\/)?game\/([^/]+)\/?$/);
+const gamePageId=gamePagePath?decodeURIComponent(gamePagePath[1]):null;
+function gameLink(id){return (__isWholesaleStorefront?'/ps95_optovik':'')+'/game/'+encodeURIComponent(id)+'?region='+encodeURIComponent(state.region)}
+if(gamePageId)document.body.classList.add('onGamePage');
+const state={tab:"home",region:"TR",sort:"pop",platform:"",players:"",language:"",genres:[],search:"",page:1,until:"",subPage:"",allDeals:false,discountRates:{TR:[],UA:[],PL:[],IN:[]},topupCards:{TR:[],PL:[],IN:[]},useTurkeyTopupCards:false,useIndiaTopupCards:true,roundStep:50,enabledRegions:{TR:true,UA:true,PL:true,IN:true}};
+
+function shouldScrollToSubsGames(){
+  return !!(state.scrollToSubsGames || window.location.hash === "#subs-games");
+}
+
+function scrollToSubsGamesIfRequested(){
+  if(!shouldScrollToSubsGames()) return;
+  const target = document.getElementById("subs-games") || document.querySelector(".subsGamesBlock");
+  if(!target) return;
+  setTimeout(()=>{
+    target.scrollIntoView({behavior:"auto", block:"start"});
+    state.scrollToSubsGames = false;
+  }, 80);
+}
+
+const TAB_LABELS={home:"Главная",preorders:"Предзаказы",new:"Новинки",discounts:"Скидки",allgames:"Все игры",subs:"Подписки",topup:"Карты пополнения",bestsellers:"Лидеры продаж"};
+
+
+function escapeHtml(s){
+  return String(s == null ? "" : s).replace(/[&<>"']/g,(ch)=>(
+    ch==="&"?"&amp;":ch==="<"?"&lt;":ch===">"?"&gt;":ch==='"'?"&quot;":"&#39;"
+  ));
+}
+
+// Robust JSON fetch for catalog data. A transient network/proxy error should not
+// leave the page with only the header and an empty games area.
+function fetchJson(url, options, timeoutMs, retries){
+  const opts = options || {};
+  const timeout = Math.max(3000, Number(timeoutMs || 15000));
+  const left = Math.max(0, Number(retries || 0));
+  let timer = null;
+  const timeoutPromise = new Promise((_, reject)=>{
+    timer = setTimeout(()=>reject(new Error("request_timeout")), timeout);
+  });
+  return Promise.race([
+    fetch(url, opts).then(r=>{
+      if(!r.ok) throw new Error("HTTP_" + r.status);
+      return r.json();
+    }),
+    timeoutPromise
+  ]).then(v=>{ if(timer) clearTimeout(timer); return v; }, err=>{
+    if(timer) clearTimeout(timer);
+    if(left > 0) return fetchJson(url, opts, timeout, left - 1);
+    throw err;
+  });
+}
+
+function optimizedPsImageUrl(src, width){
+  const raw = String(src || "").trim();
+  if(!raw) return raw;
+  if(raw.startsWith("/")) return raw;
+  try{
+    const u = new URL(raw, window.location.href);
+    const host = u.hostname.toLowerCase();
+    const isPlayStationImage = host.endsWith("playstation.com") || host.endsWith("playstation.net") || host.includes("playstation");
+    if(!isPlayStationImage) return raw;
+    const w = Math.max(80, Math.min(1920, Number(width || 322) || 322));
+    return `/api/optimized-image?u=${encodeURIComponent(u.href)}&w=${w}`;
+  }catch(_e){
+    return raw;
+  }
+}
+
+function gameCoverImg(src, attrs=""){
+  const optimized = optimizedPsImageUrl(src, 322);
+  return `<img src="${escapeHtml(optimized)}" alt="" loading="lazy" decoding="async" fetchpriority="low" width="161" height="161" referrerpolicy="no-referrer" ${attrs}>`;
+}
+
+function modalCoverImg(src){
+  const optimized = optimizedPsImageUrl(src, 440);
+  return `<img src="${escapeHtml(optimized)}" alt="" loading="lazy" decoding="async" fetchpriority="low" width="220" height="220" referrerpolicy="no-referrer">`;
+}
+
+
+
+function subsIcon(name){
+  const icons={
+    base:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="6" width="14" height="13" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 6.2V5.4A3.4 3.4 0 0 1 11.4 2h1.2A3.4 3.4 0 0 1 16 5.4v.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+    gift:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="9" width="16" height="11" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4 13h16M12 9v11M8.2 8.8C6.1 7.7 6.6 4.4 9 4.4c1.7 0 2.4 1.6 3 4.4.6-2.8 1.3-4.4 3-4.4 2.4 0 2.9 3.3.8 4.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    globe:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.8 12h16.4M12 3.5c2.2 2.4 3.3 5.2 3.3 8.5S14.2 18.1 12 20.5c-2.2-2.4-3.3-5.2-3.3-8.5S9.8 5.9 12 3.5Z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',
+    share:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="5" width="11" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 16h8.5a2.5 2.5 0 0 0 0-5H16M16 8l3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    cloud:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7.5 18.5h9.4a4.1 4.1 0 0 0 .4-8.2 6 6 0 0 0-11.1 1.5A3.4 3.4 0 0 0 7.5 18.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 16V9.5M9.5 12l2.5-2.5 2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    tag:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12.4 12.4 4H20v7.6L11.6 20 4 12.4Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="16.3" cy="7.8" r="1.4" fill="currentColor"/></svg>',
+    puzzle:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 4h4v3a2 2 0 1 0 4 0V4h3v6h-3a2 2 0 1 0 0 4h3v6h-6v-3a2 2 0 1 0-4 0v3H4v-6h3a2 2 0 1 0 0-4H4V4h5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
+    bulb:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 14.5a6 6 0 1 1 8 0c-.9.8-1.4 1.8-1.5 3h-5c-.1-1.2-.6-2.2-1.5-3Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9.5 20h5M10 22h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+    gamepad:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 9h10a4 4 0 0 1 3.7 2.5l1 2.6a3.2 3.2 0 0 1-5.4 3.3L14.7 16H9.3l-1.6 1.4a3.2 3.2 0 0 1-5.4-3.3l1-2.6A4 4 0 0 1 7 9Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 12v4M6 14h4M16.5 13.5h.1M18.5 15.5h.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+    layers:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3 3.5 7.5 12 12l8.5-4.5L12 3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M5 12.2 12 16l7-3.8M5 16.2 12 20l7-3.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    grid:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="4" width="6" height="6" rx="1.7" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="4" width="6" height="6" rx="1.7" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="4" y="14" width="6" height="6" rx="1.7" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="14" width="6" height="6" rx="1.7" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>',
+    ubisoft:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 20.5a8.5 8.5 0 1 0-7.7-4.9c1.7 3.7 6.3 4.3 9.4 2.4 3.4-2 3.5-6.8.5-8.5-2.3-1.3-5.3-.4-6.1 2-.5 1.7.6 3.3 2.2 3.5 1.4.2 2.8-.6 3-2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+    refresh:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18.5 8.5A7 7 0 0 0 6 7.8L4.5 10M5.5 15.5A7 7 0 0 0 18 16.2l1.5-2.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.5 5.5V10H9M19.5 18.5V14H15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    download:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4v10M8 10l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 18h14v2H5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
+    crown:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 8l4 4 4-7 4 7 4-4-1.5 10h-13L4 8Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M7 20h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+    demo:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 9h10a4 4 0 0 1 3.7 2.5l.9 2.4a3.1 3.1 0 0 1-5.2 3.2L15 16H9l-1.4 1.1a3.1 3.1 0 0 1-5.2-3.2l.9-2.4A4 4 0 0 1 7 9Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M7 14h4M9 12v4M16.5 13.5h.1M18.5 15.5h.1M19 6v3M17.5 7.5h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+    stream:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7.5 17.5H17a3.7 3.7 0 0 0 .5-7.4A5.5 5.5 0 0 0 7 11.4a3.1 3.1 0 0 0 .5 6.1Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16.5 13v5M14 15.5h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+    clockgame:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5.5 10.5h7a3 3 0 0 1 2.8 1.9l.7 1.9a2.4 2.4 0 0 1-4 2.5l-1-1H7l-1 1a2.4 2.4 0 0 1-4-2.5l.7-1.9a3 3 0 0 1 2.8-1.9Z" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="17" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M17 6v2.2l1.6 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+    compare:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 8h12M17 8l-3-3M17 8l-3 3M19 16H7M7 16l3-3M7 16l3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    library:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="5" width="4" height="14" rx="1" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="10" y="5" width="4" height="14" rx="1" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16 6.5 20 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+    trial:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 8h10v4a5 5 0 0 1-10 0V8Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 4h6M10 8V4M14 8V4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M10 13h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'
+  };
+  return icons[name] || icons.base;
+}
+
+function subsInfoItem(icon, content){
+  const isPng = icon === 'psplus';
+  return `<p class="subsInfoItem"><span class="subsInfoIcon${isPng ? ' subsInfoIconPngSlot' : ''}" aria-hidden="true">${isPng ? '' : subsIcon(icon)}</span><span class="subsInfoCopy">${content}</span></p>`;
+}
+
+function subsInfoList(items){
+  return items.map(([icon, content])=>subsInfoItem(icon, content)).join('');
+}
+
+function getSortOptionsForTab(tab){
+  return [
+    {v:"pop", t:"По популярности"},
+    {v:"name_asc", t:"По алфавиту ↑"},
+    {v:"name_desc", t:"По алфавиту ↓"},
+    {v:"price_asc", t:"По цене ↑"},
+    {v:"price_desc", t:"По цене ↓"},
+  ];
+}
+
+function updateSortLabel(){
+  const label=document.getElementById("sortCurrentLabel");
+  const opts=getSortOptionsForTab(state.tab);
+  const found=opts.find(o=>o.v===state.sort) || opts[0];
+  if(label) label.textContent=found.t;
+}
+
+function closeSortMenu(){
+  const menu=document.getElementById("sortMenu");
+  const btn=document.getElementById("sortOpen");
+  if(menu) menu.classList.remove("open");
+  if(menu) menu.setAttribute("aria-hidden","true");
+  if(btn) btn.setAttribute("aria-expanded","false");
+}
+
+function setSortOptionsForTab(tab){
+  const sel=document.getElementById("sort");
+  const menu=document.getElementById("sortMenu");
+  const options=getSortOptionsForTab(tab);
+
+  const allowed = new Set(options.map(o=>o.v));
+  if(!allowed.has(state.sort)) state.sort = "pop";
+
+  if(sel){
+    sel.innerHTML = options.map(o=>`<option value="${o.v}" class="colValue">${o.t}</option>`).join("");
+    sel.value = state.sort;
+  }
+  if(menu){
+    menu.innerHTML = options.map(o=>`<button type="button" class="sortMenuItem${o.v===state.sort?' active':''}" data-sort="${o.v}">${o.t}</button>`).join("");
+    menu.querySelectorAll(".sortMenuItem").forEach(btn=>{
+      btn.onclick=()=>{
+        state.sort=btn.dataset.sort || "pop";
+        state.page=1;
+        if(sel) sel.value=state.sort;
+        updateSortLabel();
+        closeSortMenu();
+        load();
+      };
+    });
+  }
+  updateSortLabel();
+}
+
+function syncFilterDrawer(){
+  document.querySelectorAll('#filterPlatforms input[type="checkbox"]').forEach(ch=>{
+    ch.checked = String(state.platform||"").toUpperCase() === String(ch.value||"").toUpperCase();
+  });
+  const selectedPlayers = new Set(String(state.players||"").split(",").map(x=>x.trim()).filter(Boolean));
+  document.querySelectorAll('#filterPlayers input[type="checkbox"]').forEach(ch=>{
+    ch.checked = selectedPlayers.has(String(ch.value||""));
+  });
+  document.querySelectorAll('#filterLanguages input[type="checkbox"]').forEach(ch=>{
+    ch.checked = String(state.language||"").toLowerCase() === String(ch.value||"").toLowerCase();
+  });
+  const selected=new Set((state.genres||[]).map(x=>String(x).trim()).filter(Boolean));
+  document.querySelectorAll('#filterGenres input[type="checkbox"]').forEach(ch=>{
+    ch.checked = selected.has(ch.value);
+  });
+}
+
+function openFilterDrawer(){
+  syncFilterDrawer();
+  const ov=document.getElementById("filterOverlay");
+  if(ov){ ov.classList.add("open"); ov.setAttribute("aria-hidden","false"); }
+}
+function closeFilterDrawer(){
+  const ov=document.getElementById("filterOverlay");
+  if(ov){ ov.classList.remove("open"); ov.setAttribute("aria-hidden","true"); }
+}
+
+function populateGenreFilters(genres){
+  const box=document.getElementById("filterGenres");
+  if(!box) return;
+  const current=Array.from(box.querySelectorAll('input')).map(x=>x.value).join('|');
+  const list=(Array.isArray(genres)?genres:[]).map(x=>String(x||'').trim()).filter(Boolean);
+  const next=list.join('|');
+  if(current===next) return;
+  box.innerHTML = list.map(g=>`<label class="filterChip"><input type="checkbox" value="${escapeHtml(g)}"><span>${escapeHtml(g)}</span></label>`).join("") || '<div class="filterEmpty">Жанры пока не заполнены</div>';
+  enableFilterHorizontalScroll(box);
+  syncFilterDrawer();
+}
+
+function resetSectionFilters(opts={}){
+  state.platform="";
+  state.players="";
+  state.language="";
+  state.genres=[];
+  state.sort="pop";
+  state.until="";
+  state.allDeals=false;
+  state.page=1;
+  if(!opts.keepSearch){
+    state.search="";
+    const si=document.getElementById("search");
+    if(si) si.value="";
+  }
+  const platformSelect=document.getElementById("platform");
+  if(platformSelect) platformSelect.value="";
+  const sortSelect=document.getElementById("sort");
+  if(sortSelect) sortSelect.value="pop";
+  document.querySelectorAll('#filterOverlay input[type="checkbox"]').forEach(x=>{ x.checked=false; });
+}
+
+function setActiveTab(tab, opts={}){
+  if(gamePageId){
+    const qs=new URLSearchParams({tab,region:state.region});
+    if(tab==='search' && state.search)qs.set('q',state.search);
+    location.assign(__storefrontBasePath+'?'+qs);return;
+  }
+  const prevTab = state.tab;
+  if(prevTab && prevTab !== tab && !opts.keepFilters){
+    resetSectionFilters({keepSearch: tab === "search"});
+  }
+  state.tab = tab;
+  if(tab!=="subs") state.subPage="";
+  if(tab==="subs" && typeof opts.subPage!=="undefined") state.subPage=opts.subPage || "";
+  // Reset only what should not bleed between sections
+  if(!opts.keepPage) state.page = 1;
+  if(tab !== "discounts") state.until = "";
+  if(tab !== "discounts") state.allDeals = false;
+  // When user explicitly opens the Discounts tab, default to the overview (no date filter)
+  if(tab === "discounts" && !opts.keepUntil){
+    state.until = "";
+    state.allDeals = false;
+  }
+
+  // Adjust sort options for this section (and reset sort if needed)
+  setSortOptionsForTab(tab);
+
+  // Update URL
+  try{
+    const qs=new URLSearchParams(location.search);
+    qs.set("tab", tab);
+    if(tab==="subs" && state.subPage) qs.set("sub", state.subPage); else qs.delete("sub");
+    // preserve filters
+    qs.set("region", state.region);
+    qs.set("sort", state.sort);
+    if(state.platform) qs.set("platform", state.platform); else qs.delete("platform");
+    if(state.players) qs.set("players", state.players); else qs.delete("players");
+    if(state.language) qs.set("language", state.language); else qs.delete("language");
+    if((state.genres||[]).length) qs.set("genres", state.genres.join(",")); else qs.delete("genres");
+    if(state.search) qs.set("q", state.search); else qs.delete("q");
+    if(state.until && tab==="discounts") qs.set("until", state.until); else qs.delete("until");
+    if(state.allDeals && tab==="discounts") qs.set("all", "1"); else qs.delete("all");
+    const __u = new URL(window.location.href);
+    __u.pathname = __storefrontBasePath;
+    __u.search = "?" + qs.toString();
+    history.replaceState(null,"", __u.pathname + __u.search);
+  }catch(_){}
+  // Visual
+  const tabs=[...document.querySelectorAll(".siteTab")];
+  tabs.forEach(b=>{
+    const is = b.dataset.tab===tab;
+    b.classList.toggle("isActive", is);
+    b.setAttribute("aria-selected", is ? "true":"false");
+    b.tabIndex = is ? 0 : -1;
+  });
+  // Toggle discount UI visibility
+  const dt=document.getElementById("discountTabs");
+  const ad=document.getElementById("allDeals");
+  if(dt) dt.style.display = (tab==="discounts") ? "" : "none";
+  if(ad) ad.style.display = (tab==="discounts") ? "" : "none";
+
+  // Discounts have two internal views: overview (banners + carousel) and list (date/all).
+  // The exact view is set in load(); clear it here when leaving the discounts section.
+  if(tab !== "discounts"){
+    try{ delete document.body.dataset.discountsView; }catch(_){ document.body.removeAttribute("data-discounts-view"); }
+  }
+  // We'll set this precisely during load(), but clear it when leaving Discounts.
+  if(tab !== "discounts"){
+    delete document.body.dataset.discountsView;
+  }
+
+  const tabsShell=document.querySelector(".siteTabsShell");
+  if(tabsShell) tabsShell.style.display = (tab === "search") ? "none" : "";
+
+  // Let CSS react to current section (hide counters/sort on non-game pages)
+  document.body.dataset.tab = tab;
+
+  if(tab !== "search" && !state.search){
+    try{ setSearchOpen(false); }catch(_){ }
+  }
+
+  // Ensure subscriptions grid layout does not leak into other sections
+  const __gridEl = document.getElementById("grid");
+  if(__gridEl) __gridEl.classList.toggle("gridSubs", tab==="subs");
+
+  // Instant render for SPA sub-pages (so clicking subscription cards opens immediately without refresh)
+  if(opts && opts.renderNow){
+    if(tab === "subs"){
+      renderSubscriptions();
+      return;
+    }
+    if(tab === "multiplayer"){
+      renderMultiplayerPage();
+      return;
+    }
+    if(tab === "topup"){
+      renderTopupPage();
+      return;
+    }
+    if(tab === "new"){
+      showEmptySection("Раздел пуст");
+      return;
+    }
+  }
+}
+
+function showEmptySection(msg){
+  const grid=document.getElementById("grid");
+  const pager=document.getElementById("pager");
+  const emptyBox=document.getElementById("emptyBox");
+  if(grid) grid.innerHTML="";
+  if(pager) pager.innerHTML="";
+  if(emptyBox){
+    emptyBox.style.display="block";
+    emptyBox.textContent=msg || "Раздел пуст";
+  }
+}
+
+
+
+
+function openSubPage(sub, scrollToGames=false){
+  state.search="";
+  state.scrollToSubsGames = !!scrollToGames;
+  const si=document.getElementById("search");
+  if(si) si.value="";
+  setSearchOpen(false);
+  setActiveTab("subs",{subPage:sub, keepPage:true, renderNow:true});
+  try{
+    if(scrollToGames){
+      const qs=new URLSearchParams(location.search);
+      qs.set("tab","subs");
+      qs.set("sub", sub);
+      history.replaceState(null,"", __storefrontBasePath + "?" + qs.toString() + "#subs-games");
+    }
+  }catch(_){ }
+  if(scrollToGames) scrollToSubsGamesIfRequested(); else scrollTo(0,0);
+}
+
+function openMultiplayerPage(){
+  state.search="";
+  state.subPage="";
+  const si=document.getElementById("search");
+  if(si) si.value="";
+  setSearchOpen(false);
+  setActiveTab("multiplayer", {keepPage:false, renderNow:true});
+  scrollTo(0,0);
+}
+
+const HOME_PSPLUS_FEATURES = {
+  essential: ["Возможность играть по сети", "Бесплатные игры месяца", "Эксклюзивные скидки", "Облачное хранилище"],
+  extra: ["Всё, что есть в PS Plus Essential", "Каталог с сотнями консольных хитов", "Отдельный набор игр от издателя Ubisoft", "Облачное хранилище"],
+  deluxe: ["Всё, что есть в PS Plus Essential и Extra", "Каталог классических хитов Sony", "Эксклюзивные демо-версии", "Облачное хранилище"],
+};
+const HOME_EAPLAY_FEATURES = ["Включает в себя игры от издателя EA.", "Дарит скидку в 10% на игры от EA."];
+
+function homeSubCardHtml(id, img, title, price, features=[]){
+  const feats = (features||[]).map(t=>`<li>${escapeHtml(t)}</li>`).join("");
+  if(id!=="eaplay"){
+    return `<button class="plusPlan" data-tier="${escapeHtml(id)}" type="button" data-home-sub="${escapeHtml(id)}">
+      <span class="planHead"><span class="planName">${escapeHtml(title)}</span><img src="/img/psplus-logo.png" width="44" height="44" alt="" loading="lazy"></span>
+      <span class="planPrice">${price||''}</span>
+      <span class="planBenefits">${(features||[]).map(t=>'<span>'+escapeHtml(t)+'</span>').join('')}</span>
+    </button>`;
+  }
+  return `<button class="homeSubCard" type="button" data-home-sub="${escapeHtml(id)}">
+    <img src="${escapeHtml(img)}" alt="${escapeHtml(title)}" loading="lazy" decoding="async">
+    <div class="homeSubText">
+      <div class="homeSubPrice">${price ? price : ""}</div>
+      <div class="homeSubName">${escapeHtml(title)}</div>
+      ${feats ? `<ul class="homeSubFeatures">${feats}</ul>` : ""}
+    </div>
+  </button>`;
+}
+
+
+
+
+function enableFilterHorizontalScroll(scroller){
+  if(!scroller || scroller.dataset.filterScrollReady) return;
+  scroller.dataset.filterScrollReady = "1";
+  let startX = 0, startY = 0, startLeft = 0, dragging = false, moved = false;
+
+  scroller.addEventListener('wheel', (e)=>{
+    if(scroller.scrollWidth <= scroller.clientWidth) return;
+    const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+    if(!delta) return;
+    scroller.scrollLeft += delta;
+    e.preventDefault();
+  }, {passive:false});
+
+  scroller.addEventListener('pointerdown', (e)=>{
+    if(e.button !== undefined && e.button !== 0) return;
+    dragging = true; moved = false;
+    startX = e.clientX; startY = e.clientY; startLeft = scroller.scrollLeft;
+  });
+  scroller.addEventListener('pointermove', (e)=>{
+    if(!dragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    if(Math.abs(dx) > 3 && Math.abs(dx) >= Math.abs(dy)){
+      if(!moved){
+        moved = true;
+        scroller.classList.add('is-dragging');
+        try{ scroller.setPointerCapture(e.pointerId); }catch(_){ }
+      }
+      scroller.scrollLeft = startLeft - dx;
+      e.preventDefault();
+    }
+  }, {passive:false});
+  const stop = ()=>{
+    if(!dragging) return;
+    dragging = false;
+    scroller.classList.remove('is-dragging');
+    if(moved){
+      scroller.dataset.dragMoved = '1';
+      setTimeout(()=>{ delete scroller.dataset.dragMoved; }, 180);
+    }
+  };
+  scroller.addEventListener('pointerup', stop);
+  scroller.addEventListener('pointercancel', stop);
+  scroller.addEventListener('lostpointercapture', stop);
+  scroller.addEventListener('click', (e)=>{
+    if(scroller.dataset.dragMoved === '1'){
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, true);
+}
+// Touch rails use browser scrolling. Mouse drags and discrete slide gestures
+// capture the pointer only once a horizontal movement has been established.
+function bindHorizontalDrag(element,slide,handleTouch=false){
+  let start=null,dragged=false;
+  element.addEventListener('dragstart',e=>e.preventDefault());
+  element.addEventListener('pointerdown',e=>{
+    if(!e.isPrimary || e.button!==0)return;
+    dragged=false;
+    if(!slide && !handleTouch && e.pointerType!=='mouse')return;
+    start={id:e.pointerId,x:e.clientX,y:e.clientY,left:element.scrollLeft};
+  });
+  element.addEventListener('pointermove',e=>{
+    if(!start || start.id!==e.pointerId)return;
+    const dx=e.clientX-start.x,dy=e.clientY-start.y;
+    if(!dragged){
+      if(Math.abs(dy)>8 && Math.abs(dy)>Math.abs(dx)){start=null;return;}
+      if(Math.abs(dx)<8)return;
+      dragged=true;element.setPointerCapture(e.pointerId);
+    }
+    if(!slide)element.scrollLeft=start.left-dx;
+  });
+  element.addEventListener('pointerup',e=>{
+    if(start?.id!==e.pointerId)return;
+    const dx=e.clientX-start.x;
+    if(slide && dragged && Math.abs(dx)>28)slide(dx<0?1:-1);
+    start=null;
+  });
+  element.addEventListener('pointercancel',()=>{start=null;});
+  element.addEventListener('click',e=>{
+    if(dragged && e.detail){e.preventDefault();e.stopPropagation();}
+  },true);
+}
+function openHomeSection(tab){
+  state.search = "";
+  state.page = 1;
+  setSearchOpen(false);
+  if(tab === "discounts"){
+    setActiveTab("discounts", {keepUntil:true});
+    state.until = "";
+    state.allDeals = true;
+  }else{
+    setActiveTab(tab);
+  }
+  load();
+  scrollTo(0,0);
+}
+
+function openDiscountDatePage(until){
+  const iso = String(until || "").trim();
+  if(!iso) return;
+  state.search = "";
+  state.page = 1;
+  const si=document.getElementById("search");
+  if(si) si.value="";
+  setSearchOpen(false);
+  // When opening a discount banner from the home hero, setActiveTab() may reset
+  // section filters while switching from Home to Discounts. Set the selected
+  // sale date after that reset so mobile tap navigation keeps the exact block.
+  setActiveTab("discounts", {keepUntil:true, keepPage:false});
+  state.until = iso;
+  state.allDeals = false;
+  load();
+  scrollTo(0,0);
+}
+
+async function appendHomeDiscountBanners(hero){
+  if(!hero) return;
+  try{
+    const [dj, bj] = await Promise.all([
+      fetch(`/api/discount-dates?region=${encodeURIComponent(state.region)}`, {cache:"no-store"}).then(r=>r.json()),
+      fetch(`/api/discount-banners`, {cache:"no-store"}).then(r=>r.json()).catch(()=>({}))
+    ]);
+    const dates = (dj && Array.isArray(dj.dates)) ? dj.dates : [];
+    const banners = (bj && bj.banners && typeof bj.banners === "object") ? bj.banners : {};
+    dates.forEach(d=>{
+      const iso = String(d && d.date ? d.date : "").trim();
+      const img = iso && banners[iso] ? String(banners[iso]) : "";
+      if(!iso || !img) return;
+      const a=document.createElement("a");
+      a.className="homeBanner homeBanner--discount";
+      a.href=`/?tab=discounts&region=${encodeURIComponent(state.region)}&until=${encodeURIComponent(iso)}`;
+      a.setAttribute("data-discount-until", iso);
+      a.setAttribute("aria-label", `Скидки до ${iso}`);
+      a.innerHTML=`<img src="${escapeHtml(img)}" alt="" loading="eager" decoding="async"/>`;
+      a.addEventListener("click", (e)=>{
+        e.preventDefault();
+        openDiscountDatePage(iso);
+      });
+      hero.appendChild(a);
+    });
+  }catch(_){}
+}
+
+function homeBlockHeader(title, targetTab){
+  return `<div class="homeBlockHead"><h2>${escapeHtml(title)}</h2><div class="homeRowTools">
+    <button class="homeViewAll" type="button" data-home-view-all="${escapeHtml(targetTab)}">Посмотреть все</button>
+    <button type="button" data-row-step="-1" aria-label="${escapeHtml(title)}: прокрутить назад">‹</button>
+    <button type="button" data-row-step="1" aria-label="${escapeHtml(title)}: прокрутить вперёд">›</button>
+    </div></div>`;
+}
+
+
+function topupSidebarImage(region){
+  const R=String(region||state.region||"TR").toUpperCase();
+  if(R==="PL") return "/img/topup-sidebar-pl.jpg";
+  if(R==="IN") return "/img/topup-sidebar-in.jpg";
+  return "/img/topup-sidebar-tr.jpg";
+}
+function openTopupPage(){
+  state.search="";
+  state.subPage="";
+  const si=document.getElementById("search");
+  if(si) si.value="";
+  setSearchOpen(false);
+  setActiveTab("topup", {keepPage:true, renderNow:true});
+  scrollTo(0,0);
+}
+
+async function renderHome(){
+  document.body.dataset.tab="home";
+  try{ delete document.body.dataset.discountsView; }catch(_){ document.body.removeAttribute("data-discounts-view"); }
+  const dt=document.getElementById("discountTabs");
+  const ad=document.getElementById("allDeals");
+  const grid=document.getElementById("grid");
+  const pager=document.getElementById("pager");
+  const emptyBox=document.getElementById("emptyBox");
+  if(dt){ dt.innerHTML=""; dt.style.display="none"; }
+  if(ad){ ad.innerHTML=""; ad.style.display="none"; }
+  if(pager) pager.innerHTML="";
+  if(emptyBox) emptyBox.style.display="none";
+  if(!grid) return;
+  grid.classList.remove("gridSubs", "searchResults");
+  grid.innerHTML = `<div class="homePage" id="homePage">
+    <section class="homeHeroWrap" aria-label="Подборки подписок">
+      <div class="homeHero" id="homeHero">
+        <a class="homeBanner homeBanner--essential" href="/?tab=subs&sub=essential#subs-games" data-home-sub="essential" data-scroll-games="1" aria-label="PS Plus Essential"><img src="/img/hero-essential.jpg" alt="PS Plus Essential" loading="eager" fetchpriority="high" decoding="async"/></a>
+        <a class="homeBanner homeBanner--extra" href="/?tab=subs&sub=extra#subs-games" data-home-sub="extra" data-scroll-games="1" aria-label="PS Plus Extra"><img src="/img/hero-extra.jpg" alt="PS Plus Extra" loading="lazy" fetchpriority="low" decoding="async"/></a>
+        <a class="homeBanner homeBanner--deluxe" href="/?tab=subs&sub=deluxe#subs-games" data-home-sub="deluxe" data-scroll-games="1" aria-label="PS Plus Deluxe"><img src="/img/hero-deluxe.jpg" alt="PS Plus Deluxe" loading="lazy" fetchpriority="low" decoding="async"/></a>
+        <a class="homeBanner homeBanner--eaplay" href="/?tab=subs&sub=eaplay#subs-games" data-home-sub="eaplay" data-scroll-games="1" aria-label="EA Play"><img src="/img/hero-eaplay.jpg" alt="EA Play" loading="lazy" fetchpriority="low" decoding="async"/></a>
+        <a class="homeBanner homeBanner--multiplayer" href="/?tab=multiplayer" data-home-page="multiplayer" aria-label="Игры для нескольких игроков"><img src="/img/hero-multiplayer.jpg" alt="Игры для нескольких игроков" loading="lazy" fetchpriority="low" decoding="async"/></a>
+        ${["UA","US"].includes(String(state.region||"TR").toUpperCase()) ? "" : `<a class="homeBanner homeBanner--topup" href="/?tab=topup" data-home-page="topup" aria-label="Карты пополнения"><img src="${escapeHtml(topupSidebarImage(state.region))}" alt="Карты пополнения" loading="lazy" fetchpriority="low" decoding="async"/></a>`}
+      </div>
+      <div class="homeHeroDots" id="homeHeroDots" aria-hidden="true"></div>
+    </section>
+    <section class="homeBlock">${homeBlockHeader("Лидеры продаж", "bestsellers")}<div class="homeRow" id="homeBest"></div></section>
+    <section class="homeSubsBlock"><div class="homeSubsHead"><h2>Подписки PS Plus</h2><div class="homeSubTabs"><button class="active" type="button" data-subtabs="psplus" data-months="1">1 месяц</button><button type="button" data-subtabs="psplus" data-months="3">3 месяца</button><button type="button" data-subtabs="psplus" data-months="12">12 месяцев</button></div></div><div class="homeSubsList" id="homeSubsList"></div></section>
+    <section class="homeSubsBlock homeEaBlock"><div class="homeSubsHead"><h2>EA Play</h2><div class="homeSubTabs homeSubTabs--two"><button class="active" type="button" data-subtabs="eaplay" data-months="1">1 месяц</button><button type="button" data-subtabs="eaplay" data-months="12">12 месяцев</button></div></div><div class="homeSubsList" id="homeEaList"></div></section>
+    <section class="homeBlock">${homeBlockHeader("Новинки", "new")}<div class="homeRow" id="homeNew"></div></section>
+    <section class="homeBlock">${homeBlockHeader("Предзаказы", "preorders")}<div class="homeRow" id="homePreorders"></div></section>
+    <section class="homeBlock">${homeBlockHeader("Скидки", "discounts")}<div class="homeRow" id="homeDiscounts"></div></section>
+    <section class="homeFooter"><a href="#" class="homeFooterLink">Контакты</a><a href="#" class="homeFooterLink">Поддержка</a><div class="homeSocials"><a class="homeSocial homeSocial--tg" href="https://t.me/" target="_blank" rel="noopener" aria-label="Telegram"></a><a class="homeSocial homeSocial--wa" href="https://wa.me/" target="_blank" rel="noopener" aria-label="WhatsApp"></a></div></section>
+  </div>`;
+
+  const waLink = grid.querySelector('.homeSocial--wa');
+  if(waLink) waLink.href = state.whatsapp || "https://wa.me/+79659556300";
+  grid.querySelectorAll('[data-home-sub]').forEach(btn=>btn.addEventListener('click',(e)=>{
+    const sub = btn.getAttribute('data-home-sub') || '';
+    const toGames = btn.getAttribute('data-scroll-games') === '1';
+    if(btn.tagName === 'A') e.preventDefault();
+    openSubPage(sub, toGames);
+  }));
+  grid.querySelectorAll('[data-home-page="multiplayer"]').forEach(btn=>btn.addEventListener('click',(e)=>{
+    if(btn.tagName === 'A') e.preventDefault();
+    openMultiplayerPage();
+  }));
+  grid.querySelectorAll('[data-home-view-all]').forEach(btn=>btn.addEventListener('click',()=>openHomeSection(btn.getAttribute('data-home-view-all')||'home')));
+  grid.querySelectorAll('[data-row-step]').forEach(button=>button.addEventListener('click',()=>{
+    const row=button.closest('.homeBlock').querySelector('.homeRow');
+    row.scrollBy({left:Number(button.dataset.rowStep)*row.clientWidth*.85,
+      behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
+  }));
+  const hero=grid.querySelector('#homeHero');
+  await appendHomeDiscountBanners(hero);
+
+  hero?.querySelector('[data-home-page="topup"]')?.addEventListener('click',e=>{
+    e.preventDefault();openTopupPage();
+  });
+
+  // Top banner carousel: center active slide, bigger active size, autoplay + dots.
+  if(hero){
+    const heroSlides=[...hero.querySelectorAll('.homeBanner')];
+    const dots=document.getElementById('homeHeroDots');
+    let heroIndex=0;
+    let heroTimer=null;
+    const renderHero=()=>{
+      const len=heroSlides.length;
+      heroSlides.forEach((sl,i)=>{
+        const prev=(heroIndex-1+len)%len;
+        const next=(heroIndex+1)%len;
+        sl.classList.toggle('is-active', i===heroIndex);
+        sl.classList.toggle('is-prev', i===prev);
+        sl.classList.toggle('is-next', i===next);
+        sl.classList.toggle('is-hidden', i!==heroIndex && i!==prev && i!==next);
+      });
+      if(dots){
+        dots.innerHTML=heroSlides.map((_,i)=>`<button type="button" class="${i===heroIndex?'active':''}" aria-label="Слайд ${i+1}" data-hero-dot="${i}"></button>`).join('');
+        dots.querySelectorAll('[data-hero-dot]').forEach(b=>b.addEventListener('click',()=>{ heroIndex=Number(b.dataset.heroDot||0); renderHero(); restartHero(); }));
+      }
+    };
+    const goHero=(dir)=>{ if(!heroSlides.length) return; heroIndex=(heroIndex+dir+heroSlides.length)%heroSlides.length; renderHero(); };
+    const restartHero=()=>{ if(heroTimer) clearInterval(heroTimer); heroTimer=setInterval(()=>goHero(1),3000); };
+    bindHorizontalDrag(hero,dir=>{goHero(dir);restartHero();});
+    renderHero(); restartHero();
+  }
+  grid.querySelectorAll('.homeRow').forEach(row=>bindHorizontalDrag(row));
+
+  const qsBase = (extra={}) => {
+    const qs = new URLSearchParams({region:state.region, sort:"pop", page:"1"});
+    if(state.platform) qs.set("platform", state.platform);
+    if(state.players) qs.set("players", state.players);
+    if(state.language) qs.set("language", state.language);
+    if((state.genres||[]).length) qs.set("genres", state.genres.join(","));
+    Object.entries(extra).forEach(([k,v])=>qs.set(k,String(v)));
+    return qs.toString();
+  };
+  const fillRow = async (id, url) => {
+    const row=document.getElementById(id);
+    if(!row) return;
+    row.innerHTML = `<div class="homeLoading">Загрузка...</div>`;
+    try{
+      const j=await fetchJson(url,{cache:"no-store"},15000,1);
+      row.innerHTML="";
+      const defaultSourceTab = id === "homeBest" ? "allgames" : (id === "homeNew" ? "new" : (id === "homePreorders" ? "preorders" : (id === "homeDiscounts" ? "discounts" : state.tab)));
+      (j.items||[]).slice(0,15).forEach(g=>{
+        const sourceTab = g.sourceTab || defaultSourceTab;
+        const showDate = sourceTab === "discounts";
+        row.appendChild(buildCard(Object.assign({}, g, {__cardTab:sourceTab, __forceShowEdition: id === "homeBest"}), state.whatsapp||"", showDate));
+      });
+      if(!row.children.length) row.innerHTML = `<div class="homeLoading">Игры еще не добавлены</div>`;
+    }catch(_){ row.innerHTML = `<div class="homeLoading">Игры еще не добавлены</div>`; }
+  };
+
+  const prices = await getSubsPrices();
+  const renderHomeSubs = (months) => {
+    const list=document.getElementById("homeSubsList");
+    if(!list) return;
+    const R=state.region;
+    list.innerHTML = [
+      homeSubCardHtml("essential", `/img/essential_${months}${Number(months)===1?'.jpg':(Number(months)===12?'.jpg':'.png')}`, "PS Plus Essential", renderSubOfferPrice(prices,R,"psplus","essential",months), HOME_PSPLUS_FEATURES.essential),
+      homeSubCardHtml("extra", `/img/extra_${months}.png`, "PS Plus Extra", renderSubOfferPrice(prices,R,"psplus","extra",months), HOME_PSPLUS_FEATURES.extra),
+      homeSubCardHtml("deluxe", `/img/deluxe_${months}.png`, "PS Plus Deluxe", renderSubOfferPrice(prices,R,"psplus","deluxe",months), HOME_PSPLUS_FEATURES.deluxe),
+    ].join("");
+    list.querySelectorAll('[data-home-sub]').forEach(btn=>btn.addEventListener('click',()=>openSubPage(btn.getAttribute('data-home-sub')||'')));
+  };
+  const renderHomeEa = (months) => {
+    const list=document.getElementById("homeEaList");
+    if(!list) return;
+    const R=state.region;
+    list.innerHTML = homeSubCardHtml("eaplay", `/img/eaplay_${months}.png`, "EA Play", renderSubOfferPrice(prices,R,"eaplay","",months), HOME_EAPLAY_FEATURES);
+    list.querySelectorAll('[data-home-sub]').forEach(btn=>btn.addEventListener('click',()=>openSubPage(btn.getAttribute('data-home-sub')||'', true)));
+  };
+  renderHomeSubs(1);
+  renderHomeEa(1);
+  grid.querySelectorAll('.homeSubTabs button').forEach(btn=>btn.addEventListener('click',()=>{
+    const group=btn.dataset.subtabs || 'psplus';
+    grid.querySelectorAll(`.homeSubTabs button[data-subtabs="${group}"]`).forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    if(group === 'eaplay') renderHomeEa(Number(btn.dataset.months||1));
+    else renderHomeSubs(Number(btn.dataset.months||1));
+  }));
+
+  await Promise.all([
+    fillRow("homeBest", "/api/bestsellers?view=cards&"+qsBase({limit:15})),
+    fillRow("homeNew", "/api/newreleases?view=cards&"+qsBase({perPage:15})),
+    fillRow("homePreorders", "/api/preorders?view=cards&"+qsBase({perPage:15})),
+    fillRow("homeDiscounts", "/api/games?view=cards&"+qsBase({perPage:15})),
+  ]);
+}
+
+
+
+async function renderMultiplayerPage(){
+  document.body.dataset.tab="multiplayer";
+  try{ delete document.body.dataset.discountsView; }catch(_){ document.body.removeAttribute("data-discounts-view"); }
+  const dt=document.getElementById("discountTabs");
+  const ad=document.getElementById("allDeals");
+  const grid=document.getElementById("grid");
+  const pager=document.getElementById("pager");
+  const emptyBox=document.getElementById("emptyBox");
+  if(dt){ dt.innerHTML=""; dt.style.display="none"; }
+  if(ad){ ad.innerHTML=""; ad.style.display="none"; }
+  if(emptyBox) emptyBox.style.display="none";
+  if(!grid) return;
+  grid.classList.remove("gridSubs", "searchResults");
+  grid.innerHTML = `<section class="fullListPage multiplayerPage"><h1 class="multiplayerTitle">Игры для нескольких игроков</h1><div class="multiplayerToolbar"><button class="btnGhost" type="button" id="multiplayerBackBtn">← На главную</button><div class="fullListCount" id="multiplayerCount">Загрузка...</div></div><div class="grid fullListGrid" id="multiplayerGrid"></div></section>`;
+  const back=document.getElementById("multiplayerBackBtn");
+  if(back) back.onclick=()=>{ window.location.href=__storefrontBasePath; };
+  const list=document.getElementById("multiplayerGrid");
+  const count=document.getElementById("multiplayerCount");
+  const renderPager=(total, perPage)=>{
+    if(!pager) return;
+    pager.innerHTML="";
+    const totalPages=Math.max(1, Math.ceil((total||0)/(perPage||24)));
+    if(totalPages<=1) return;
+    const mk=(label,page,disabled=false,active=false)=>{
+      const b=document.createElement("button");
+      b.className="pagerBtn"+(active?" active":"");
+      b.textContent=label;
+      b.disabled=disabled;
+      b.onclick=()=>{state.page=page; renderMultiplayerPage(); scrollTo(0,0);};
+      return b;
+    };
+    pager.appendChild(mk("‹", Math.max(1,state.page-1), state.page===1));
+    const start=Math.max(1,state.page-1);
+    const end=Math.min(totalPages,state.page+1);
+    if(start>1) pager.appendChild(mk("1",1,false,state.page===1));
+    if(start>2){ const dots=document.createElement("span"); dots.className="pagerDots"; dots.textContent="…"; pager.appendChild(dots); }
+    for(let p=start;p<=end;p++) pager.appendChild(mk(String(p),p,false,p===state.page));
+    if(end<totalPages-1){ const dots=document.createElement("span"); dots.className="pagerDots"; dots.textContent="…"; pager.appendChild(dots); }
+    if(end<totalPages) pager.appendChild(mk(String(totalPages),totalPages,false,state.page===totalPages));
+    pager.appendChild(mk("›", Math.min(totalPages,state.page+1), state.page===totalPages));
+  };
+  try{
+    const perPage=24;
+    const qs=new URLSearchParams({region:state.region, page:String(state.page||1), perPage:String(perPage)});
+    if(state.platform) qs.set("platform", state.platform);
+    if(state.players) qs.set("players", state.players);
+    if(state.language) qs.set("language", state.language);
+    if((state.genres||[]).length) qs.set("genres", state.genres.join(","));
+    const j=await fetch("/api/multiplayer?view=cards&"+qs.toString(),{cache:"no-store"}).then(r=>r.json());
+    if(j && (j.total||0)>0 && (j.items||[]).length===0 && state.page>1){
+      state.page=Math.max(1, Math.ceil((j.total||0)/(j.perPage||perPage)));
+      return renderMultiplayerPage();
+    }
+    if(count) count.textContent=`Найдено игр: ${j.total||0}`;
+    if(list){
+      list.innerHTML="";
+      (j.items||[]).forEach(g=>list.appendChild(buildCard(Object.assign({}, g, {__cardTab:(g.sourceTab || "allgames"), __forceShowEdition:true}), state.whatsapp||"", false)));
+      if(!list.children.length) list.innerHTML=`<div class="homeLoading">Игры еще не добавлены</div>`;
+    }
+    renderPager(j.total||0, j.perPage||perPage);
+  }catch(_){
+    if(count) count.textContent="Найдено игр: 0";
+    if(list) list.innerHTML=`<div class="homeLoading">Игры еще не добавлены</div>`;
+    if(pager) pager.innerHTML="";
+  }
+}
+
+async function renderBestsellersPage(){
+  document.body.dataset.tab="bestsellers";
+  try{ delete document.body.dataset.discountsView; }catch(_){ document.body.removeAttribute("data-discounts-view"); }
+  const dt=document.getElementById("discountTabs");
+  const ad=document.getElementById("allDeals");
+  const grid=document.getElementById("grid");
+  const pager=document.getElementById("pager");
+  const emptyBox=document.getElementById("emptyBox");
+  if(dt){ dt.innerHTML=""; dt.style.display="none"; }
+  if(ad){ ad.innerHTML=""; ad.style.display="none"; }
+  if(pager) pager.innerHTML="";
+  if(emptyBox) emptyBox.style.display="none";
+  if(!grid) return;
+  grid.classList.remove("gridSubs");
+  grid.innerHTML = `<div class="sectionTop"><button class="sectionBackBtn" type="button" id="bestsellersBack">‹ Назад</button><h1>Лидеры продаж</h1></div><div class="bestsellersGrid" id="bestsellersGrid"><div class="homeLoading">Загрузка...</div></div>`;
+  const back=document.getElementById("bestsellersBack");
+  if(back) back.onclick=()=>openHomeSection("home");
+  const list=document.getElementById("bestsellersGrid");
+  const renderBestPager=(total,perPage)=>{
+    if(!pager) return;
+    pager.innerHTML="";
+    const totalPages=Math.max(1, Math.ceil((total||0)/(perPage||24)));
+    const mk=(label,page,disabled=false,active=false)=>{
+      const b=document.createElement("button");
+      b.className="pagerBtn"+(active?" active":"");
+      b.textContent=label;
+      b.disabled=disabled;
+      b.onclick=()=>{state.page=page;renderBestsellersPage();scrollTo(0,0);};
+      return b;
+    };
+    if(totalPages<=1) return;
+    pager.appendChild(mk("‹", Math.max(1,state.page-1), state.page===1));
+    if(totalPages<=3){
+      for(let p=1;p<=totalPages;p++) pager.appendChild(mk(String(p),p,false,p===state.page));
+    }else{
+      const start=Math.max(1,state.page-1);
+      const end=Math.min(totalPages,state.page+1);
+      for(let p=start;p<=end;p++) pager.appendChild(mk(String(p),p,false,p===state.page));
+      if(end<totalPages-1){ const dots=document.createElement("span"); dots.className="pagerDots"; dots.textContent="…"; pager.appendChild(dots); }
+      if(end<totalPages) pager.appendChild(mk(String(totalPages),totalPages,false,state.page===totalPages));
+    }
+    pager.appendChild(mk("›", Math.min(totalPages,state.page+1), state.page===totalPages));
+  };
+  try{
+    const perPage=24;
+    const qs = new URLSearchParams({region:state.region, sort:"pop", page:String(state.page||1), perPage:String(perPage)});
+    if(state.platform) qs.set("platform", state.platform);
+    if(state.players) qs.set("players", state.players);
+    if(state.language) qs.set("language", state.language);
+    if((state.genres||[]).length) qs.set("genres", state.genres.join(","));
+    const j=await fetch("/api/bestsellers?view=cards&"+qs.toString(),{cache:"no-store"}).then(r=>r.json());
+    if(j && (j.total||0)>0 && (j.items||[]).length===0 && state.page>1){
+      state.page=Math.max(1, Math.ceil((j.total||0)/(j.perPage||perPage)));
+      return renderBestsellersPage();
+    }
+    list.innerHTML="";
+    (j.items||[]).forEach(g=>list.appendChild(buildCard(Object.assign({}, g, {__cardTab:(g.sourceTab || "allgames"), __forceShowEdition:true}), state.whatsapp||"", false)));
+    if(!list.children.length) list.innerHTML = `<div class="homeLoading">Игры еще не добавлены</div>`;
+    renderBestPager(j.total||0, j.perPage||perPage);
+  }catch(_){
+    list.innerHTML = `<div class="homeLoading">Игры еще не добавлены</div>`;
+  }
+}
+
+function renderSubscriptions(){
+  const grid=document.getElementById("grid");
+  const pager=document.getElementById("pager");
+  const emptyBox=document.getElementById("emptyBox");
+  if(pager) pager.innerHTML="";
+  if(emptyBox) emptyBox.style.display="none";
+  if(!grid) return;
+
+  // Switch the shared grid container into "subscriptions" layout
+  grid.classList.add("gridSubs");
+
+  // Dedicated pages (we will implement step-by-step)
+  if(state.subPage==="essential"){
+    renderSubsEssential();
+    return;
+  }
+  if(state.subPage==="extra"){
+    renderSubsExtra();
+    return;
+  }
+
+  if(state.subPage==="deluxe"){
+    renderSubsDeluxe();
+    return;
+  }
+
+  if(state.subPage==="eaplay"){
+    renderSubsEaPlay();
+    return;
+  }
+
+  // If user clicked into a specific subscription page – show placeholder for now
+  if(state.subPage){
+    const titleMap={essential:"PlayStation Plus Essential",extra:"PlayStation Plus Extra",deluxe:"PlayStation Plus Deluxe",eaplay:"EA Play"};
+    const title=titleMap[state.subPage] || "Подписка";
+    grid.innerHTML = `
+      <div class="subsPage">
+        <div class="subsPageHead">
+          <button class="btnGhost subsBackBtn" type="button" id="subsBackBtn">← Назад</button>
+          <div class="subsPageTitle">${escapeHtml(title)}</div>
+        </div>
+        <div class="subsEmpty">Раздел пуст</div>
+      </div>
+    `;
+    const back=document.getElementById("subsBackBtn");
+    if(back) back.onclick=()=>setActiveTab("subs",{subPage:"", renderNow:true});
+    return;
+  }
+
+  const cards=[
+    {id:"essential", title:"PsPlus Essential", img:"/img/psplus.jpg", alt:"PlayStation Plus Essential"},
+    {id:"extra", title:"PsPlus Extra", img:"/img/extra.png", alt:"PlayStation Plus Extra"},
+    {id:"deluxe", title:"PsPlus Deluxe", img:"/img/deluxe.png", alt:"PlayStation Plus Deluxe"},
+    {id:"eaplay", title:"EaPlay", img:"/img/ea.png", alt:"EA Play"},
+  ];
+
+  grid.innerHTML = cards.map(c=>`
+    <button class="subsCard" type="button" data-sub="${c.id}" aria-label="${escapeHtml(c.alt)}">
+      <div class="subsImgWrap">
+        <img src="${c.img}" alt="${escapeHtml(c.alt)}" loading="lazy" decoding="async"/>
+      </div>
+      <div class="subsName">${escapeHtml(c.title)}</div>
+    </button>
+  `).join("");
+
+  grid.querySelectorAll("[data-sub]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const sub=btn.getAttribute("data-sub") || "";
+      setActiveTab("subs",{subPage:sub, keepPage:true, renderNow:true});
+    });
+  });
+}
+
+let __subsPricesCache = null;
+async function getSubsPrices(){
+  if(__subsPricesCache) return __subsPricesCache;
+  try{
+    const j = await fetchJson("/api/subscriptions-prices", { cache:"no-store" }, 10000, 1);
+    __subsPricesCache = j || {};
+    return __subsPricesCache;
+  }catch(_){
+    __subsPricesCache = {};
+    return __subsPricesCache;
+  }
+}
+
+function getSubPrice(prices, region, kind, tier, months){
+  const R = String(region||"TR").toUpperCase();
+  const m = String(months);
+  if(kind==="psplus"){
+    const row = prices && prices[R] && prices[R].psplus && prices[R].psplus[tier];
+    return Number(row && row[m]) || 0;
+  }
+  if(kind==="eaplay"){
+    const row = prices && prices[R] && prices[R].eaplay;
+    return Number(row && row[m]) || 0;
+  }
+  return 0;
+}
+
+function getSubDiscountPrice(prices, region, kind, tier, months){
+  if(Number(months) !== 12) return 0;
+  const R = String(region||"TR").toUpperCase();
+  if(kind==="psplus"){
+    const row = prices && prices[R] && prices[R].psplus && prices[R].psplus[tier];
+    return Number(row && row.discount12) || 0;
+  }
+  if(kind==="eaplay"){
+    const row = prices && prices[R] && prices[R].eaplay;
+    return Number(row && row.discount12) || 0;
+  }
+  return 0;
+}
+
+function getSubFinalPrice(prices, region, kind, tier, months){
+  const base = getSubPrice(prices, region, kind, tier, months);
+  const discount = getSubDiscountPrice(prices, region, kind, tier, months);
+  return discount > 0 ? discount : base;
+}
+
+function renderSubOfferPrice(prices, region, kind, tier, months){
+  const base = getSubPrice(prices, region, kind, tier, months);
+  const discount = getSubDiscountPrice(prices, region, kind, tier, months);
+  if(discount > 0 && base > 0){
+    return `<span class="subOfferPriceOld">${fmtRub(base)}</span><span class="subOfferPriceNew">${fmtRub(discount)}</span>`;
+  }
+  return base ? fmtRub(base) : "—";
+}
+
+// Fetch games by subscription tag (e.g. "psplus_extra")
+async function renderSubsEssential(){
+  const grid=document.getElementById("grid");
+  const emptyBox=document.getElementById("emptyBox");
+  if(emptyBox) emptyBox.style.display="none";
+  if(!grid) return;
+  grid.innerHTML = `
+    <div class="subsDetail subsEssential" aria-busy="true">
+      <div class="subsDetailHead">
+        <button class="btnGhost subsBackBtn" type="button" id="subsBackBtn">← Назад</button>
+        <div class="subsPageTitle">PlayStation Plus Essential</div>
+      </div>
+      <div class="subsLoading">Загрузка...</div>
+    </div>
+  `;
+  const back=document.getElementById("subsBackBtn");
+  if(back) back.onclick=()=>setActiveTab("subs",{subPage:"", renderNow:true});
+
+  const prices = await getSubsPrices();
+  const region = state.region;
+  const items = [
+    {months:1, label:"1 месяц", img:"/img/essential_1.jpg"},
+    {months:3, label:"3 месяца", img:"/img/essential_3.png"},
+    {months:12,label:"12 месяцев", img:"/img/essential_12.jpg"},
+  ];
+
+  const cardsHtml = items.map(it=>{
+    const id = `sub_psplus_essential_${it.months}`;
+    const price = getSubPrice(prices, region, "psplus", "essential", it.months);
+    const gameForCart = {
+      id,
+      name: "PlayStation Plus Essential",
+      edition: it.label,
+      platform: "Подписка",
+      cover: it.img,
+      finalPriceRub: price
+    };
+    // store cart payload in dataset for click handler
+    return `
+      <div class="subOfferCard" data-sub-offer="${id}">
+        <div class="subOfferImg"><img src="${it.img}" loading="lazy" decoding="async" alt="Essential ${it.months}" loading="lazy" onerror="this.src='/img/psplus.png'"/></div>
+        <div class="subOfferTitle">Essential <span>${escapeHtml(it.label)}</span></div>
+        <div class="subOfferPrice">${renderSubOfferPrice(prices, region, "psplus", "essential", it.months)}</div>
+        <button class="buyBtn" type="button" data-cart-game="${id}" data-cart-label="Купить" data-cart-label-in="В корзине">Купить</button>
+      </div>
+    `;
+  }).join("");
+
+  grid.innerHTML = `
+    <div class="subsDetail subsEssential">
+      <div class="subsDetailHead">
+        <button class="btnGhost subsBackBtn" type="button" id="subsBackBtn">← Назад</button>
+        <div class="subsPageTitle">PlayStation Plus Essential</div>
+      </div>
+      <div class="subOfferGrid">
+        ${cardsHtml}
+      </div>
+      <div class="subsInfoBox">
+        <div class="subsInfoTitle">Подробнее о PlayStation Plus</div>
+        <div class="subsInfoText">
+${subsInfoList([
+        ['psplus', '<b>PlayStation Plus Essential</b> — базовый уровень подписки PlayStation, который обеспечивает доступ к ключевым функциям PlayStation.'],
+        ['gift', '<b>Ежемесячные игры.</b> Несколько проектов для PS4 и PS5, которые добавляются в библиотеку при активной подписке.'],
+        ['globe', '<b>Доступ к онлайн-мультиплееру.</b> Можно играть с друзьями и другими игроками по всему миру.'],
+        ['share', '<b>Share Play.</b> Функция позволяет передать управление аккаунтом другому человеку, что удобно для совместных игр или прохождения сложных уровней.'],
+        ['cloud', '<b>Облачное хранилище.</b> Объём — до 100 ГБ, можно сохранять игровые данные и получать к ним доступ с любого устройства, подключённого к PlayStation Network.'],
+        ['tag', '<b>Эксклюзивные скидки.</b> Специальные предложения и акции в PlayStation Store, например, до 75% скидки на избранные игры.'],
+        ['puzzle', '<b>Дополнительный контент.</b> Бонусы и внутриигровые предметы для отдельных проектов.'],
+        ['bulb', '<b>Справка по игре (для PS5).</b> Подсказки и советы прямо во время прохождения.'],
+        ['gamepad', '<b>Коллекция PlayStation Plus (для PS5).</b> Доступ к подборке популярных игр прошлого поколения.'],
+        ['psplus', '<b>PS Plus Essential</b> подходит для тех, кто активно играет в многопользовательские игры, получает удовольствие от бесплатных игр ежемесячно и ищет базовые функции PlayStation по доступной цене.']
+      ])}
+		</div>
+      </div>
+      <div class="subsGamesBlock" id="subs-games">
+        <div class="subsGamesHead">
+          <div class="subsGamesTitle">Игры в подписке Essential</div>
+          <div class="subsGamesCount" id="subsEssentialGamesCount">Найдено игр: 0</div>
+        </div>
+        <div class="grid subsGamesGrid" id="subsGamesGrid"></div>
+      </div>
+    </div>
+  `;
+  const back2=document.getElementById("subsBackBtn");
+  if(back2) back2.onclick=()=>setActiveTab("subs",{subPage:"", renderNow:true});
+
+  // Wire buy buttons
+  grid.querySelectorAll(".subOfferCard").forEach(card=>{
+    const id = card.getAttribute("data-sub-offer");
+    const months = Number(String(id||"").split("_").pop()) || 1;
+    const label = months===1 ? "1 месяц" : (months===3 ? "3 месяца" : "12 месяцев");
+    const img = months===1 ? "/img/essential_1.png" : (months===3 ? "/img/essential_3.png" : "/img/essential_12.png");
+    const price = getSubFinalPrice(prices, region, "psplus", "essential", months);
+    const btn = card.querySelector("button[data-cart-game]");
+    if(btn){
+      btn.addEventListener("click", ()=>{
+        buySubscriptionWhatsApp({
+          name: "PlayStation Plus Essential",
+          months: months,
+          region: region,
+          price: price
+        });
+      });
+    }
+  });
+
+  const games = await getSubscriptionGames("psplus_essential");
+  const countEl = document.getElementById("subsEssentialGamesCount");
+  if(countEl) countEl.textContent = `Найдено игр: ${games.length}`;
+  const gamesGrid=document.getElementById("subsGamesGrid");
+  if(gamesGrid){
+    gamesGrid.innerHTML="";
+    const whatsapp = state.whatsapp || "https://wa.me/+79659556300";
+    games.forEach(g=> gamesGrid.appendChild(buildCard(g, whatsapp, false)));
+  }
+  scrollToSubsGamesIfRequested();
+}
+
+let __subGamesCache = {};
+async function getSubscriptionGames(sub){
+  const key = `${String(sub||"")}|${String(state.region||"TR").toUpperCase()}`;
+  if(__subGamesCache[key]) return __subGamesCache[key];
+  try{
+    const qs = new URLSearchParams({ sub: String(sub||""), region: String(state.region||"TR") });
+    const r = await fetch(`/api/subgames?view=cards&${qs.toString()}`, { cache:"no-store" });
+    const j = await r.json();
+    const items = Array.isArray(j.items) ? j.items : [];
+    __subGamesCache[key] = items;
+    return items;
+  }catch(_){
+    __subGamesCache[key] = [];
+    return [];
+  }
+}
+
+async function renderSubsExtra(){
+  const grid=document.getElementById("grid");
+  const emptyBox=document.getElementById("emptyBox");
+  if(emptyBox) emptyBox.style.display="none";
+  if(!grid) return;
+
+  grid.innerHTML = `
+    <div class="subsDetail subsExtra" aria-busy="true">
+      <div class="subsDetailHead">
+        <button class="btnGhost subsBackBtn" type="button" id="subsBackBtn">← Назад</button>
+        <div class="subsPageTitle">PlayStation Plus Extra</div>
+      </div>
+      <div class="subsLoading">Загрузка...</div>
+    </div>
+  `;
+  const back=document.getElementById("subsBackBtn");
+  if(back) back.onclick=()=>setActiveTab("subs",{subPage:"", renderNow:true});
+
+  const prices = await getSubsPrices();
+  const region = state.region;
+  const items = [
+    {months:1, label:"1 месяц", img:"/img/extra_1.png"},
+    {months:3, label:"3 месяца", img:"/img/extra_3.png"},
+    {months:12,label:"12 месяцев", img:"/img/extra_12.png"},
+  ];
+
+  const cardsHtml = items.map(it=>{
+    const id = `sub_psplus_extra_${it.months}`;
+    const price = getSubPrice(prices, region, "psplus", "extra", it.months);
+    return `
+      <div class="subOfferCard" data-sub-offer="${id}">
+        <div class="subOfferImg"><img src="${it.img}" loading="lazy" decoding="async" alt="Extra ${it.months}" loading="lazy" onerror="this.src='/img/extra.png'"/></div>
+        <div class="subOfferTitle">Extra <span>${escapeHtml(it.label)}</span></div>
+        <div class="subOfferPrice">${renderSubOfferPrice(prices, region, "psplus", "extra", it.months)}</div>
+        <button class="buyBtn" type="button" data-sub-buy="${id}">Купить</button>
+      </div>
+    `;
+  }).join("");
+
+  // Games in Extra subscription
+  const games = await getSubscriptionGames("psplus_extra");
+  const gamesHtml = `
+    <div class="subsGamesHead">
+      <div class="subsGamesTitle">Игры в подписке Extra</div>
+      <div class="subsGamesCount">Найдено игр: ${games.length}</div>
+    </div>
+    <div class="grid subsGamesGrid" id="subsGamesGrid"></div>
+  `;
+
+  grid.innerHTML = `
+    <div class="subsDetail subsExtra">
+      <div class="subsDetailHead">
+        <button class="btnGhost subsBackBtn" type="button" id="subsBackBtn">← Назад</button>
+        <div class="subsPageTitle">PlayStation Plus Extra</div>
+      </div>
+      <div class="subOfferGrid">
+        ${cardsHtml}
+      </div>
+	   <div class="subsInfoBox">
+        <div class="subsInfoTitle">Подробнее о PlayStation Plus Extra</div>
+        <div class="subsInfoText">
+${subsInfoList([
+        ['psplus', '<b>PlayStation Plus Extra</b> — средний уровень подписки PlayStation Plus, который включает все преимущества базовой версии <b>PS Plus Essential</b> и добавляет расширенные возможности.'],
+        ['grid', '<b>Доступ к каталогу игр</b> для PS4 и PS5. В него входят хиты от PlayStation Studios, инди-проекты и блокбастеры.'],
+        ['ubisoft', '<b>Подписка Ubisoft+ Classics</b> — отдельная коллекция игр от Ubisoft, включающая серии Assassin\'s Creed, Far Cry, Watch Dogs.'],
+        ['refresh', '<b>Ежемесячные обновления каталога.</b> Новые игры добавляются каждый месяц.'],
+        ['download', '<b>Игры доступны без ограничений</b> — можно играть сколько угодно, пока активна подписка.']
+      ])}
+		</div>
+      </div>
+      <div class="subsGamesBlock" id="subs-games">
+        ${gamesHtml}
+      </div>
+    </div>
+  `;
+
+  const back2=document.getElementById("subsBackBtn");
+  if(back2) back2.onclick=()=>setActiveTab("subs",{subPage:"", renderNow:true});
+
+  // Wire buy buttons (WhatsApp)
+  grid.querySelectorAll("button[data-sub-buy]").forEach(btn=>{
+    const id = btn.getAttribute("data-sub-buy") || "";
+    const months = Number(String(id).split("_").pop()) || 1;
+    const price = getSubFinalPrice(prices, region, "psplus", "extra", months);
+    btn.addEventListener("click", ()=>{
+      buySubscriptionWhatsApp({
+        name: "PlayStation Plus Extra",
+        months,
+        region,
+        price
+      });
+    });
+  });
+
+  // Render games grid
+  const gamesGrid=document.getElementById("subsGamesGrid");
+  if(gamesGrid){
+    gamesGrid.innerHTML="";
+    const whatsapp = state.whatsapp || "https://wa.me/+79659556300";
+    games.forEach(g=> gamesGrid.appendChild(buildCard(g, whatsapp, false)));
+  }
+  scrollToSubsGamesIfRequested();
+}
+
+function renderSubsDeluxe(){
+  const grid=document.getElementById("grid");
+  const emptyBox=document.getElementById("emptyBox");
+  if(emptyBox) emptyBox.style.display="none";
+  if(!grid) return;
+
+  grid.innerHTML = `
+    <div class="subsDetail subsDeluxe" aria-busy="true">
+      <div class="subsDetailHead">
+        <button class="btnGhost subsBackBtn" type="button" id="subsBackBtn">← Назад</button>
+        <div class="subsPageTitle">PlayStation Plus Deluxe</div>
+      </div>
+      <div class="subsLoading">Загрузка...</div>
+    </div>
+  `;
+
+  (async ()=>{
+    try{
+      const prices = await getSubsPrices();
+      const region = state.region;
+      const items = [
+        {months:1, label:"1 месяц", img:"/img/deluxe_1.png"},
+        {months:3, label:"3 месяца", img:"/img/deluxe_3.png"},
+        {months:12,label:"12 месяцев", img:"/img/deluxe_12.png"},
+      ];
+
+      const cardsHtml = items.map(it=>{
+        const id = `sub_psplus_deluxe_${it.months}`;
+        const price = getSubPrice(prices, region, "psplus", "deluxe", it.months);
+        return `
+          <div class="subOfferCard" data-sub-offer="${id}">
+            <div class="subOfferImg"><img src="${it.img}" loading="lazy" decoding="async" alt="Deluxe ${it.months}" loading="lazy" onerror="this.src='/img/deluxe.png'"/></div>
+            <div class="subOfferTitle">Deluxe <span>${escapeHtml(it.label)}</span></div>
+            <div class="subOfferPrice">${renderSubOfferPrice(prices, region, "psplus", "deluxe", it.months)}</div>
+            <button class="buyBtn" type="button" data-sub-buy="${id}">Купить</button>
+          </div>
+        `;
+      }).join("");
+
+      // Games in Deluxe subscription
+      const games = await getSubscriptionGames("psplus_deluxe");
+      const gamesHtml = `
+        <div class="subsGamesHead">
+          <div class="subsGamesTitle">Игры в подписке Deluxe</div>
+          <div class="subsGamesCount">Найдено игр: ${games.length}</div>
+        </div>
+        <div class="grid subsGamesGrid" id="subsGamesGrid"></div>
+      `;
+
+      grid.innerHTML = `
+        <div class="subsDetail subsDeluxe">
+          <div class="subsDetailHead">
+            <button class="btnGhost subsBackBtn" type="button" id="subsBackBtn">← Назад</button>
+            <div class="subsPageTitle">PlayStation Plus Deluxe</div>
+          </div>
+          <div class="subOfferGrid">
+            ${cardsHtml}
+          </div>
+          <div class="subsInfoBox">
+            <div class="subsInfoTitle">Подробнее о PlayStation Plus Deluxe</div>
+            <div class="subsInfoText">
+${subsInfoList([
+          ['psplus', '<b>PlayStation Plus Deluxe</b> — максимальный уровень подписки PlayStation Plus, который включает все преимущества <b>PS Plus Essential</b> и <b>PS Plus Extra</b>.'],
+          ['library', '<b>Каталог классических игр</b> с PlayStation 1, PlayStation 2 и PlayStation Portable. Многие из этих игр были улучшены для работы на современных консолях, а некоторые даже получили поддержку трофеев.'],
+          ['demo', '<b>Демо-версии игр (только для PS5)</b> — можно тестировать новые игры перед покупкой.']
+        ])}
+			</div>
+          </div>
+          <div class="subsGamesBlock" id="subs-games">
+            ${gamesHtml}
+          </div>
+        </div>
+      `;
+
+      const back=document.getElementById("subsBackBtn");
+      if(back) back.onclick=()=>setActiveTab("subs",{subPage:"", renderNow:true});
+
+      // Wire buy buttons (WhatsApp)
+      grid.querySelectorAll("button[data-sub-buy]").forEach(btn=>{
+        const id = btn.getAttribute("data-sub-buy") || "";
+        const months = Number(String(id).split("_").pop()) || 1;
+        const price = getSubFinalPrice(prices, region, "psplus", "deluxe", months);
+        btn.addEventListener("click", ()=>{
+          buySubscriptionWhatsApp({
+            name: "PlayStation Plus Deluxe",
+            months,
+            region,
+            price
+          });
+        });
+      });
+
+      // Render games grid
+      const gamesGrid=document.getElementById("subsGamesGrid");
+      if(gamesGrid){
+        gamesGrid.innerHTML="";
+        const whatsapp = state.whatsapp || "https://wa.me/+79659556300";
+        games.forEach(g=> gamesGrid.appendChild(buildCard(g, whatsapp, false)));
+      }
+      scrollToSubsGamesIfRequested();
+    }catch(e){
+      console.error(e);
+      grid.innerHTML = `
+        <div class="subsDetail subsDeluxe">
+          <div class="subsDetailHead">
+            <button class="btnGhost subsBackBtn" type="button" id="subsBackBtn">← Назад</button>
+            <div class="subsPageTitle">PlayStation Plus Deluxe</div>
+          </div>
+          <div class="subsEmpty">Раздел пуст</div>
+        </div>
+      `;
+      const back=document.getElementById("subsBackBtn");
+      if(back) back.onclick=()=>setActiveTab("subs",{subPage:"", renderNow:true});
+    }
+  })();
+}
+
+async function renderSubsEaPlay(){
+  const grid=document.getElementById("grid");
+  const emptyBox=document.getElementById("emptyBox");
+  if(emptyBox) emptyBox.style.display="none";
+  if(!grid) return;
+
+  grid.innerHTML = `
+    <div class="subsDetail subsEaPlay" aria-busy="true">
+      <div class="subsDetailHead">
+        <button class="btnGhost subsBackBtn" type="button" id="subsBackBtn">← Назад</button>
+        <div class="subsPageTitle">EA Play</div>
+      </div>
+      <div class="subsLoading">Загрузка...</div>
+    </div>
+  `;
+
+  const back=document.getElementById("subsBackBtn");
+  if(back) back.onclick=()=>setActiveTab("subs",{subPage:"", renderNow:true});
+
+  const prices = await getSubsPrices();
+  const region = state.region;
+  const items = [
+    {months:1, label:"1 месяц", img:"/img/eaplay_1.png"},
+    {months:12,label:"12 месяцев", img:"/img/eaplay_12.png"},
+  ];
+
+  const cardsHtml = items.map(it=>{
+    const id = `sub_eaplay_${it.months}`;
+    const price = getSubPrice(prices, region, "eaplay", null, it.months);
+    return `
+      <div class="subOfferCard" data-sub-offer="${id}">
+        <div class="subOfferImg"><img src="${it.img}" loading="lazy" decoding="async" alt="EA Play ${it.months}" loading="lazy" onerror="this.src='/img/ea.png'"/></div>
+        <div class="subOfferTitle">EA Play <span>${escapeHtml(it.label)}</span></div>
+        <div class="subOfferPrice">${renderSubOfferPrice(prices, region, "eaplay", null, it.months)}</div>
+        <button class="buyBtn" type="button" data-sub-buy="${id}">Купить</button>
+      </div>
+    `;
+  }).join("");
+
+  const games = await getSubscriptionGames("eaplay");
+  const gamesHtml = `
+    <div class="subsGamesHead">
+      <div class="subsGamesTitle">Игры в подписке EA Play</div>
+      <div class="subsGamesCount">Найдено игр: ${games.length}</div>
+    </div>
+    <div class="grid subsGamesGrid" id="subsGamesGrid"></div>
+  `;
+
+  grid.innerHTML = `
+    <div class="subsDetail subsEaPlay">
+      <div class="subsDetailHead">
+        <button class="btnGhost subsBackBtn" type="button" id="subsBackBtn">← Назад</button>
+        <div class="subsPageTitle">EA Play</div>
+      </div>
+      <div class="subOfferGrid">
+        ${cardsHtml}
+      </div>
+      <div class="subsInfoBox">
+        <div class="subsInfoTitle">Подробнее о EA Play</div>
+        <div class="subsInfoText">
+${subsInfoList([
+        ['library', '<b>Доступ к библиотеке игр.</b> В неё входят популярные серии, такие как FIFA, UFC, Madden NFL, The Sims, Battlefield, Need for Speed и многие другие.'],
+        ['trial', '<b>Ранний доступ к новым играм.</b> Можно испытать новые игры EA до их официального релиза с пробными версиями, доступными до 10 часов.'],
+        ['tag', '<b>Скидки на покупки.</b> Можно получать скидки до 10% на цифровые покупки игр EA.']
+      ])}
+		</div>
+      </div>
+      <div class="subsGamesBlock" id="subs-games">
+        ${gamesHtml}
+      </div>
+    </div>
+  `;
+
+  const back2=document.getElementById("subsBackBtn");
+  if(back2) back2.onclick=()=>setActiveTab("subs",{subPage:"", renderNow:true});
+
+  grid.querySelectorAll("button[data-sub-buy]").forEach(btn=>{
+    const id = btn.getAttribute("data-sub-buy") || "";
+    const months = Number(String(id).split("_").pop()) || 1;
+    const price = getSubFinalPrice(prices, region, "eaplay", null, months);
+    btn.addEventListener("click", ()=>{
+      buySubscriptionWhatsApp({
+        name: "EA Play",
+        months,
+        region,
+        price
+      });
+    });
+  });
+
+  const gamesGrid=document.getElementById("subsGamesGrid");
+  if(gamesGrid){
+    gamesGrid.innerHTML="";
+    const whatsapp = state.whatsapp || "https://wa.me/+79659556300";
+    games.forEach(g=> gamesGrid.appendChild(buildCard(g, whatsapp, false)));
+  }
+  scrollToSubsGamesIfRequested();
+}
+
+function initTabsUI(){
+  const scroller=document.getElementById("siteTabs");
+  const left=document.querySelector(".tabsArrowLeft");
+  const right=document.querySelector(".tabsArrowRight");
+  if(!scroller) return;
+
+  bindHorizontalDrag(scroller,null,true);
+  const update=()=>{
+    const max = scroller.scrollWidth - scroller.clientWidth;
+    const x = scroller.scrollLeft;
+    const canLeft = x > 4;
+    const canRight = x < (max - 4);
+    if(left) left.style.visibility = canLeft ? "visible":"hidden";
+    if(right) right.style.visibility = canRight ? "visible":"hidden";
+  };
+
+  const scrollByAmount=(dir)=>{
+    const amt = Math.max(120, Math.floor(scroller.clientWidth*0.8));
+    scroller.scrollBy({left: dir*amt, behavior:"smooth"});
+  };
+
+  if(left) left.onclick=()=>scrollByAmount(-1);
+  if(right) right.onclick=()=>scrollByAmount(1);
+
+  // Tabs click
+  document.querySelectorAll(".siteTab").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      setActiveTab(btn.dataset.tab || "discounts");
+      load();
+    });
+  });
+
+  scroller.addEventListener("scroll", update, {passive:true});
+  window.addEventListener("resize", update);
+  // Initial
+  update();
+  // Ensure active tab is visible
+  const active = document.querySelector('.siteTab.isActive');
+  if(active) active.scrollIntoView({inline:"center", block:"nearest"});
+}
+
+
+// Search UI (лупа справа вверху → раскрывающееся поле + быстрые результаты)
+const searchWrapEl=document.getElementById("searchWrap");
+const searchToggleEl=document.getElementById("searchToggle");
+const searchPanelEl=document.getElementById("searchPanel");
+const searchCloseEl=document.getElementById("searchClose");
+const quickSearchGoEl=document.getElementById("quickSearchGo");
+const quickSearchResultsEl=document.getElementById("quickSearchResults");
+let __quickSearchTimer=null;
+let __quickSearchPreviewLoaded=false;
+let __previousTabBeforeSearch="home";
+
+function setSearchOpen(isOpen, opts={}){
+  if(!searchWrapEl) return;
+  searchWrapEl.classList.toggle("open", !!isOpen);
+  document.body.classList.toggle("search-is-open", !!isOpen && state.tab !== "search");
+  searchWrapEl.classList.toggle("searchPageMode", state.tab === "search" || !!opts.page);
+  if(searchPanelEl) searchPanelEl.setAttribute("aria-hidden", String(!isOpen));
+  const qbox=document.getElementById("quickSearchBox");
+  if(qbox) qbox.setAttribute("aria-hidden", String(!isOpen || state.tab === "search"));
+  if(isOpen){
+    const input=document.getElementById("search");
+    if(input) setTimeout(()=>input.focus({preventScroll:true}), 0);
+    try{
+      const row=document.querySelector(".searchInputRow");
+      const rect=row ? row.getBoundingClientRect() : null;
+      if(rect) document.documentElement.style.setProperty("--quick-search-top", Math.max(0, rect.bottom + 14) + "px");
+    }catch(_){}
+    if(state.tab !== "search") updateQuickSearchResults();
+  }
+}
+function closeQuickSearch(clear=false){
+  if(clear){
+    state.search="";
+    const input=document.getElementById("search");
+    if(input) input.value="";
+  }
+  setSearchOpen(false);
+}
+async function fetchQuickList(url){
+  try{
+    const r=await fetch(url);
+    if(!r.ok) return [];
+    const j=await r.json();
+    return Array.isArray(j.items) ? j.items : [];
+  }catch(_){ return []; }
+}
+function shuffleQuickItems(items){
+  const arr=[...items];
+  for(let i=arr.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+  return arr;
+}
+function renderQuickCards(items){
+  if(!quickSearchResultsEl) return;
+  quickSearchResultsEl.innerHTML = "";
+  (items||[]).forEach((game)=>{
+    const slot=document.createElement("div");
+    slot.className="quickGameCardSlot";
+
+    const card=document.createElement("a");
+    card.className="quickTkCard";
+    card.href=gameLink(game.id);
+    card.setAttribute("aria-label", game.name || "Игра");
+
+    const cover = game.cover
+      ? `<img src="${escapeHtml(optimizedPsImageUrl(game.cover, 320))}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.style.display='none'">`
+      : `<div class="quickTkNoCover">NO COVER</div>`;
+    const platform = escapeHtml(game.platform || "PS4 / PS5");
+    const caption = productCaption(game);
+    const edition = caption.edition ? `<div class="quickTkEdition">${escapeHtml(caption.edition)}</div>` : ``;
+    const discount = game.discPerc ? `<span class="quickTkDiscount">-${escapeHtml(String(game.discPerc))}%</span>` : ``;
+    const price = escapeHtml(gamePriceText(game));
+    const isPreorderQuick = !!game.isPreorder || game.__quickSource === "preorders" || game.__cardTab === "preorders";
+    const preorderBadge = isPreorderQuick ? `<div class="preorderBadge quickTkPreorder" aria-label="Предзаказ">Предзаказ</div>` : ``;
+
+    card.innerHTML = `
+      <div class="quickTkCover">
+        <div class="platformStrip quickTkPlatform">${platform}</div>
+        ${preorderBadge}
+        ${cover}
+      </div>
+      <div class="quickTkTitle">${escapeHtml(caption.name)}${game.isAddon?'<span class="detailAddonBadge">Аддон</span>':''}</div>
+      ${edition}
+      <div class="quickTkPriceRow"><span class="quickTkPrice">${price}</span>${discount}</div>
+      ${game.isAddon?addonDiscountDetails(game):''}
+    `;
+
+
+    slot.appendChild(card);
+    quickSearchResultsEl.appendChild(slot);
+  });
+  initQuickSearchDragScroll();
+}
+function initQuickSearchDragScroll(){
+  const scroller=quickSearchResultsEl;
+  if(!scroller || scroller.__dragReady) return;
+  scroller.__dragReady=true;
+  let down=false;
+  let startX=0;
+  let startLeft=0;
+  let moved=false;
+  scroller.addEventListener("mousedown",(e)=>{
+    if(e.button!==0) return;
+    down=true; moved=false; startX=e.clientX; startLeft=scroller.scrollLeft;
+    scroller.classList.add("isDragging");
+  });
+  window.addEventListener("mousemove",(e)=>{
+    if(!down) return;
+    const dx=e.clientX-startX;
+    if(Math.abs(dx)>3) moved=true;
+    scroller.scrollLeft=startLeft-dx;
+  });
+  window.addEventListener("mouseup",()=>{
+    down=false;
+    scroller.classList.remove("isDragging");
+    setTimeout(()=>{ moved=false; },0);
+  });
+  scroller.addEventListener("click",(e)=>{
+    if(moved){
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, true);
+}
+let quickSearchRequest=0;
+async function updateQuickSearchResults(){
+  const request=++quickSearchRequest;
+  if(!quickSearchResultsEl || state.tab === "search") return;
+  const q=String((document.getElementById("search")||{}).value || "").trim();
+  quickSearchResultsEl.innerHTML='<div class="quickLoading">Загрузка...</div>';
+  let items=[];
+  if(q){
+    items=await fetchQuickList(`/api/search?view=cards&region=${encodeURIComponent(state.region)}&q=${encodeURIComponent(q)}&page=1&perPage=12`);
+  }else{
+    const [pre, news]=await Promise.all([
+      fetchQuickList(`/api/preorders?view=cards&region=${encodeURIComponent(state.region)}&page=1`),
+      fetchQuickList(`/api/newreleases?view=cards&region=${encodeURIComponent(state.region)}&page=1`)
+    ]);
+    const preItems=(pre||[]).slice(0,5).map(x=>Object.assign({}, x, {isPreorder:true, __quickSource:"preorders"}));
+    const newsItems=(news||[]).slice(0,5).map(x=>Object.assign({}, x, {__quickSource:"new"}));
+    items=shuffleQuickItems([...preItems, ...newsItems]);
+    __quickSearchPreviewLoaded=true;
+  }
+  if(request!==quickSearchRequest || q!==String(searchInputEl.value||"").trim())return;
+  if(!items.length){
+    quickSearchResultsEl.innerHTML='<div class="quickLoading">Ничего не найдено</div>';
+    return;
+  }
+  renderQuickCards(items);
+}
+if(searchToggleEl){
+  searchToggleEl.addEventListener("click",(e)=>{
+    e.preventDefault();
+    const isOpen=!!(searchWrapEl && searchWrapEl.classList.contains("open"));
+    setSearchOpen(!isOpen);
+  });
+}
+const searchInputEl=document.getElementById("search");
+if(searchInputEl){
+  searchInputEl.addEventListener("focus",()=>{
+    if(state.tab !== "search") setSearchOpen(true);
+  });
+  searchInputEl.addEventListener("click",(e)=>{
+    if(state.tab !== "search") setSearchOpen(true);
+  });
+}
+if(searchCloseEl){
+  searchCloseEl.addEventListener("click",(e)=>{
+    e.preventDefault();
+    e.stopPropagation();
+    if(state.tab === "search"){
+      state.search="";
+      const input=document.getElementById("search");
+      if(input) input.value="";
+      const back = __previousTabBeforeSearch && __previousTabBeforeSearch !== "search" ? __previousTabBeforeSearch : "home";
+      setActiveTab(back, {keepFilters:false});
+      load();
+      scrollTo(0,0);
+    }else{
+      closeQuickSearch(true);
+    }
+  });
+}
+if(quickSearchGoEl){
+  quickSearchGoEl.addEventListener("click",(e)=>{
+    e.preventDefault();
+    e.stopPropagation();
+    __previousTabBeforeSearch = state.tab && state.tab !== "search" ? state.tab : (__previousTabBeforeSearch || "home");
+    const _searchInput=document.getElementById("search"); state.search=(_searchInput&&_searchInput.value)||"";
+    state.page=1;
+    setActiveTab("search", {keepFilters:true, keepPage:false});
+    load();
+    scrollTo(0,0);
+  });
+}
+document.addEventListener("click",(e)=>{
+  if(!searchWrapEl) return;
+  if(!searchWrapEl.classList.contains("open")) return;
+  if(state.tab === "search") return;
+  if(searchWrapEl.contains(e.target)) return;
+  const gameModal=document.getElementById("gameModal");
+  // Do not close quick search when the click belongs to the game card modal.
+  // Close buttons hide the modal before this document handler runs, so check
+  // contains(e.target) regardless of current display state.
+  if(gameModal && gameModal.contains(e.target)) return;
+  setSearchOpen(false);
+});
+document.addEventListener("keydown",(e)=>{
+  if(e.key==="Escape"){
+    const gameModal=document.getElementById("gameModal");
+    if(gameModal && gameModal.style.display !== "none") return;
+    if(state.tab === "search" && searchCloseEl) searchCloseEl.click();
+    else setSearchOpen(false);
+  }
+});
+
+// restore state from URL query (shareable links)
+const urlQS=new URLSearchParams(location.search);
+if(urlQS.get("tab")) state.tab=String(urlQS.get("tab"));
+if(urlQS.get("region")) state.region=urlQS.get("region");
+if(urlQS.get("page")) state.page=Math.max(1, parseInt(urlQS.get("page"),10)||1);
+if(urlQS.get("sort")) state.sort=urlQS.get("sort");
+if(urlQS.get("platform")) state.platform=urlQS.get("platform");
+if(urlQS.get("players")) state.players=urlQS.get("players");
+if(urlQS.get("language")) state.language=urlQS.get("language");
+if(urlQS.get("genres")) state.genres=urlQS.get("genres").split(",").map(x=>x.trim()).filter(Boolean);
+if(urlQS.get("q") && state.tab === "search") state.search=urlQS.get("q");
+if(urlQS.get("sub")) state.subPage=String(urlQS.get("sub"));
+if(urlQS.get("until")) state.until=String(urlQS.get("until"));
+if(urlQS.get("all")==="1") state.allDeals=true;
+state.scrollToSubsGames = window.location.hash === "#subs-games";
+
+// restore last selected region on refresh
+
+try{
+  const savedRegion = localStorage.getItem("ps95_region");
+  if(savedRegion && !urlQS.get("region")) state.region = savedRegion;
+}catch(e){}
+
+
+const REGION_LABELS={TR:"Турция",UA:"Украина",PL:"Польша",IN:"Индия",US:"США"};
+const REGION_FLAG_CLASSES={TR:"regionFlagTR",UA:"regionFlagCIS",PL:"regionFlagPL",IN:"regionFlagIN",US:"regionFlagUS"};
+const REGION_ORDER=["TR","UA","PL","IN","US"];
+function applyEnabledRegions(enabled){
+  const src=(enabled&&typeof enabled==="object")?enabled:{};
+  const normalized={};
+  for(const R of REGION_ORDER) normalized[R]=src[R]!==false;
+  if(!REGION_ORDER.some(R=>normalized[R])) normalized.TR=true;
+  state.enabledRegions=normalized;
+
+  // Remove disabled regions from both the custom picker and the hidden native select.
+  document.querySelectorAll(".regionPickerOption[data-region]").forEach(btn=>{
+    const R=String(btn.dataset.region||"").toUpperCase();
+    btn.hidden=!normalized[R];
+    btn.style.display=normalized[R]?"":"none";
+  });
+  const select=document.getElementById("region");
+  if(select){
+    [...select.options].forEach(opt=>{ opt.disabled=!normalized[String(opt.value||"").toUpperCase()]; opt.hidden=opt.disabled; });
+  }
+
+  // A disabled region can still be present in an old URL/localStorage. Never render it.
+  const current=String(state.region||"").toUpperCase();
+  if(!normalized[current]){
+    state.region=REGION_ORDER.find(R=>normalized[R]) || "TR";
+    try{localStorage.setItem("ps95_region",state.region);}catch(_){}
+    const url=new URL(location.href);
+    if(url.searchParams.has("region")){
+      url.searchParams.set("region",state.region);
+      history.replaceState(null,"",url.pathname+(url.searchParams.toString()?"?"+url.searchParams.toString():"")+url.hash);
+    }
+  }
+  updateRegionPicker();
+}
+function isRegionEnabled(region){return state.enabledRegions[String(region||"").toUpperCase()]!==false;}
+function regionFlagHtml(region){
+  const R=String(region||"TR").toUpperCase();
+  const cls=REGION_FLAG_CLASSES[R]||REGION_FLAG_CLASSES.TR;
+  return `<span class="regionFlagIcon ${cls}" aria-hidden="true"></span>`;
+}
+function updateRegionPicker(){
+  const R=String(state.region||"TR").toUpperCase();
+  const select=document.getElementById("region");
+  if(select) select.value=R;
+  const flag=document.getElementById("regionPickerFlag");
+  const text=document.getElementById("regionPickerText");
+  if(flag) flag.innerHTML=regionFlagHtml(R);
+  if(text){text.textContent=R==="US"?"USA":R;text.dataset.code=text.textContent;}
+  document.getElementById("regionPickerBtn")?.setAttribute("aria-label","Регион: "+(REGION_LABELS[R]||R));
+  document.querySelectorAll(".regionPickerOption").forEach(btn=>{
+    const active=String(btn.dataset.region||"").toUpperCase()===R;
+    btn.classList.toggle("active", active);
+    btn.setAttribute("aria-selected", active ? "true" : "false");
+  });
+}
+function closeRegionPicker(){
+  const picker=document.getElementById("regionPicker");
+  const btn=document.getElementById("regionPickerBtn");
+  const menu=document.getElementById("regionPickerMenu");
+  if(picker) picker.classList.remove("open");
+  if(btn) btn.setAttribute("aria-expanded","false");
+  if(menu) menu.setAttribute("aria-hidden","true");
+}
+function openRegionPicker(){
+  const picker=document.getElementById("regionPicker");
+  const btn=document.getElementById("regionPickerBtn");
+  const menu=document.getElementById("regionPickerMenu");
+  if(picker) picker.classList.add("open");
+  if(btn) btn.setAttribute("aria-expanded","true");
+  if(menu) menu.setAttribute("aria-hidden","false");
+}
+function setRegionValue(region){
+  const R=String(region||"TR").toUpperCase();
+  if(!REGION_LABELS[R] || !isRegionEnabled(R)) return;
+  state.region=R;
+  try{localStorage.setItem("ps95_region",state.region);}catch(_){}
+  updateRegionPicker();
+  closeRegionPicker();
+  updateCartCount();
+  updateWishCount();
+  refreshAllWishButtons();
+  if(isCartOpen()) renderCart();
+  if(isWishOpen()) renderWishlist();
+  load();
+}
+
+function addonDiscountDetails(game){
+  if(!game || !(Number(game.discPerc)>0))return '';
+  const old=Number(game.oldPriceRub||0), current=Number(game.finalPriceRub||0);
+  return (old>current && current>0?'<small class="regionCompareOld">'+escapeHtml(fmtRub(old))+'</small>':'')+
+    (game.discountedUntil?'<small style="display:block;opacity:.8">До '+escapeHtml(formatDateDMY(game.discountedUntil).trim())+'</small>':'');
+}
+function gamePriceText(game){
+  if(state.region==="US" && !game.finalPriceRub)return game.storePrice>0?formatStoreCurrency(game.storePrice,"US"):"Цена уточняется";
+  return fmtRub(game.finalPriceRub);
+}
+function fmtRub(n){try{return new Intl.NumberFormat("ru-RU").format(n)+" ₽";}catch(e){return n+" ₽";}}
+function formatDateDMY(dateStr) {
+  if (!dateStr) return "";
+  const s = String(dateStr).trim();
+
+  // YYYY-MM-DD (например: 2026-01-07)
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return ` ${m[3]}.${m[2]}.${m[1]}`;
+
+  // DD.MM.YYYY (если вдруг уже так)
+  const m2 = s.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if (m2) return ` ${m2[1]}.${m2[2]}.${m2[3]}`;
+
+  return "";
+}
+
+function releaseDateToYMD(dateStr){
+  if(!dateStr) return "";
+  const s = String(dateStr).trim();
+  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m) return `${m[1]}-${m[2]}-${m[3]}`;
+  m = s.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if(m) return `${m[3]}-${m[2]}-${m[1]}`;
+  return "";
+}
+
+function isFutureReleaseDate(dateStr){
+  const ymd = releaseDateToYMD(dateStr);
+  if(!ymd) return false;
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
+  return ymd > today;
+}
+
+function formatDateRuLong(dateStr){
+  if(!dateStr) return "";
+  const s=String(dateStr).trim();
+  const m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  let y,mm,dd;
+  if(m){ y=Number(m[1]); mm=Number(m[2]); dd=Number(m[3]); }
+  else{
+    const m2=s.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+    if(!m2) return "";
+    dd=Number(m2[1]); mm=Number(m2[2]); y=Number(m2[3]);
+  }
+  const months=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+  const ddStr=String(dd).padStart(2,"0");
+  const mon=months[Math.max(0,Math.min(11,mm-1))];
+  return `До: ${ddStr} ${mon} ${y}`;
+}
+
+// ---------------- Cart (per region, stored in localStorage) ----------------
+const CART_LS_PREFIX = "ps95_cart_";
+const WISH_LS_PREFIX = "ps95_wish_";
+const CART_ICON_SVG = `<svg class="btnCartIcon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 6h15.2l-1.35 7.25c-.12.66-.7 1.15-1.37 1.15H9.05c-.66 0-1.23-.46-1.38-1.1L5.85 5H3.5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="19" r="1.55" fill="currentColor"/><circle cx="17" cy="19" r="1.55" fill="currentColor"/></svg>`;
+const CAL_ICON_SVG = `<svg class="dateIcon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="5.5" width="16" height="15" rx="3.2" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M8 3.5v4M16 3.5v4M4 10h16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M8.5 13.8h2.2M13.3 13.8h2.2M8.5 17h2.2M13.3 17h2.2" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round"/></svg>`;
+function dateWithIconHtml(text){ const t=String(text||'').trim(); return t ? `${CAL_ICON_SVG}<span>${escapeHtml(t)}</span>` : ''; }
+function cartButtonHtml(label){ return `${CART_ICON_SVG}<span>${escapeHtml(label || 'В корзину')}</span>`; }
+function pickCartRate(rules, price){
+  const p=Number(price||0);
+  for(const r of (rules||[])){
+    const min=Number(r.min); const max=(r.max===null||typeof r.max==="undefined")?null:Number(r.max);
+    if(Number.isFinite(min) && p>=min && (max===null || p<max)) return Number(r.rate)||1;
+  }
+  return (rules||[]).length ? (Number(rules[rules.length-1].rate)||1) : 1;
+}
+function roundCartDown(value, step){ const st=Number(step)||50; return Math.floor((Number(value)||0)/st)*st; }
+function calcCartDiscount(items){
+  const list=Array.isArray(items)?items:[];
+  const oldTotal=list.reduce((s,x)=>s+(Number(x.finalPriceRub)||0),0);
+  if(list.length<2) return {oldTotal, discount:0, total:oldTotal};
+  const rules=(state.discountRates&&state.discountRates[state.region])||[];
+  const total=list.reduce((s,x)=>{
+    const storePrice=Number(x.storePrice||0);
+    const basePrice=Number(x.finalPriceRub)||0;
+    if(!storePrice) return s+Math.max(400, roundCartDown(basePrice, state.roundStep));
+    const rate=pickCartRate(rules, storePrice);
+    return s+Math.max(400, roundCartDown(storePrice*rate, state.roundStep));
+  },0);
+  return {oldTotal, discount:Math.max(0, oldTotal-total), total};
+}
+
+function shouldUseTopupCartCheckout(region){
+  const R=String(region||state.region||"TR").toUpperCase();
+  if(R==="PL") return true;
+  if(R==="IN") return !!state.useIndiaTopupCards;
+  if(R==="TR") return !!state.useTurkeyTopupCards;
+  return false;
+}
+function cartCurrencyCode(region){
+  const R=String(region||state.region||"TR").toUpperCase();
+  if(R==="US") return "USD";
+  if(R==="PL") return "ZL";
+  if(R==="IN") return "INR";
+  if(R==="TR") return "TL";
+  return R;
+}
+function formatStoreCurrency(value, region){
+  const n=Number(value||0);
+  const rounded=Math.round(n*100)/100;
+  const hasKop=Math.abs(rounded-Math.round(rounded))>0.001;
+  const formatted=new Intl.NumberFormat("ru-RU", {minimumFractionDigits:hasKop?2:0, maximumFractionDigits:hasKop?2:0}).format(rounded);
+  return `${formatted} ${cartCurrencyCode(region)}`;
+}
+function formatTopupLeftoverCurrency(value, region){
+  const R=String(region||state.region||"TR").toUpperCase();
+  const n=Number(value||0);
+  const rounded=Math.round(n*100)/100;
+  const hasFraction=Math.abs(rounded-Math.round(rounded))>0.001;
+  const formatted=new Intl.NumberFormat("ru-RU", {minimumFractionDigits:hasFraction?2:0, maximumFractionDigits:hasFraction?2:0}).format(rounded);
+  const code=R==="IN" ? "Rs" : cartCurrencyCode(R);
+  return `${formatted} ${code}`;
+}
+function calcTopupCartDetails(cards, price){
+  const rawPrice=Number(price||0);
+  const target=Math.ceil(rawPrice);
+  const list=(Array.isArray(cards)?cards:[])
+    .map(c=>({amount:Math.round(Number(c.amount)||0), rub:Number(c.rub)||0}))
+    .filter(c=>c.amount>0 && c.rub>0)
+    .sort((a,b)=>a.amount-b.amount || a.rub-b.rub);
+  if(!target || !list.length) return {nominal:0, rub:0, price:rawPrice, left:0, cards:[]};
+
+  const maxAmount=Math.max(...list.map(c=>c.amount));
+  const limit=target+maxAmount;
+  const inf=Number.POSITIVE_INFINITY;
+  const dp=Array(limit+1).fill(inf);
+  const cnt=Array(limit+1).fill(inf);
+  const prev=Array(limit+1).fill(null);
+  dp[0]=0;
+  cnt[0]=0;
+
+  for(let sum=0; sum<=limit; sum++){
+    if(!Number.isFinite(dp[sum])) continue;
+    for(let i=0;i<list.length;i++){
+      const card=list[i];
+      const next=sum+card.amount;
+      if(next>limit) continue;
+      const nextRub=dp[sum]+card.rub;
+      const nextCnt=cnt[sum]+1;
+      if(
+        nextRub<dp[next] ||
+        (nextRub===dp[next] && nextCnt<cnt[next])
+      ){
+        dp[next]=nextRub;
+        cnt[next]=nextCnt;
+        prev[next]={sum, idx:i};
+      }
+    }
+  }
+
+  let bestRub=inf, bestSum=inf, bestCnt=inf;
+  for(let sum=target; sum<=limit; sum++){
+    if(
+      dp[sum]<bestRub ||
+      (dp[sum]===bestRub && sum<bestSum) ||
+      (dp[sum]===bestRub && sum===bestSum && cnt[sum]<bestCnt)
+    ){
+      bestRub=dp[sum];
+      bestSum=sum;
+      bestCnt=cnt[sum];
+    }
+  }
+  if(!Number.isFinite(bestRub) || !Number.isFinite(bestSum)) return {nominal:0, rub:0, price:rawPrice, left:0, cards:[]};
+
+  const byAmount=new Map();
+  let cur=bestSum;
+  while(cur>0 && prev[cur]){
+    const step=prev[cur];
+    const card=list[step.idx];
+    const key=String(card.amount);
+    const existing=byAmount.get(key) || {amount:card.amount, rub:card.rub, qty:0};
+    existing.qty += 1;
+    byAmount.set(key, existing);
+    cur=step.sum;
+  }
+  const combo=Array.from(byAmount.values())
+    .sort((a,b)=>a.amount-b.amount)
+    .map(c=>({amount:c.amount, rub:c.rub, qty:c.qty, totalRub:c.rub*c.qty}));
+
+  return {nominal:bestSum, rub:bestRub, price:rawPrice, left:Math.max(0,bestSum-rawPrice), cards:combo};
+}
+function topupCardImage(region, nominal){
+  const R=String(region||state.region||"TR").toUpperCase();
+  const amount=Math.round(Number(nominal)||0);
+  const base="/img/topup-cards/";
+  const maps={
+    TR:new Set([250,500,750,1000,1500,2000,2500,3000,4000,5000]),
+    PL:new Set([50,100,200,500]),
+    IN:new Set([1000,2000,3000,4000,5000])
+  };
+  const key=R==="IN"?"in":R.toLowerCase();
+  if(maps[R] && maps[R].has(amount)) return `${base}${key}-${amount}.png`;
+  const available=maps[R] ? Array.from(maps[R]).sort((a,b)=>Math.abs(a-amount)-Math.abs(b-amount) || b-a) : [];
+  if(available.length) return `${base}${key}-${available[0]}.png`;
+  return "";
+}
+function topupAccordionHtml(){
+  return `
+    <button class="cartTopupInfoToggle" type="button" aria-expanded="false">
+      <span class="cartTopupInfoIcon">i</span>
+      <span>Что за карты для пополнения?</span>
+      <span class="cartTopupInfoArrow">⌄</span>
+    </button>
+    <div class="cartTopupInfoText" hidden>
+      Это коды, которые нужно активировать в своём аккаунте Play Station, чтобы на него зачислились средства. С помощью этих средств вы сможете купить выбранные товары в PS Store.
+    </div>`;
+}
+function bindTopupAccordions(root){
+  (root||document).querySelectorAll('.cartTopupInfoToggle').forEach(btn=>{
+    btn.onclick=()=>{
+      const text=btn.nextElementSibling;
+      const open=btn.getAttribute('aria-expanded')==='true';
+      btn.setAttribute('aria-expanded', String(!open));
+      if(text) text.hidden=open;
+    };
+  });
+}
+function renderTopupCartSection(items, details){
+  const region=state.region;
+  const nominal=Number(details.nominal||0);
+  const cards=(Array.isArray(details.cards)&&details.cards.length)
+    ? details.cards
+    : (nominal>0 ? [{amount:nominal, rub:Number(details.rub||0), qty:1, totalRub:Number(details.rub||0)}] : []);
+  const rowsHtml=cards.map(card=>{
+    const amount=Number(card.amount||0);
+    const qty=Math.max(1, Math.round(Number(card.qty||1)));
+    const rowRub=Number(card.totalRub || (Number(card.rub||0)*qty) || 0);
+    const img=topupCardImage(region, amount);
+    return `
+      <div class="cartTopupCardRow">
+        <div class="cartTopupImageWrap">${img ? `<img class="cartTopupImage" src="${img}" alt="Карта пополнения ${escapeHtml(formatStoreCurrency(amount, region))}" loading="lazy" decoding="async"/>` : ''}</div>
+        <div class="cartTopupCardInfo">
+          <div class="cartTopupRub">${fmtRub(rowRub)}</div>
+          <div class="cartTopupNominal">Номинал ${formatStoreCurrency(amount, region)}</div>
+        </div>
+        <div class="cartTopupQty">${qty}</div>
+      </div>`;
+  }).join("");
+  const section=document.createElement('div');
+  section.className='cartTopupSection';
+  section.innerHTML=`
+    <div class="cartTopupHead">
+      <div class="cartTopupTitle">Карты для пополнения</div>
+      <div class="cartTopupNominalTotal">${formatStoreCurrency(nominal, region)}</div>
+    </div>
+    <div class="cartTopupCardsList">${rowsHtml}</div>
+    <div class="cartTopupInfoBox">${topupAccordionHtml()}</div>
+    ${Number(details.left||0)>0 ? `<div class="cartTopupLeftover">${escapeHtml(formatTopupLeftoverCurrency(details.left, region))} останутся на вашем аккаунте.</div>` : ''}
+  `;
+  bindTopupAccordions(section);
+  return section;
+}
+
+
+function getCartKey(region){
+  return CART_LS_PREFIX + String(region || "TR").toUpperCase();
+}
+function safeJsonParse(s, fallback){
+  try{ return JSON.parse(s); }catch(_){ return fallback; }
+}
+function loadCart(region){
+  try{
+    const raw = localStorage.getItem(getCartKey(region));
+    const arr = safeJsonParse(raw, []);
+    return Array.isArray(arr) ? arr : [];
+  }catch(_){
+    return [];
+  }
+}
+function saveCart(region, items){
+  try{
+    localStorage.setItem(getCartKey(region), JSON.stringify(items || []));
+  }catch(_){}
+}
+async function refreshCartItemsFromServer(region){
+  const R = String(region || state.region || "TR").toUpperCase();
+  const stored = loadCart(R);
+  if(!stored.length) return stored;
+  const ids = stored.map(x=>String(x && x.id || "").trim()).filter(Boolean);
+  if(!ids.length) return stored;
+  try{
+    const r = await fetch(`/api/cart-items?region=${encodeURIComponent(R)}&ids=${encodeURIComponent(ids.join(","))}`, { cache:"no-store" });
+    const j = await r.json().catch(()=>null);
+    if(!r.ok || !j || !j.ok || !Array.isArray(j.items)) return stored;
+    const freshById = new Map(j.items.map(x=>[String(x.id), x]));
+    let changed = false;
+    const merged = stored.map(oldItem=>{
+      const fresh = freshById.get(String(oldItem && oldItem.id));
+      if(!fresh) return oldItem;
+      const normalized = normalizeGameForCart(Object.assign({}, oldItem, fresh));
+      if(JSON.stringify(normalized) !== JSON.stringify(oldItem)) changed = true;
+      return normalized;
+    });
+    if(changed) saveCart(R, merged);
+    return merged;
+  }catch(_e){
+    return stored;
+  }
+}
+async function refreshWishlistItemsFromServer(region){
+  const R = String(region || state.region || "TR").toUpperCase();
+  const stored = loadWishlist(R);
+  if(!stored.length) return stored;
+  const ids = stored.map(x=>String(x && x.id || "").trim()).filter(Boolean);
+  if(!ids.length) return stored;
+  try{
+    const r = await fetch(`/api/cart-items?region=${encodeURIComponent(R)}&ids=${encodeURIComponent(ids.join(","))}`, { cache:"no-store" });
+    const j = await r.json().catch(()=>null);
+    if(!r.ok || !j || !j.ok || !Array.isArray(j.items)) return stored;
+    const freshById = new Map(j.items.map(x=>[String(x.id), x]));
+    let changed = false;
+    const merged = stored.map(oldItem=>{
+      const fresh = freshById.get(String(oldItem && oldItem.id));
+      if(!fresh) return oldItem;
+      const normalized = normalizeGameForCart(Object.assign({}, oldItem, fresh));
+      if(JSON.stringify(normalized) !== JSON.stringify(oldItem)) changed = true;
+      return normalized;
+    });
+    if(changed) saveWishlist(R, merged);
+    return merged;
+  }catch(_e){
+    return stored;
+  }
+}
+function getWishKey(region){ return WISH_LS_PREFIX + String(region || "TR").toUpperCase(); }
+function loadWishlist(region){
+  try{ const arr=safeJsonParse(localStorage.getItem(getWishKey(region)), []); return Array.isArray(arr)?arr:[]; }catch(_){ return []; }
+}
+function saveWishlist(region, items){ try{ localStorage.setItem(getWishKey(region), JSON.stringify(items || [])); }catch(_){} }
+function isInWishlist(gameId, region){ return loadWishlist(region || state.region).some(x => String(x.id) === String(gameId)); }
+function updateWishCount(){
+  const el=document.getElementById("wishCount"); if(!el) return;
+  const n=loadWishlist(state.region).length; el.textContent=String(n); el.style.display=n>0?"inline-flex":"none";
+}
+function setWishBtnState(btn, inWish){
+  if(!btn) return; btn.classList.toggle("isInWishlist", !!inWish); btn.setAttribute("aria-pressed", String(!!inWish)); btn.setAttribute("title", inWish ? "Убрать из желаемого" : "В желаемое");
+}
+function refreshAllWishButtons(){ document.querySelectorAll("button[data-wish-game]").forEach(btn=>setWishBtnState(btn, isInWishlist(btn.getAttribute("data-wish-game"), state.region))); }
+function addToWishlist(game){
+  if(!game || !game.id) return; const region=state.region; const items=loadWishlist(region); const normalized=normalizeGameForCart(game);
+  const idx=items.findIndex(x=>String(x.id)===String(normalized.id)); if(idx>=0) items[idx]=normalized; else items.push(normalized);
+  saveWishlist(region, items); updateWishCount(); refreshAllWishButtons(); if(isWishOpen()) renderWishlist();
+}
+function removeFromWishlist(gameId){
+  const items=loadWishlist(state.region).filter(x=>String(x.id)!==String(gameId)); saveWishlist(state.region, items); updateWishCount(); refreshAllWishButtons(); if(isWishOpen()) renderWishlist();
+}
+function toggleWishlist(game){ if(isInWishlist(game.id, state.region)) removeFromWishlist(game.id); else addToWishlist(game); }
+function isWishOpen(){ const ov=document.getElementById("wishOverlay"); return !!(ov && ov.style.display!=="none"); }
+function openWishlist(){ const ov=document.getElementById("wishOverlay"); if(!ov) return; try{ if(state.tab!=="search") closeQuickSearch(false); }catch(_){ } ov.style.display="flex"; ov.setAttribute("aria-hidden","false"); document.body.classList.add("modalOpen"); renderWishlist(); }
+function closeWishlist(){ const ov=document.getElementById("wishOverlay"); if(!ov) return; ov.style.display="none"; ov.setAttribute("aria-hidden","true"); document.body.classList.remove("modalOpen"); }
+function normalizeGameForCart(game){
+  // Store what we need to render the cart and build WhatsApp message
+  return {
+    id: game.id,
+    name: game.name || "",
+    edition: game.edition || "Standard Edition",
+    sub: game.sub || "",
+    platform: game.platform || "PS4 / PS5",
+    cover: game.cover || "",
+    discPerc: Number(game.discPerc || 0) || 0,
+    discountedUntil: game.discountedUntil || null,
+    finalPriceRub: Number(game.finalPriceRub || 0) || 0,
+    storePrice: Number(game.storePrice || 0) || 0
+  };
+}
+
+function isCartOpen(){
+  const ov = document.getElementById("cartOverlay");
+  return !!(ov && ov.style.display !== "none");
+}
+function openCart(){
+  const ov = document.getElementById("cartOverlay");
+  if(!ov) return;
+  try{ if(state.tab!=="search") closeQuickSearch(false); }catch(_){ }
+  ov.style.display = "flex";
+  ov.setAttribute("aria-hidden", "false");
+  document.body.classList.add("modalOpen");
+  renderCart();
+}
+function closeCart(){
+  const ov = document.getElementById("cartOverlay");
+  if(!ov) return;
+  ov.style.display = "none";
+  ov.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("modalOpen");
+}
+
+function updateCartCount(){
+  const el = document.getElementById("cartCount");
+  if(!el) return;
+  const n = loadCart(state.region).length;
+  el.textContent = String(n);
+  el.style.display = n > 0 ? "inline-flex" : "none";
+}
+
+function isInCart(gameId, region){
+  const r = (region || state.region);
+  return loadCart(r).some(x => String(x.id) === String(gameId));
+}
+
+function setBuyBtnState(btn, inCart){
+  if(!btn) return;
+  const defLabel = btn.getAttribute("data-cart-label") || "В корзину";
+  const inLabel = btn.getAttribute("data-cart-label-in") || "В корзине";
+  btn.classList.toggle("isInCart", !!inCart);
+  const label = inCart ? inLabel : defLabel;
+  if((defLabel || "").toLowerCase().includes("корз")) btn.innerHTML = cartButtonHtml(label);
+  else btn.textContent = label;
+  btn.setAttribute("aria-pressed", String(!!inCart));
+}
+
+function refreshAllBuyButtons(){
+  // update all buttons on page (cards + modal) for current region
+  document.querySelectorAll("button[data-cart-game]").forEach(btn=>{
+    const id = btn.getAttribute("data-cart-game");
+    setBuyBtnState(btn, isInCart(id, state.region));
+  });
+}
+
+function addToCart(game){
+  if(!game || !game.id || (state.region==="US" && !(game.finalPriceRub>0))) return;
+  const region = state.region;
+  const items = loadCart(region);
+  const normalized = normalizeGameForCart(game);
+  const idx = items.findIndex(x => String(x.id) === String(normalized.id));
+  if(idx >= 0) items[idx] = normalized;
+  else items.push(normalized);
+  saveCart(region, items);
+  updateCartCount();
+  refreshAllBuyButtons();
+  if(isCartOpen()) renderCart();
+}
+
+function removeFromCart(gameId){
+  const region = state.region;
+  const items = loadCart(region).filter(x => String(x.id) !== String(gameId));
+  saveCart(region, items);
+  updateCartCount();
+  refreshAllBuyButtons();
+  if(isCartOpen()) renderCart();
+}
+
+function clearCart(){
+  saveCart(state.region, []);
+  updateCartCount();
+  refreshAllBuyButtons();
+  if(isCartOpen()) renderCart();
+}
+
+function subBadgeHtml(subVal){
+  const s = String(subVal||"").trim().toLowerCase();
+  const isEa = (s==="eaplay" || s==="ea_play" || s==="ea");
+  const isEssential = (s==="psplus_essential" || s==="ps_plus_essential" || s==="essential");
+  const isExtra = (s==="psplus_extra" || s==="ps_plus_extra" || s==="extra");
+  const isDeluxe = (s==="psplus_deluxe" || s==="ps_plus_deluxe" || s==="deluxe");
+  if(!s || (!isEa && !isEssential && !isExtra && !isDeluxe && s!=="psplus" && s!=="psplus_premium")) return "";
+  const EA_ICON = "/img/ea1.png";
+  const PSPLUS_ICON = "/img/psplus1.png";
+  const icon = isEa ? EA_ICON : PSPLUS_ICON;
+  const text = s==="psplus" ? "Входит в PlayStation Plus" : s==="psplus_premium" ? "Входит в PlayStation Plus Premium" : isEa ? "Входит в EA Play" : (isEssential ? "Доступна в Essential" : (isDeluxe ? "Доступна в Deluxe" : "Доступна в Extra"));
+  return `<div class="cartSub"><img class="subIcon" src="${icon}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.style.display='none'"/><span>${text}</span></div>`;
+}
+
+async function renderCart(){
+  const body = document.getElementById("cartBody");
+  const totalEl = document.getElementById("cartTotal");
+  const regionEl = document.getElementById("cartRegion");
+  const hintEl = document.getElementById("cartHint");
+  const buyBtn = document.getElementById("cartBuyBtn");
+  const clearBtn = document.getElementById("cartClearBtn");
+
+  if(regionEl) regionEl.textContent = `(${state.region})`;
+
+  let items = loadCart(state.region);
+  items = await refreshCartItemsFromServer(state.region);
+  updateCartCount();
+  refreshAllBuyButtons();
+  const usesTopup = shouldUseTopupCartCheckout(state.region);
+  const storeTotal = items.reduce((s,x)=>s+(Number(x.storePrice)||0),0);
+  const topupDetails = usesTopup ? calcTopupCartDetails((state.topupCards&&state.topupCards[state.region])||[], storeTotal) : null;
+  const totals = usesTopup ? {oldTotal:0, discount:0, total:Number(topupDetails&&topupDetails.rub||0)} : calcCartDiscount(items);
+
+  const oldTotalEl = document.getElementById("cartOldTotal");
+  const discountEl = document.getElementById("cartDiscount");
+  const discountRowEl = document.getElementById("cartDiscountRow");
+  const oldTotalRowEl = document.getElementById("cartOldTotalRow");
+  if(totalEl) totalEl.textContent = fmtRub(totals.total);
+  if(oldTotalEl) oldTotalEl.textContent = fmtRub(totals.oldTotal);
+  if(discountEl) discountEl.textContent = `- ${fmtRub(totals.discount)}`;
+  if(oldTotalRowEl) oldTotalRowEl.style.display = (!usesTopup && totals.discount > 0) ? "flex" : "none";
+  if(discountRowEl) discountRowEl.style.display = (!usesTopup && totals.discount > 0) ? "flex" : "none";
+
+  if(clearBtn) clearBtn.disabled = items.length === 0;
+  if(buyBtn) buyBtn.disabled = items.length === 0;
+
+  if(!body) return;
+
+  if(!items.length){
+    body.innerHTML = `<div class="cartEmpty">В корзине пусто</div>`;
+    if(hintEl) hintEl.textContent = "";
+    return;
+  }
+
+  body.innerHTML = "";
+  items.forEach(item=>{
+    const row = document.createElement("div");
+    row.className = "cartItem";
+    const priceHtml = usesTopup ? formatStoreCurrency(item.storePrice || 0, state.region) : gamePriceText(item);
+    const metaHtml = usesTopup ? "" : `
+        <div class="cartMeta">
+          <div class="cartDisc">${item.discPerc ? `-${item.discPerc}%` : ""}</div>
+          <div class="cartUntil">${item.discountedUntil ? escapeHtml(formatDateRuLong(item.discountedUntil)) : ""}</div>
+        </div>`;
+    row.innerHTML = `
+      <div class="cartItemLeft">
+        <div class="cartCover">
+          ${item.cover ? gameCoverImg(item.cover, `onerror="this.style.display='none'"`) : `<div class="noCoverBox">NO COVER</div>`}
+        </div>
+        <div class="cartPlatforms">${item.platform || "PS4 / PS5"}</div>
+      </div>
+      <div class="cartItemRight">
+        <div class="cartItemTop">
+          <a class="cartItemTitle gameTitleLink" href="${escapeHtml(gameLink(item.id))}">${escapeHtml(productCaption(item).name)}</a>
+          <button class="cartRemove" type="button" aria-label="Удалить">×</button>
+        </div>
+        <div class="cartEdition">${escapeHtml(productCaption(item).edition)}</div>
+        ${usesTopup ? "" : subBadgeHtml(item.sub)}
+        ${metaHtml}
+        <div class="cartPriceRow">
+          <div class="cartPrice">${priceHtml}</div>
+        </div>
+      </div>
+    `;
+    row.querySelector(".cartRemove").onclick = ()=>removeFromCart(item.id);
+    body.appendChild(row);
+  });
+
+  if(usesTopup && topupDetails && Number(topupDetails.nominal||0)>0){
+    body.appendChild(renderTopupCartSection(items, topupDetails));
+  }
+  if(hintEl) hintEl.textContent = "";
+}
+
+async function renderWishlist(){
+  const body=document.getElementById("wishBody"); const regionEl=document.getElementById("wishRegion"); const clearBtn=document.getElementById("wishClearBtn");
+  if(regionEl) regionEl.textContent=`(${state.region})`;
+  let items=loadWishlist(state.region);
+  items = await refreshWishlistItemsFromServer(state.region);
+  updateWishCount();
+  refreshAllWishButtons();
+  if(clearBtn) clearBtn.disabled=items.length===0;
+  if(!body) return;
+  if(!items.length){ body.innerHTML=`<div class="cartEmpty">Список желаемого пуст</div>`; return; }
+  body.innerHTML="";
+  items.forEach(item=>{
+    const row=document.createElement("div"); row.className="cartItem wishItem";
+    row.innerHTML=`
+      <div class="cartItemLeft"><div class="cartCover">${item.cover ? gameCoverImg(item.cover, `onerror="this.style.display='none'"`) : `<div class="noCoverBox">NO COVER</div>`}</div><div class="cartPlatforms">${item.platform || "PS4 / PS5"}</div></div>
+      <div class="cartItemRight">
+        <div class="cartItemTop"><a class="cartItemTitle gameTitleLink" href="${escapeHtml(gameLink(item.id))}">${escapeHtml(productCaption(item).name)}</a><button class="cartRemove" type="button" aria-label="Удалить">×</button></div>
+        <div class="cartEdition">${escapeHtml(productCaption(item).edition)}</div>
+        <div class="cartMeta"><div class="cartDisc">${item.discPerc ? `-${item.discPerc}%` : ""}</div><div class="cartUntil">${item.discountedUntil ? escapeHtml(formatDateRuLong(item.discountedUntil)) : ""}</div></div>
+        <div class="cartPriceRow wishPriceRow"><div class="cartPrice">${gamePriceText(item)}</div><button class="buyBtn wishAddCartBtn" type="button" data-cart-game="${item.id}" data-cart-label="В корзину" data-cart-label-in="В корзине">В корзину</button></div>
+      </div>`;
+    row.querySelector(".cartRemove").onclick=()=>removeFromWishlist(item.id);
+    const addBtn=row.querySelector(".wishAddCartBtn");if(state.region==="US" && !(item.finalPriceRub>0))addBtn.disabled=true; setBuyBtnState(addBtn, isInCart(item.id, state.region));
+    addBtn.onclick=()=>{ if(isInCart(item.id, state.region)) removeFromCart(item.id); else addToCart(item); setBuyBtnState(addBtn, isInCart(item.id, state.region)); };
+    body.appendChild(row);
+  });
+}
+function clearWishlist(){ saveWishlist(state.region, []); updateWishCount(); refreshAllWishButtons(); if(isWishOpen()) renderWishlist(); }
+async function showWishlistDiscountToast(){
+  const items=(await refreshWishlistItemsFromServer(state.region)).filter(x=>Number(x.discPerc||0)>0); if(!items.length) return;
+  const old=document.getElementById("wishToast"); if(old) old.remove();
+  const el=document.createElement("div"); el.id="wishToast"; el.className="wishToast";
+  el.innerHTML=`<div class="wishToastTitle">В вашем списке желаемого есть игры со скидкой</div>`;
+  document.body.appendChild(el); requestAnimationFrame(()=>el.classList.add("show")); setTimeout(()=>{ el.classList.remove("show"); setTimeout(()=>el.remove(),350); },3600);
+}
+
+
+function normalizeWhatsAppBase(link){
+  let base = String(link || "").trim();
+  if(!base) return "https://wa.me/+79659556300";
+  if(/^\+?\d[\d\s().-]*$/.test(base)){
+    const phone = base.replace(/\D/g, "");
+    return phone ? `https://wa.me/${phone}` : "https://wa.me/+79659556300";
+  }
+  if(/^https?:\/\//i.test(base)) return base;
+  return "https://" + base.replace(/^\/+/, "");
+}
+function openWhatsAppMessage(message, baseLink){
+  const base = normalizeWhatsAppBase(baseLink || state.whatsapp);
+  const sep = base.includes("?") ? "&" : "?";
+  window.open(base + sep + "text=" + encodeURIComponent(String(message || "")), "_blank");
+}
+
+async function buyCartWhatsApp(){
+  const items = await refreshCartItemsFromServer(state.region);
+  if(state.region==="US" && items.some(item=>!(item.finalPriceRub>0))){alert("Цена в рублях пока недоступна.");return;}
+  updateCartCount();
+  refreshAllBuyButtons();
+  if(!items.length) return;
+
+  const usesTopup = shouldUseTopupCartCheckout(state.region);
+  const storeTotal = items.reduce((s,x)=>s+(Number(x.storePrice)||0),0);
+  const topupDetails = usesTopup ? calcTopupCartDetails((state.topupCards&&state.topupCards[state.region])||[], storeTotal) : null;
+  const totals = usesTopup ? {oldTotal:0, discount:0, total:Number(topupDetails&&topupDetails.rub||0)} : calcCartDiscount(items);
+
+  const lines = [];
+  lines.push("Хочу купить игры:");
+  lines.push(`Регион: ${state.region}`);
+  lines.push("");
+  items.forEach((g, i)=>{
+    const parts = [];
+    parts.push(`${i+1}) ${g.name}`);
+    if(g.edition) parts.push(`Издание: ${g.edition}`);
+    if(g.platform) parts.push(`Платформа: ${g.platform}`);
+    if(!usesTopup && g.discPerc) parts.push(`Скидка: -${g.discPerc}%`);
+    if(!usesTopup && g.discountedUntil) parts.push(String(formatDateRuLong(g.discountedUntil)).replace(/^До:\s*/,"Дата конца скидки: "));
+    parts.push(`Цена: ${usesTopup ? formatStoreCurrency(g.storePrice || 0, state.region) : fmtRub(g.finalPriceRub || 0)}`);
+    lines.push(parts.join("\n"));
+    lines.push("");
+  });
+  if(usesTopup && topupDetails){
+    lines.push(`Сумма игр в PS Store: ${formatStoreCurrency(storeTotal, state.region)}`);
+    lines.push(`Карты для пополнения: ${formatStoreCurrency(topupDetails.nominal, state.region)}`);
+    if(Array.isArray(topupDetails.cards) && topupDetails.cards.length){
+      topupDetails.cards.forEach(card=>{
+        const qty=Math.max(1, Math.round(Number(card.qty||1)));
+        const rowRub=Number(card.totalRub || (Number(card.rub||0)*qty) || 0);
+        lines.push(`- ${formatStoreCurrency(card.amount, state.region)} × ${qty}: ${fmtRub(rowRub)}`);
+      });
+    }
+    lines.push(`Стоимость карт: ${fmtRub(topupDetails.rub)}`);
+    if(Number(topupDetails.left||0)>0) lines.push(`${formatTopupLeftoverCurrency(topupDetails.left, state.region)} останутся на вашем аккаунте.`);
+  }else if(totals.discount > 0){
+    lines.push(`Старая цена: ${fmtRub(totals.oldTotal)}`);
+    lines.push(`Скидка за 2+ игры: - ${fmtRub(totals.discount)}`);
+  }
+  lines.push(`Итого: ${fmtRub(totals.total)}`);
+
+  openWhatsAppMessage(lines.join("\n"));
+}
+
+// ---------------- end Cart ----------------
+
+// ---------------- Subscriptions WhatsApp ----------------
+function buySubscriptionWhatsApp(p){
+  if(!p) return;
+  const region = String(p.region || state.region || "TR");
+  const monthsNum = Number(p.months || 0);
+  const period = monthsNum===1 ? "1 месяц" : (monthsNum===3 ? "3 месяца" : (monthsNum===12 ? "12 месяцев" : String(monthsNum)));
+  const price = Number(p.price || 0);
+  const name = String(p.name || "Подписка");
+
+  const lines = [];
+  lines.push("Хочу купить подписку:");
+  lines.push(name);
+  lines.push(`Срок: ${period}`);
+  lines.push(`Регион: ${region}`);
+  if(price) lines.push(`Цена: ${fmtRub(price)}`);
+
+  openWhatsAppMessage(lines.join("\n"));
+}
+
+
+
+
+
+function eaPriceHtml(game){
+  if(game.discPerc>0 || !(game.eaStorePrice>0))return '';
+  const amount=game.eaPriceRub>0?fmtRub(game.eaPriceRub):formatStoreCurrency(game.eaStorePrice,state.region);
+  return '<span class="eaMemberPrice">'+escapeHtml(amount)+' с EA Play</span>';
+}
+function buildCard(game, whatsapp, showUntil){
+  if(game.officialUrl){
+    const tile=document.createElement('article');tile.className='card shopGame';
+    tile.innerHTML='<a href="'+escapeHtml(game.officialUrl)+'"><div class="coverWrap">'+(game.cover?gameCoverImg(game.cover,''):'')+'</div><p class="title">'+escapeHtml(game.name||'')+'</p><small>В PS Store ↗</small></a>';
+    return tile;
+  }
+  const cardTab = game && game.__cardTab ? String(game.__cardTab) : state.tab;
+  const isSearchMode = !!String(state.search || "").trim();
+  const isPreorder = (cardTab === "preorders" && !isSearchMode) || !!game.isPreorder;
+  const isNewRelease = !isPreorder && (cardTab === "new" || !!game.isNewRelease || game.sourceTab === "new");
+  const div=document.createElement("div");
+  div.className = (isPreorder ? "card shopGame card--preorder" : "card shopGame") + (isNewRelease ? " card--new" : "");
+  const inCart = isInCart(game.id, state.region);
+  const inWish = isInWishlist(game.id, state.region);
+  const preorderBadge = isPreorder ? `<div class="preorderBadge" aria-label="Предзаказ">Предзаказ</div>` : "";
+  const newBadge = isNewRelease ? `<div class="newBadge" aria-label="Новинка">Новинка</div>` : "";
+  const compareButton = `<button class="compareBtn" type="button" aria-label="Сравнить регионы" title="Сравнить регионы">${subsIcon('compare')}</button>`;
+  const showEdition = !!game.__forceShowEdition || cardTab !== "allgames" || !!String(state.search||"").trim();
+  const caption = productCaption(game);
+  const editionHtml = showEdition && caption.edition
+    ? `<div class="cardEdition">${escapeHtml(caption.edition)}</div>`
+    : "";
+
+  // For preorders we keep the same card structure as other pages,
+  // but allow separate styling via .card--preorder.
+  // Release date is shown only in the modal.
+  const discountHtml = game.discPerc ? ("-"+game.discPerc+"%") : "";
+
+  const priceRowHtml = `<div class="cardPriceLine"><strong class="price">${gamePriceText(game)}</strong>${discountHtml?'<span class="discount">'+escapeHtml(discountHtml)+'</span>':''}</div>`;
+
+  div.innerHTML=`
+    <div class="coverWrap">
+      ${preorderBadge}
+      ${newBadge}
+      <span class="platformStrip">${escapeHtml(game.platform||"PS4 / PS5")}</span>
+      ${compareButton}
+      <button class="wishBtn ${inWish?"isInWishlist":""}" data-wish-game="${game.id}" type="button" aria-label="В желаемое" aria-pressed="${inWish?"true":"false"}"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z"/></svg></button>
+      ${game.cover?gameCoverImg(game.cover, `onerror="this.style.display='none'"`):"<div style='font-weight:900;font-size:12px;opacity:.9'>NO COVER</div>"}
+    </div>
+    <div class="body-bar1">
+      <p class="title"><a class="gameTitleLink" href="${escapeHtml(gameLink(game.id))}">${escapeHtml(caption.name)}</a>${game.isAddon?'<span class="detailAddonBadge">Аддон</span>':''}</p>
+      ${editionHtml}
+      <div class="bottom">
+      ${priceRowHtml}${game.isAddon?addonDiscountDetails(game):''}${eaPriceHtml(game)}
+      <div class="row cardActions"><button class="buyBtn buyBtn--card ${inCart?"isInCart":""}" data-cart-game="${game.id}" data-cart-label="В корзину" data-cart-label-in="В корзине" type="button" aria-pressed="${inCart?"true":"false"}">${cartButtonHtml(inCart?"В корзине":"В корзину")}</button></div>
+      </div>
+    </div>`;
+  const cw = div.querySelector(".coverWrap");
+  if(cw){const a=document.createElement('a');a.href=gameLink(game.id);a.className='coverGameLink';a.setAttribute('aria-label',game.name);cw.append(a);}
+  if(state.region==="US" && !(game.finalPriceRub>0)){
+    const button=div.querySelector(".buyBtn");button.hidden=true;button.disabled=true;
+  }
+  div.querySelector(".buyBtn").onclick=(e)=>{
+    if(e){ e.preventDefault(); e.stopPropagation(); }
+    const nowInCart = isInCart(game.id, state.region);
+    if(nowInCart) removeFromCart(game.id);
+    else addToCart(game);
+  };
+  div.addEventListener("click",e=>{
+    if(!e.target.closest("button,a,input,select") && !window.getSelection()?.toString())location.assign(gameLink(game.id));
+  });
+  const compareBtn = div.querySelector(".compareBtn");
+  if(compareBtn){ compareBtn.onclick=(e)=>{ e.preventDefault(); e.stopPropagation(); openRegionCompare(game); }; }
+  const wishBtn = div.querySelector(".wishBtn");
+  if(wishBtn){ wishBtn.onclick=(e)=>{ e.preventDefault(); e.stopPropagation(); toggleWishlist(game); setWishBtnState(wishBtn, isInWishlist(game.id, state.region)); }; }
+  return div;
+}
+
+
+const REGION_COMPARE_LABELS=REGION_LABELS;
+function regionComparePriceHtml(g){
+  const disc = Number(g && g.discPerc || 0);
+  const old = Number(g && g.oldPriceRub || 0);
+  const price = Number(g && g.finalPriceRub || 0);
+  return `<div class="regionComparePriceLine">${disc ? `<span class="regionCompareDiscount">-${disc}%</span>` : ``}<div class="regionComparePrices">${old ? `<span class="regionCompareOld">${escapeHtml(fmtRub(old))}</span>` : ``}<span class="regionComparePrice">${price ? escapeHtml(fmtRub(price)) : (g.region==='US' && g.storePrice>0 ? escapeHtml(formatStoreCurrency(g.storePrice,'US')):'—')}</span></div></div>`;
+}
+function renderRegionCompareItems(items, activeRegion){
+  const order=["UA","TR","PL","IN","US"].filter(isRegionEnabled);
+  return order.map(R=>{
+    const g = (items||[]).find(x=>String(x.region||'').toUpperCase()===R);
+    if(!g){
+      return `<div class="regionCompareItem isMissing"><div class="regionCompareRegion">${REGION_COMPARE_LABELS[R]}<span>${R==="US"?"USA":R}</span></div><div class="regionCompareMissing">Нет данных</div></div>`;
+    }
+    const active = String(activeRegion||'').toUpperCase()===R;
+    return `<div class="regionCompareItem ${active?'isActive':''}">
+      <div class="regionCompareRegion">${REGION_COMPARE_LABELS[R]}<span>${R==="US"?"USA":R}</span></div>
+      <div class="regionCompareEdition">${escapeHtml(gmRuLabel(g.ru))}</div>
+      ${regionComparePriceHtml(g)}
+    </div>`;
+  }).join('');
+}
+function openRegionCompare(game){
+  const overlay=document.getElementById("regionCompareModal");
+  const list=document.getElementById("regionCompareList");
+  const title=document.getElementById("regionCompareTitle");
+  const sub=document.getElementById("regionCompareSub");
+  const platform=document.getElementById("regionComparePlatform");
+  const discountDate=document.getElementById("regionCompareDiscountDate");
+  const cover=document.getElementById("regionCompareCover");
+  if(!overlay || !list) return;
+  if(title) title.textContent = game && game.name ? game.name : "Сравнение";
+  if(sub) sub.textContent = game ? gmEditionShortText(game) : "";
+  if(platform) platform.textContent = game && game.platform ? game.platform : "PS4 / PS5";
+  const setCompareDiscountDate = (until)=>{
+    if(!discountDate) return;
+    const v = String(until || "").trim();
+    discountDate.textContent = v ? `Скидка до ${formatDateDMY(v)}` : "";
+    discountDate.style.display = v ? "block" : "none";
+  };
+  setCompareDiscountDate(game && game.discountedUntil);
+  if(cover){
+    if(game && game.cover){ cover.innerHTML = `<img src="${escapeHtml(optimizedPsImageUrl(game.cover, 420))}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">`; }
+    else cover.innerHTML = `<div class="regionCompareNoCover"></div>`;
+  }
+  list.innerHTML = `<div class="regionCompareLoading">Загрузка...</div>`;
+  overlay.style.display="flex";
+  document.body.classList.add("modalOpen");
+  const qs=new URLSearchParams({id:String(game && game.id || ''), region:String(state.region||'TR')});
+  if(game && game.conceptId) qs.set('conceptId', String(game.conceptId));
+  fetch(`/api/game-regions?${qs.toString()}`, {cache:"no-store"})
+    .then(r=>r.json())
+    .then(j=>{
+      const items = (j && j.items) || [];
+      list.innerHTML = renderRegionCompareItems(items, state.region);
+      const active = items.find(x=>String(x.region||'').toUpperCase()===String(state.region||'TR').toUpperCase()) || items.find(x=>Number(x.discPerc||0)>0 && x.discountedUntil) || null;
+      if(active && active.discountedUntil) setCompareDiscountDate(active.discountedUntil);
+    })
+    .catch(()=>{ list.innerHTML = `<div class="regionCompareLoading">Не удалось загрузить сравнение</div>`; });
+}
+function closeRegionCompare(){
+  const overlay=document.getElementById("regionCompareModal");
+  if(!overlay) return;
+  overlay.style.display="none";
+  document.body.classList.remove("modalOpen");
+}
+
+
+function gmRuLabel(ru){
+  const v = String(ru || 'none').toLowerCase();
+  if(v === 'voice') return 'Русская озвучка и текст';
+  if(v === 'text') return 'Русские субтитры';
+  if(v === 'unknown') return 'Русский перевод: неизвестно';
+  return 'Без русского перевода';
+}
+function gmIsRuPositive(ru){ return String(ru||'').toLowerCase()==='voice' || String(ru||'').toLowerCase()==='text'; }
+function gmEditionShortText(g){
+  const ed = String(g.edition || '').trim();
+  if(ed) return ed;
+  const n = String(g.name || '').trim();
+  return n || 'Standard Edition';
+}
+function gmEditionSubText(g){
+  return gmEditionShortText(g);
+}
+function gmEditionGameTitleText(g){
+  const n = String(g.name || '').trim();
+  return n || gmEditionShortText(g);
+}
+function gmRenderEditionItem(g, activeId){
+  const active = String(g.id||'') === String(activeId||'');
+  const img = g.cover ? `<img src="${escapeHtml(optimizedPsImageUrl(g.cover, 160))}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : `<div class="gmv2EditionNoCover"></div>`;
+  const disc = Number(g.discPerc||0) ? `<span class="gmv2EditionDiscount">-${Number(g.discPerc||0)}%</span>` : ``;
+  const old = Number(g.oldPriceRub||0) ? `<div class="gmv2EditionOld">${escapeHtml(fmtRub(g.oldPriceRub))}</div>` : '';
+  const price = Number(g.finalPriceRub||0) ? escapeHtml(fmtRub(g.finalPriceRub)) : '—';
+  return `<button class="gmv2Edition ${active?'isActive':''}" type="button" data-gmv2-edition="${escapeHtml(g.id||'')}" aria-pressed="${active?'true':'false'}">
+    <div class="gmv2EditionCover">${img}</div>
+    <div class="gmv2EditionInfo">
+      <div class="gmv2EditionName">${escapeHtml(gmEditionGameTitleText(g))}</div>
+      <div class="gmv2EditionPlatform">${escapeHtml(g.platform || '')}</div>
+      <div class="gmv2EditionSub">${escapeHtml(gmEditionSubText(g))}</div>
+    </div>
+    <div class="gmv2EditionBuy">
+      <div class="gmv2EditionPriceLine">${disc}<span class="gmv2EditionPrice">${price}</span></div>
+      ${old}
+    </div>
+  </button>`;
+}
+
+
+function gmPlayersText(g){
+  const raw = String(g && g.players || '').trim();
+  if(!raw) return '1 игрок';
+  const n = raw.replace(/[–—]/g,'-').match(/^(\d+)(?:\s*-\s*(\d+))?/);
+  if(!n) return raw;
+  if(!n[2] && Number(n[1]) === 1) return '1 игрок';
+  return raw;
+}
+function gmPlayersIconCount(playersText){
+  const raw = String(playersText || '').replace(/[–—]/g,'-');
+  const n = raw.match(/^(\d+)(?:\s*-\s*(\d+))?/);
+  if(!n) return 1;
+  const max = Number(n[2] || n[1] || 1);
+  if(max >= 4) return 3;
+  if(max >= 2) return 2;
+  return 1;
+}
+function gmPlayersIconsHtml(count){
+  let html = '';
+  for(let i = 0; i < count; i++){
+    html += '<span class="gmv2PlayerAvatar" aria-hidden="true"></span>';
+  }
+  return html;
+}
+function gmUpdatePlayersInfo(game){
+  const p = document.getElementById('gmPlayersInfo');
+  if(!p) return;
+  const text = gmPlayersText(game);
+  p.innerHTML = `<span class="gmv2PlayersIcons">${gmPlayersIconsHtml(gmPlayersIconCount(text))}</span><span class="gmv2PlayersText">${escapeHtml(text)}</span>`;
+}
+
+
+let __gmMediaItems=[];
+let __gmMediaIndex=0;
+function gmYoutubeId(rawUrl){
+  const raw=String(rawUrl||'').trim();
+  if(!raw) return '';
+  try{
+    const u=new URL(raw);
+    const host=u.hostname.toLowerCase().replace(/^www\./,'');
+    if(host==='youtu.be') return (u.pathname.split('/').filter(Boolean)[0]||'').slice(0,32);
+    if(host==='youtube.com' || host==='m.youtube.com' || host==='music.youtube.com' || host==='youtube-nocookie.com'){
+      if(u.pathname==='/watch') return (u.searchParams.get('v')||'').slice(0,32);
+      const parts=u.pathname.split('/').filter(Boolean);
+      if(['embed','shorts','live'].includes(parts[0])) return (parts[1]||'').slice(0,32);
+    }
+  }catch(_e){}
+  return '';
+}
+function gmYoutubeEmbedUrl(rawUrl){
+  const id=gmYoutubeId(rawUrl);
+  return id ? `https://www.youtube.com/embed/${encodeURIComponent(id)}?autoplay=1&rel=0&playsinline=1` : '';
+}
+function gmMediaThumbHtml(item, idx){
+  const type=String(item&&item.type||'').toLowerCase();
+  const url=String(item&&item.url||'');
+  if(!url) return '';
+  if(type==='video'){
+    return `<button class="gmMediaThumb gmMediaThumbVideo" type="button" data-gm-media="${idx}" aria-label="Открыть трейлер"><span class="gmMediaPlay">▶</span><span class="gmMediaLabel">Трейлер</span></button>`;
+  }
+  return `<button class="gmMediaThumb" type="button" data-gm-media="${idx}" aria-label="Открыть скриншот"><img src="${escapeHtml(optimizedPsImageUrl(url,420))}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"></button>`;
+}
+function gmRenderMedia(game){
+  const section=document.getElementById('gmMediaSection');
+  const rail=document.getElementById('gmMediaRail');
+  if(!section||!rail) return;
+  const raw=Array.isArray(game&&game.mediaGallery)?game.mediaGallery:[];
+  const videos=raw.filter(x=>String(x&&x.type||'').toLowerCase()==='video' && x.url);
+  const images=raw.filter(x=>String(x&&x.type||'').toLowerCase()==='image' && x.url);
+  __gmMediaItems=videos.concat(images);
+  // Each opened game starts its media gallery from the first item.
+  // The same modal/rail DOM node is reused between games, so without this
+  // reset scrollLeft from the previously opened game is preserved.
+  rail.scrollLeft = 0;
+  __gmMediaIndex = 0;
+  if(!__gmMediaItems.length){ section.style.display='none'; rail.innerHTML=''; return; }
+  section.style.display='';
+  rail.innerHTML=__gmMediaItems.map(gmMediaThumbHtml).join('');
+  // Reset once more after thumbnails are in the DOM (important on mobile).
+  requestAnimationFrame(()=>{ rail.scrollLeft = 0; });
+  rail.querySelectorAll('[data-gm-media]').forEach(btn=>btn.onclick=()=>gmOpenMedia(Number(btn.getAttribute('data-gm-media')||0)));
+}
+function gmOpenMedia(idx){
+  if(!__gmMediaItems.length) return;
+  __gmMediaIndex=Math.max(0,Math.min(__gmMediaItems.length-1,Number(idx)||0));
+  const lb=document.getElementById('gmMediaLightbox');
+  if(!lb) return;
+  lb.style.display='flex'; lb.setAttribute('aria-hidden','false');
+  document.body.classList.add('modalOpen');
+  gmRenderLightbox();
+}
+function gmRenderLightbox(){
+  const stage=document.getElementById('gmMediaLbStage');
+  const counter=document.getElementById('gmMediaLbCounter');
+  if(!stage||!__gmMediaItems.length) return;
+  const item=__gmMediaItems[__gmMediaIndex];
+  const type=String(item.type||'').toLowerCase();
+  if(type==='video'){
+    const ytEmbed=gmYoutubeEmbedUrl(item.url);
+    stage.innerHTML = ytEmbed
+      ? `<iframe class="gmMediaYoutube" src="${escapeHtml(ytEmbed)}" title="Трейлер YouTube" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`
+      : `<video src="${escapeHtml(item.url)}" controls autoplay playsinline preload="metadata"></video>`;
+  }else{
+    stage.innerHTML=`<img src="${escapeHtml(optimizedPsImageUrl(item.url,1920))}" alt="Скриншот" referrerpolicy="no-referrer">`;
+  }
+  if(counter) counter.textContent=`${__gmMediaIndex+1} / ${__gmMediaItems.length}`;
+}
+function gmStepMedia(dir){ if(!__gmMediaItems.length)return; __gmMediaIndex=(__gmMediaIndex+dir+__gmMediaItems.length)%__gmMediaItems.length; gmRenderLightbox(); }
+function gmCloseMedia(){
+  const lb=document.getElementById('gmMediaLightbox'); if(!lb)return;
+  lb.style.display='none'; lb.setAttribute('aria-hidden','true');
+  const stage=document.getElementById('gmMediaLbStage'); if(stage) stage.innerHTML='';
+  const gameOpen=document.getElementById('gameModal');
+  if(!gameOpen || gameOpen.style.display==='none') document.body.classList.remove('modalOpen');
+}
+
+document.addEventListener("keydown",(e)=>{
+  const lb=document.getElementById('gmMediaLightbox');
+  const lbOpen=lb && lb.style.display!=="none";
+  if(lbOpen && e.key==="ArrowLeft"){ e.preventDefault(); gmStepMedia(-1); return; }
+  if(lbOpen && e.key==="ArrowRight"){ e.preventDefault(); gmStepMedia(1); return; }
+  if(e.key==="Escape") { if(lbOpen){ gmCloseMedia(); return; } closeRegionCompare(); }
+});
+document.addEventListener("DOMContentLoaded",()=>{
+
+  const lb=document.getElementById('gmMediaLightbox');
+  const lbc=document.getElementById('gmMediaLbClose');
+  const lbp=document.getElementById('gmMediaLbPrev');
+  const lbn=document.getElementById('gmMediaLbNext');
+  if(lbc) lbc.onclick=gmCloseMedia;
+  if(lbp) lbp.onclick=()=>gmStepMedia(-1);
+  if(lbn) lbn.onclick=()=>gmStepMedia(1);
+  if(lb) lb.addEventListener('click',e=>{ if(e.target===lb) gmCloseMedia(); });
+});
+
+async function loadDiscountTabs(){
+  // Replaced by the new Discounts overview (banner cards + All Deals carousel)
+  return [];
+}
+
+function isoToRuDateLong(iso){
+  const s=String(iso||"").split("T")[0];
+  const [y,m,d]=s.split("-").map(x=>parseInt(x,10));
+  if(!y||!m||!d) return "";
+  const months=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+  return `${d} ${months[m-1]} ${y}`;
+}
+
+async function renderDiscountOverview(){
+  const wrap=document.getElementById("discountTabs");
+  const allDeals=document.getElementById("allDeals");
+  const grid=document.getElementById("grid");
+  const pager=document.getElementById("pager");
+  const emptyBox=document.getElementById("emptyBox");
+  if(!wrap || !allDeals) return;
+
+  // Hide the main grid on the overview page
+  if(grid) grid.innerHTML="";
+  if(pager) pager.innerHTML="";
+  if(emptyBox){ emptyBox.style.display="none"; }
+
+  wrap.innerHTML = "<div class='discountBannersGrid' id='discountBannersGrid'></div>";
+  allDeals.innerHTML = "<div class='allDealsHead'><div class='allDealsTitle'>Все Скидки</div><a class='allDealsViewAll' href='#' id='allDealsViewAll'>Посмотреть все</a></div><div class='allDealsShell'><button class='allDealsArrow left' type='button' aria-label='Назад'>‹</button><div class='allDealsTrack' id='allDealsTrack'></div><button class='allDealsArrow right' type='button' aria-label='Вперёд'>›</button></div>";
+  const viewAll = document.getElementById("allDealsViewAll");
+  if(viewAll){
+    viewAll.onclick=(e)=>{
+      e.preventDefault();
+      state.allDeals = true;
+      state.until = "";
+      state.page = 1;
+      load();
+    };
+  }
+
+  let dates=[];
+  let banners={};
+  try{
+    const [dj, bj] = await Promise.all([
+      fetch(`/api/discount-dates?region=${encodeURIComponent(state.region)}`).then(r=>r.json()),
+      fetch(`/api/discount-banners`).then(r=>r.json()).catch(()=>({}))
+    ]);
+    dates = (dj && dj.dates) ? dj.dates : [];
+    banners = (bj && bj.banners) ? bj.banners : (bj||{});
+  }catch(_){
+    dates=[];
+    banners={};
+  }
+
+  const gridEl = document.getElementById("discountBannersGrid");
+  if(gridEl){
+    if(!dates.length){
+      gridEl.innerHTML = "<div class='card' style='padding:12px;'>Скидок пока нет</div>";
+    }else{
+      for(const d of dates){
+        const iso = d.date;
+        const img = banners && banners[iso] ? banners[iso] : "";
+        const card=document.createElement("a");
+        card.href="#";
+        card.className="discountBannerCard";
+        card.onclick=(e)=>{
+          e.preventDefault();
+          state.until = iso;
+          state.allDeals = false;
+          state.page = 1;
+          load();
+        };
+        const label = isoToRuDateLong(iso);
+        card.innerHTML = `
+          <div class="discountBannerImgWrap">
+            ${img ? `<img src="${img}" alt="Sale Image" decoding="async"/>` : `<div class="discountBannerPlaceholder"></div>`}
+          </div>
+          <div class="discountBannerCaption">${dateWithIconHtml('До ' + (label || iso))}</div>
+        `;
+        gridEl.appendChild(card);
+      }
+    }
+  }
+
+  // Carousel data (11 games total across all discount blocks)
+  try{
+    const qs=new URLSearchParams({tab:"discounts",region:state.region,page:"1",sort:state.sort,perPage:"11"});
+    const j=await fetch(`/api/games?view=cards&${qs.toString()}`).then(r=>r.json());
+    const items=(j && j.items) ? j.items : [];
+    const viewport=document.getElementById("allDealsTrack");
+    if(viewport){
+      viewport.innerHTML = "<div class='allDealsInner' id='allDealsInner'></div>";
+      const inner = document.getElementById('allDealsInner');
+      items.forEach(g=>{
+        const el=document.createElement("div");
+        el.className="allDealsItem";
+        el.appendChild(buildCard(g, state.whatsapp||"", true));
+        inner.appendChild(el);
+      });
+      // View All card at the end
+      const view=document.createElement("div");
+      view.className="allDealsItem";
+      view.innerHTML = `<a href="#" class="allDealsViewCard"><div class="allDealsViewCardInner">Посмотреть все</div></a>`;
+      view.querySelector("a").onclick=(e)=>{e.preventDefault(); state.allDeals=true; state.until=""; state.page=1; load();};
+      inner.appendChild(view);
+
+      // Adaptive carousel (no half-cards, no scrollbar) — like PS Store
+      let index = 0;
+      const leftBtn = allDeals.querySelector('.allDealsArrow.left');
+      const rightBtn = allDeals.querySelector('.allDealsArrow.right');
+
+      const getNum = (el, prop)=>{
+        const v = getComputedStyle(el).getPropertyValue(prop);
+        const n = parseFloat(String(v).trim());
+        return Number.isFinite(n) ? n : 0;
+      };
+
+      const getPerView = ()=>{
+        const pv = parseInt(String(getComputedStyle(viewport).getPropertyValue('--perView')||'').trim(),10);
+        return Number.isFinite(pv) && pv>0 ? pv : 6;
+      };
+
+      const clamp = (v,min,max)=>Math.max(min, Math.min(max, v));
+
+      const update = ()=>{
+        const perView = getPerView();
+        const gap = getNum(viewport, '--gap');
+        const firstItem = inner.querySelector('.allDealsItem');
+        const itemW = firstItem ? firstItem.getBoundingClientRect().width : 0;
+        const step = itemW + gap;
+        const maxIndex = Math.max(0, inner.children.length - perView);
+        index = clamp(index, 0, maxIndex);
+        inner.style.transform = `translate3d(${-index * step}px,0,0)`;
+
+        if(leftBtn) leftBtn.disabled = index<=0;
+        if(rightBtn) rightBtn.disabled = index>=maxIndex;
+      };
+
+      const moveBy = (delta)=>{ index += delta; update(); };
+      if(leftBtn) leftBtn.onclick=()=>moveBy(-getPerView());
+      if(rightBtn) rightBtn.onclick=()=>moveBy(getPerView());
+
+      bindHorizontalDrag(viewport,moveBy);
+
+      // Keep it responsive
+      inner.style.transition = 'transform .35s ease';
+      update();
+      window.addEventListener('resize', ()=>{ update(); }, {passive:true});
+    }
+  }catch(_){
+    // ignore
+  }
+}
+
+
+function topupRegionName(region){
+  const R=String(region||state.region||"TR").toUpperCase();
+  if(R==="PL") return "Польша";
+  if(R==="IN") return "Индия";
+  if(R==="TR") return "Турция";
+  return "СНГ";
+}
+function buyTopupCardWhatsApp(card){
+  if(!card) return;
+  const amount=Number(card.amount||0);
+  const rub=Number(card.rub||0);
+  const lines=[];
+  lines.push("Хочу купить карту пополнения:");
+  lines.push(`Регион: ${topupRegionName(state.region)} (${state.region})`);
+  lines.push(`Номинал: ${formatStoreCurrency(amount, state.region)}`);
+  if(rub) lines.push(`Цена: ${fmtRub(rub)}`);
+  openWhatsAppMessage(lines.join("\n"));
+}
+async function renderTopupPage(){
+  document.body.dataset.tab="topup";
+  const grid=document.getElementById("grid");
+  const pager=document.getElementById("pager");
+  const emptyBox=document.getElementById("emptyBox");
+  const dt=document.getElementById('discountTabs');
+  const ad=document.getElementById('allDeals');
+  if(dt){ dt.innerHTML=""; dt.style.display="none"; }
+  if(ad){ ad.innerHTML=""; ad.style.display="none"; }
+  if(pager) pager.innerHTML="";
+  if(emptyBox) emptyBox.style.display="none";
+  if(!grid) return;
+  grid.classList.remove("searchResults", "gridSubs");
+  grid.classList.add("topupPageGrid");
+  const controls=document.querySelector(".resultsBar");
+  if(controls) controls.style.display="none";
+  const R=String(state.region||"TR").toUpperCase();
+  if(R==="UA"){
+    grid.innerHTML=`<div class="topupPage"><div class="sectionTop"><button class="sectionBackBtn" type="button" id="topupBack">‹ Назад</button><h1>Карты пополнения</h1></div><div class="topupEmpty card">Для региона СНГ карты пополнения не используются.</div></div>`;
+    const back=document.getElementById("topupBack");
+    if(back) back.onclick=()=>openHomeSection("home");
+    return;
+  }
+  const cards=((state.topupCards&&state.topupCards[R])||[])
+    .map(c=>({amount:Number(c.amount||0), rub:Number(c.rub||0)}))
+    .filter(c=>c.amount>0 && c.rub>0)
+    .sort((a,b)=>a.amount-b.amount);
+  const rows=cards.map(c=>{
+    const img=topupCardImage(R, c.amount);
+    return `<article class="topupProductCard">
+      <div class="topupProductImageWrap">${img ? `<img src="${escapeHtml(img)}" alt="${escapeHtml(formatStoreCurrency(c.amount,R))}" loading="lazy" decoding="async">` : `<div class="noCoverBox">NO IMAGE</div>`}</div>
+      <div class="topupProductBody">
+        <div class="topupProductNominal">${escapeHtml(formatStoreCurrency(c.amount,R))}</div>
+        <div class="topupProductPrice">${fmtRub(c.rub)}</div>
+        <button class="buyBtn topupProductBuy" type="button" data-topup-buy="${escapeHtml(String(c.amount))}">Купить</button>
+      </div>
+    </article>`;
+  }).join("");
+  grid.innerHTML=`<div class="topupPage">
+    <div class="sectionTop"><button class="sectionBackBtn" type="button" id="topupBack">‹ Назад</button><h1>Карты пополнения PSN ${escapeHtml(topupRegionName(R))}</h1></div>
+    ${rows ? `<div class="topupProducts">${rows}</div>` : `<div class="topupEmpty card">Карты пополнения для этого региона пока не добавлены.</div>`}
+  </div>`;
+  const back=document.getElementById("topupBack");
+  if(back) back.onclick=()=>openHomeSection("home");
+  grid.querySelectorAll("[data-topup-buy]").forEach(btn=>{
+    btn.onclick=()=>{
+      const amount=Number(btn.getAttribute("data-topup-buy")||0);
+      const card=cards.find(c=>Number(c.amount)===amount);
+      buyTopupCardWhatsApp(card);
+    };
+  });
+}
+
+async function load(){
+  // keep filters selected across pagination
+  document.getElementById("region").value=state.region;
+  updateRegionPicker();
+  const __resultsBar=document.querySelector(".resultsBar");
+  if(__resultsBar) __resultsBar.style.display="";
+  const __gridForReset=document.getElementById("grid");
+  if(__gridForReset) __gridForReset.classList.remove("topupPageGrid");
+  // sort select options depend on active tab; value is set in setActiveTab/setSortOptionsForTab
+  if(document.getElementById("platform")) document.getElementById("platform").value=state.platform||"";
+  const searchEl=document.getElementById("search");
+  const currentHeaderSearchValue=searchEl ? (searchEl.value || "") : "";
+  if(state.tab === "search"){
+    if(searchEl) searchEl.value=state.search||"";
+    // На странице поиска раскрываем поле, если есть запрос.
+    if(state.search) setSearchOpen(true);
+  }else{
+    // Старый поиск больше не должен фильтровать обычные разделы сайта.
+    // Значение в поле можно оставить визуально, но в state.search оно не участвует.
+    state.search="";
+    if(searchEl) searchEl.value=currentHeaderSearchValue;
+  }
+  const meta=await fetchJson("/api/meta", {cache:"no-store"}, 12000, 1);
+  if(meta && meta.settings){
+    applyEnabledRegions(meta.settings.enabledRegions);
+  }
+  populateGenreFilters(meta && meta.genres);
+  // Apply active tab UI (do not reset page when loading)
+  const knownTabs = new Set(["home","preorders","new","discounts","allgames","subs","topup","bestsellers","multiplayer","search"]);
+  if(!knownTabs.has(state.tab)) state.tab="home";
+  if(!gamePageId)setActiveTab(state.tab, {keepPage:true,keepUntil:true});
+
+  if(meta){
+    state.whatsapp = (meta.settings && meta.settings.whatsappLink) || state.whatsapp || "https://wa.me/+79659556300";
+    state.discountRates = meta.discountRates || state.discountRates || {TR:[],UA:[],PL:[],IN:[]};
+    state.topupCards = meta.topupCards || state.topupCards || {TR:[],PL:[],IN:[]};
+    state.useTurkeyTopupCards = !!(meta.settings && meta.settings.useTurkeyTopupCards);
+    state.useIndiaTopupCards = !(meta.settings && meta.settings.useIndiaTopupCards === false);
+    state.roundStep = Number((meta.settings && meta.settings.roundStep) || state.roundStep || 50);
+  }
+
+  if(gamePageId){await renderGamePage();return;}
+  if(state.tab==="search"){
+    setSearchOpen(true, {page:true});
+  }
+
+  if(state.tab==="home" && !(state.search||"").trim()){
+    await renderHome();
+    return;
+  }
+
+  if(state.tab==="bestsellers" && !(state.search||"").trim()){
+    await renderBestsellersPage();
+    return;
+  }
+
+  if(state.tab==="multiplayer" && !(state.search||"").trim()){
+    await renderMultiplayerPage();
+    return;
+  }
+
+  if(state.tab==="topup" && !(state.search||"").trim()){
+    await renderTopupPage();
+    return;
+  }
+
+  // Discounts: old date-tabs were replaced by the overview page (banner cards + All Deals carousel)
+  if(state.tab==="discounts" && !(state.search||"").trim()) await loadDiscountTabs();
+
+  // Счётчик общего количества игр
+  const totalEl=document.getElementById("gamesTotal");
+  if(totalEl && meta){
+    const totalCount = (state.tab==="allgames") ? (meta.allGamesTotal||0) : (state.tab==="discounts") ? (meta.total||0) : (state.tab==="preorders") ? (meta.preordersTotal||0) : 0;
+    totalEl.textContent=`Найдено игр: ${totalCount}`;
+  }
+  const whatsapp=(meta.settings && meta.settings.whatsappLink)||"https://wa.me/+79659556300";
+  state.whatsapp = whatsapp;
+  state.discountRates = meta.discountRates || {TR:[],UA:[],PL:[],IN:[]};
+  state.topupCards = meta.topupCards || state.topupCards || {TR:[],PL:[],IN:[]};
+  state.useTurkeyTopupCards = !!(meta.settings && meta.settings.useTurkeyTopupCards);
+  state.useIndiaTopupCards = !(meta.settings && meta.settings.useIndiaTopupCards === false);
+  state.roundStep = Number((meta.settings && meta.settings.roundStep) || 50);
+  const showUntil=!!(state.tab==="discounts" && meta.hasAnyUntil && meta.hasAnyUntil[state.region]);
+
+  // Discounts overview (no date selected, not "View All", and not searching)
+  if(state.tab==="discounts" && !state.search && !state.until && !state.allDeals){
+    document.body.dataset.discountsView = "overview";
+    // On overview we show banners + carousel only
+    const dt=document.getElementById('discountTabs');
+    if(dt) dt.style.display = "";
+    const ad=document.getElementById("allDeals");
+    if(ad) ad.style.display="";
+    await renderDiscountOverview();
+    return;
+  }
+
+  // Discounts list views (by date / View All / search)
+  if(state.tab === "discounts"){
+    document.body.dataset.discountsView = "list";
+    const dt=document.getElementById('discountTabs');
+    if(dt){ dt.innerHTML=""; dt.style.display = "none"; }
+  }
+
+  // In date/all views, hide the All Deals carousel UI.
+  const __ad=document.getElementById("allDeals");
+  if(__ad){ __ad.innerHTML=""; __ad.style.display="none"; }
+
+  // Если есть несколько блоков дат скидок, игры показываем только после выбора даты
+  const needPickDate = false; // больше не скрываем игры: по умолчанию показываем ближайшую дату скидки
+  const grid=document.getElementById("grid");
+  if(grid) grid.classList.toggle("searchResults", !!(state.search||"").trim());
+  const pager=document.getElementById("pager");
+  const emptyBox=document.getElementById("emptyBox");
+
+  if(state.tab === "search" && !String(state.search || "").trim()){
+    const dt=document.getElementById('discountTabs');
+    if(dt){ dt.innerHTML=""; dt.style.display="none"; }
+    const ad=document.getElementById("allDeals");
+    if(ad){ ad.innerHTML=""; ad.style.display="none"; }
+    if(grid) grid.innerHTML="";
+    if(pager) pager.innerHTML="";
+    if(emptyBox){
+      emptyBox.style.display="block";
+      emptyBox.textContent="Вы ещё ничего не искали";
+    }
+    try{history.replaceState(null,"",`?tab=search&region=${encodeURIComponent(state.region)}`);}catch(_){}
+    return;
+  }
+
+  // Reset special layouts applied by other sections
+  if(grid) grid.classList.remove("gridSubs");
+  if(needPickDate){
+    if(grid) grid.innerHTML="";
+    if(pager) pager.innerHTML="";
+    if(emptyBox){
+      emptyBox.style.display="block";
+      emptyBox.textContent="Выберите дату скидки выше";
+    }
+    return;
+  }
+
+
+
+  // "Новинки" теперь загружаются с сервера (игры из "Всё игры" по PS категории)
+  if(state.tab==="subs" && !(state.search||"").trim()){
+    renderSubscriptions();
+    return;
+  }
+  // Keep current section in URL so refresh stays on the same page/tab
+  const qs=new URLSearchParams({tab:state.tab,region:state.region,page:String(state.page),sort:state.sort});
+  if(state.tab==="subs" && state.subPage && !(state.search||"").trim()) qs.set("sub", state.subPage);
+  // keep current state in URL (so refresh keeps page/filters)
+  
+  if(state.platform) qs.set("platform", state.platform);
+  if(state.players) qs.set("players", state.players);
+  if(state.language) qs.set("language", state.language);
+  if((state.genres||[]).length) qs.set("genres", state.genres.join(","));
+  if(state.search)qs.set("q",state.search);
+  // During search, don't restrict by discount date. Search must run across all dates.
+  if(!state.search && state.until)qs.set("until",state.until);
+  if(state.tab==="discounts" && state.allDeals) qs.set("all","1");
+  // keep current state in URL (so refresh keeps page/filters)
+  try{history.replaceState(null,"",`?${qs.toString()}`);}catch(_){}
+  // Choose API: when search is active -> global search across all games + preorders (subscriptions excluded).
+  let apiPath;
+  if(state.tab==="search" || (state.search||"").trim()){
+    apiPath = "/api/search?view=cards&";
+    // When searching globally, do not restrict by discount date, "all deals" or subscription page.
+    qs.delete("until"); qs.delete("all"); qs.delete("sub");
+  }else if(state.tab==="allgames"){
+    apiPath = "/api/allgames?view=cards&";
+  }else if(state.tab==="preorders"){
+    apiPath = "/api/preorders?view=cards&";
+  }else if(state.tab==="new"){
+    apiPath = "/api/newreleases?view=cards&";
+  }else if(state.tab==="subs"){
+    apiPath = "/api/subgames?view=cards&";
+  }else{
+    apiPath = "/api/games?view=cards&";
+  }
+  const j=await fetchJson(apiPath+qs.toString(), {cache:"no-store"}, 18000, 1);
+
+  // If user switched region and current page became empty, jump to last available page
+  if(j && (j.total||0)>0 && (j.items||[]).length===0 && state.page>1){
+    const lastPage=Math.max(1, Math.ceil((j.total||0)/(j.perPage||36)));
+    if(lastPage!==state.page){ state.page=lastPage; return load(); }
+  }
+
+  grid.innerHTML="";
+  (j.items||[]).forEach(g=>grid.appendChild(buildCard(g,whatsapp,showUntil)));
+  if(emptyBox){
+    emptyBox.style.display = (j.total===0) ? "block" : "none";
+    if(j.total===0) emptyBox.textContent="Игры еще не добавлены";
+  }
+  pager.innerHTML="";
+  const totalPages = Math.max(1, Math.ceil((j.total||0) / (j.perPage||20)));
+
+  const mk=(label,page,disabled=false,active=false)=>{
+    const b=document.createElement("button");
+    b.className="pagerBtn"+(active?" active":"");
+    b.textContent=label;
+    b.disabled=disabled;
+    b.onclick=()=>{state.page=page;load();scrollTo(0,0)};
+    return b;
+  };
+
+  // nothing to paginate
+  if(totalPages<=1){
+    // keep empty
+  } else {
+    // Prev
+    pager.appendChild(mk("‹", Math.max(1, state.page-1), state.page===1));
+
+    if(totalPages<=3){
+      for(let p=1;p<=totalPages;p++){
+        pager.appendChild(mk(String(p), p, false, p===state.page));
+      }
+    } else {
+      // show a sliding window around current page
+      const start = Math.max(1, state.page-1);
+      const end   = Math.min(totalPages, state.page+1);
+
+      for(let p=start;p<=end;p++){
+        pager.appendChild(mk(String(p), p, false, p===state.page));
+      }
+
+      if(end < totalPages-1){
+        const dots=document.createElement("span");
+        dots.className="pagerDots";
+        dots.textContent="…";
+        pager.appendChild(dots);
+      }
+
+      // always show last page
+      if(end < totalPages){
+        pager.appendChild(mk(String(totalPages), totalPages, false, state.page===totalPages));
+      }
+    }
+
+    // Next
+    pager.appendChild(mk("›", Math.min(totalPages, state.page+1), state.page===totalPages));
+  }
+}
+document.getElementById("region").onchange=e=>setRegionValue(e.target.value);
+const regionPickerBtn=document.getElementById("regionPickerBtn");
+const regionPickerMenu=document.getElementById("regionPickerMenu");
+if(regionPickerBtn){
+  regionPickerBtn.addEventListener("click",()=>{
+    const picker=document.getElementById("regionPicker");
+    if(picker && picker.classList.contains("open")) closeRegionPicker(); else openRegionPicker();
+  });
+}
+if(regionPickerMenu){
+  regionPickerMenu.addEventListener("click",e=>{
+    const opt=e.target.closest(".regionPickerOption[data-region]");
+    if(!opt) return;
+    setRegionValue(opt.dataset.region);
+  });
+}
+document.addEventListener("click",e=>{
+  const picker=document.getElementById("regionPicker");
+  if(picker && !picker.contains(e.target)) closeRegionPicker();
+});
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeRegionPicker(); });
+updateRegionPicker();
+document.getElementById("sort").onchange=e=>{state.sort=e.target.value;state.page=1;load();};
+let __searchTimer=null;
+document.getElementById("search").addEventListener("input",()=>{
+  const value=(document.getElementById("search").value||"");
+  clearTimeout(__searchTimer);
+  if(state.tab === "search"){
+    state.search=value;
+    state.page=1;
+    __searchTimer=setTimeout(()=>load(),250);
+  }else{
+    // Быстрый поиск работает только в своём окне и не фильтрует текущую страницу.
+    state.search="";
+    __searchTimer=setTimeout(()=>updateQuickSearchResults(),180);
+  }
+});
+
+const platformSelectEl=document.getElementById("platform");
+if(platformSelectEl){
+  platformSelectEl.onchange=()=>{state.platform=platformSelectEl.value;state.page=1;load();};
+}
+document.getElementById("sort").onchange=()=>{state.sort=document.getElementById("sort").value;state.page=1;load();};
+
+const resetBtnEl=document.getElementById("reset");
+if(resetBtnEl){
+  resetBtnEl.onclick=()=>{
+    resetSectionFilters({keepSearch:false});
+    setSearchOpen(false);
+    load();
+  };
+}
+
+
+
+const sortOpenBtn=document.getElementById("sortOpen");
+if(sortOpenBtn){
+  sortOpenBtn.onclick=(e)=>{
+    e.stopPropagation();
+    const menu=document.getElementById("sortMenu");
+    if(!menu) return;
+    const isOpen=menu.classList.toggle("open");
+    menu.setAttribute("aria-hidden", isOpen?"false":"true");
+    sortOpenBtn.setAttribute("aria-expanded", isOpen?"true":"false");
+  };
+}
+document.addEventListener("click",(e)=>{
+  const sc=document.getElementById("sortControl");
+  if(sc && !sc.contains(e.target)) closeSortMenu();
+});
+const filterOpenBtn=document.getElementById("filterOpen");
+if(filterOpenBtn) filterOpenBtn.onclick=openFilterDrawer;
+const filterCloseBtn=document.getElementById("filterClose");
+if(filterCloseBtn) filterCloseBtn.onclick=closeFilterDrawer;
+const filterBackdrop=document.getElementById("filterBackdrop");
+if(filterBackdrop) filterBackdrop.onclick=closeFilterDrawer;
+const filterApplyBtn=document.getElementById("filterApply");
+if(filterApplyBtn) filterApplyBtn.onclick=()=>{
+  const checkedPlatform=Array.from(document.querySelectorAll('#filterPlatforms input:checked')).map(x=>x.value)[0] || "";
+  const checkedPlayers=Array.from(document.querySelectorAll('#filterPlayers input:checked')).map(x=>x.value).filter(Boolean).join(",");
+  const checkedLanguage=Array.from(document.querySelectorAll('#filterLanguages input:checked')).map(x=>x.value)[0] || "";
+  state.platform=checkedPlatform;
+  state.players=checkedPlayers;
+  state.language=checkedLanguage;
+  state.genres=Array.from(document.querySelectorAll('#filterGenres input:checked')).map(x=>x.value).filter(Boolean);
+  const platformSelect=document.getElementById("platform");
+  if(platformSelect) platformSelect.value=state.platform;
+  state.page=1;
+  closeFilterDrawer();
+  load();
+};
+const filterClearBtn=document.getElementById("filterClear");
+if(filterClearBtn) filterClearBtn.onclick=()=>{
+  state.platform="";
+  state.players="";
+  state.language="";
+  state.genres=[];
+  syncFilterDrawer();
+};
+document.querySelectorAll('#filterPlatforms input[type="checkbox"]').forEach(ch=>{
+  ch.addEventListener('change',()=>{
+    if(ch.checked){
+      document.querySelectorAll('#filterPlatforms input[type="checkbox"]').forEach(other=>{ if(other!==ch) other.checked=false; });
+    }
+  });
+});
+document.querySelectorAll('#filterLanguages input[type="checkbox"]').forEach(ch=>{
+  ch.addEventListener('change',()=>{
+    if(ch.checked){
+      document.querySelectorAll('#filterLanguages input[type="checkbox"]').forEach(other=>{ if(other!==ch) other.checked=false; });
+    }
+  });
+});
+
+// Cart UI wiring
+document.addEventListener("DOMContentLoaded",()=>{
+  enableFilterHorizontalScroll(document.getElementById('filterPlayers'));
+  enableFilterHorizontalScroll(document.getElementById('filterLanguages'));
+  enableFilterHorizontalScroll(document.getElementById('filterGenres'));
+
+  const cartToggle=document.getElementById("cartToggle");
+  const cartClose=document.getElementById("cartCloseBtn");
+  const cartOverlay=document.getElementById("cartOverlay");
+  const cartBuy=document.getElementById("cartBuyBtn");
+  const cartClear=document.getElementById("cartClearBtn");
+  const wishToggle=document.getElementById("wishToggle");
+  const wishClose=document.getElementById("wishCloseBtn");
+  const wishOverlay=document.getElementById("wishOverlay");
+  const wishClear=document.getElementById("wishClearBtn");
+
+  if(cartToggle) cartToggle.onclick=(e)=>{ e.preventDefault(); openCart(); };
+  if(cartClose) cartClose.onclick=(e)=>{ e.preventDefault(); closeCart(); };
+  if(cartOverlay){
+    cartOverlay.addEventListener("click",(e)=>{
+      if(e.target===cartOverlay) closeCart();
+    });
+  }
+  if(cartBuy) cartBuy.onclick=(e)=>{ e.preventDefault(); buyCartWhatsApp(); };
+  if(cartClear) cartClear.onclick=(e)=>{ e.preventDefault(); clearCart(); };
+  if(wishToggle) wishToggle.onclick=(e)=>{ e.preventDefault(); openWishlist(); };
+  if(wishClose) wishClose.onclick=(e)=>{ e.preventDefault(); closeWishlist(); };
+  if(wishOverlay) wishOverlay.addEventListener("click",(e)=>{ if(e.target===wishOverlay) closeWishlist(); });
+  if(wishClear) wishClear.onclick=(e)=>{ e.preventDefault(); clearWishlist(); };
+  const regionCompareModal=document.getElementById("regionCompareModal");
+  const regionCompareClose=document.getElementById("regionCompareClose");
+  if(regionCompareClose) regionCompareClose.onclick=(e)=>{ e.preventDefault(); closeRegionCompare(); };
+  if(regionCompareModal) regionCompareModal.addEventListener("click",(e)=>{ if(e.target===regionCompareModal) closeRegionCompare(); });
+
+  const knownTabs2 = new Set(["home","preorders","new","discounts","allgames","subs","bestsellers","multiplayer","search"]);
+  if(!knownTabs2.has(state.tab)) state.tab="home";
+  if(!gamePageId)setActiveTab(state.tab,{keepPage:true});
+  initTabsUI();
+  updateCartCount();
+  updateWishCount();
+  showWishlistDiscountToast();
+
+  const backToTop=document.getElementById("backToTop");
+  if(backToTop){
+    const updateBackToTop=()=>backToTop.classList.toggle("isVisible", window.scrollY > 420);
+    window.addEventListener("scroll", updateBackToTop, {passive:true});
+    updateBackToTop();
+    backToTop.onclick=()=>window.scrollTo({top:0, behavior:"smooth"});
+  }
+});
+
+document.addEventListener("keydown",(e)=>{
+  if(e.key==="Escape") { closeCart(); closeWishlist(); closeRegionCompare(); }
+});
+
+function showCatalogLoadError(err){
+  if(gamePageId){const host=document.getElementById('gamePage');host.hidden=false;host.textContent='Не удалось загрузить страницу игры. ';const retry=document.createElement('button');retry.textContent='Повторить';retry.onclick=startCatalogLoad;host.append(retry);return}
+  try{ console.error("Playstore95 catalog load failed:", err); }catch(_e){}
+  const grid=document.getElementById("grid");
+  const pager=document.getElementById("pager");
+  const emptyBox=document.getElementById("emptyBox");
+  if(pager) pager.innerHTML="";
+  if(emptyBox) emptyBox.style.display="none";
+  if(grid){
+    grid.innerHTML='<div class="homeLoading" style="grid-column:1/-1;padding:28px 16px;text-align:center">Не удалось загрузить игры.<br><button type="button" id="catalogRetryBtn" class="btnDark" style="margin-top:12px">Повторить</button></div>';
+    const retry=document.getElementById("catalogRetryBtn");
+    if(retry) retry.onclick=()=>{ retry.disabled=true; load().catch(showCatalogLoadError); };
+  }
+}
+function startCatalogLoad(){ load().catch(showCatalogLoadError); }
+if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", startCatalogLoad);
+else startCatalogLoad();
+</script>
+<div id="gmMediaLightbox" class="gmMediaLightbox" style="display:none" aria-hidden="true">
+  <button class="gmMediaLbClose" id="gmMediaLbClose" type="button" aria-label="Закрыть">×</button>
+  <button class="gmMediaLbNav gmMediaLbPrev" id="gmMediaLbPrev" type="button" aria-label="Назад">‹</button>
+  <div class="gmMediaLbStage" id="gmMediaLbStage"></div>
+  <button class="gmMediaLbNav gmMediaLbNext" id="gmMediaLbNext" type="button" aria-label="Вперёд">›</button>
+  <div class="gmMediaLbCounter" id="gmMediaLbCounter"></div>
+</div>
+
+<div id="regionCompareModal" class="modalOverlay regionCompareOverlay" style="display:none">
+  <div class="regionCompareCard" role="dialog" aria-modal="true" aria-label="Сравнение регионов">
+    <button class="regionCompareClose" id="regionCompareClose" aria-label="Закрыть" type="button">×</button>
+    <div class="regionCompareKicker">Сравнение регионов</div>
+    <div class="regionCompareHead">
+      <div class="regionCompareCover" id="regionCompareCover"></div>
+      <div class="regionCompareHeadText">
+        <div class="regionCompareTitle" id="regionCompareTitle"></div>
+        <div class="regionCompareSub" id="regionCompareSub"></div>
+        <div class="regionComparePlatform" id="regionComparePlatform"></div>
+        <div class="regionCompareDiscountDate" id="regionCompareDiscountDate"></div>
+      </div>
+    </div>
+    <div class="regionCompareList" id="regionCompareList"></div>
+  </div>
+</div>
+
+<div id="wishOverlay" class="cartOverlay wishOverlay" style="display:none" aria-hidden="true">
+  <div class="cartDrawer wishDrawer" role="dialog" aria-modal="true" aria-label="Список желаемого">
+    <div class="cartHead"><div class="cartTitle">Желаемое <span class="cartRegion" id="wishRegion"></span></div><div class="cartHeadActions"><button class="btnGhost cartClearBtn" id="wishClearBtn" type="button">Очистить</button><button class="cartClose" id="wishCloseBtn" type="button" aria-label="Закрыть">×</button></div></div>
+    <div class="cartBody" id="wishBody"></div>
+  </div>
+</div>
+
+<div id="cartOverlay" class="cartOverlay" style="display:none" aria-hidden="true">
+  <div class="cartDrawer" role="dialog" aria-modal="true" aria-label="Корзина">
+    <div class="cartHead">
+      <div class="cartTitle">Корзина <span class="cartRegion" id="cartRegion"></span></div>
+      <div class="cartHeadActions">
+        <button class="btnGhost cartClearBtn" id="cartClearBtn" type="button">Очистить</button>
+        <button class="cartClose" id="cartCloseBtn" type="button" aria-label="Закрыть">×</button>
+      </div>
+    </div>
+    <div class="cartBody" id="cartBody"></div>
+    <div class="cartFoot">
+      <div class="cartTotalRow cartOldTotalRow" id="cartOldTotalRow" style="display:none;">
+        <div class="cartTotalLabel">Старая цена</div>
+        <div class="cartTotalValue cartOldTotalValue" id="cartOldTotal">0 ₽</div>
+      </div>
+      <div class="cartTotalRow cartDiscountRow" id="cartDiscountRow" style="display:none;">
+        <div class="cartTotalLabel">Скидка за 2+ игры</div>
+        <div class="cartTotalValue cartDiscountValue" id="cartDiscount">0 ₽</div>
+      </div>
+      <div class="cartTotalRow">
+        <div class="cartTotalLabel">Итого:</div>
+        <div class="cartTotalValue" id="cartTotal">0 ₽</div>
+      </div>
+      <button class="buyBtn cartBuyBtn" id="cartBuyBtn" type="button">Купить</button>
+      <div class="cartHint" id="cartHint"></div>
+    </div>
+  </div>
+</div>
+
+  <script src="/snow.js"></script>
+</body></html>
+
