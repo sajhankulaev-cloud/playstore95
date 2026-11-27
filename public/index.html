@@ -1,18 +1,35 @@
 <!doctype html><html lang="ru"><head>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="preload" href="/fonts/orbitron-latin.woff2" as="font" type="font/woff2" crossorigin>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>PlayStore 95 — Скидки</title><link rel="stylesheet" href="/styles.css"/></head>
+<title>PlayStore 95 — Скидки</title><link rel="stylesheet" href="/styles.css"/><link rel="stylesheet" href="/game-page.css"><link rel="stylesheet" href="/storefront-theme.css"><script src="/product-caption.js" defer></script><script src="/game-page.js" defer></script></head>
 <body>
+
   <canvas id="snowCanvas" class="snowCanvas" aria-hidden="true"></canvas>
 
 <div class="topbar"><div class="container topbarInner">
   <div class="topbarHeader">
-    <a href="/" class="brand">
+    <a href="/" class="brand" aria-label="PlayStore 95 — главная">
 		<span class="brandIcon" aria-hidden="true"></span>
-		<span class="brandTextWrap"><span class="brandText">PlayStore 95</span><span class="brandWholesaleLabel">Оптовый</span></span>
+		<span class="brandTextWrap"><span class="brandText"><span class="brandFull">PlayStore </span><span class="brandShort">PS</span><span class="brandNumber">95</span></span><span class="brandWholesaleLabel">Оптовый</span></span>
 	</a>
+  <div class="filters">
+    <div class="colorA">Регион:</div>
+    <div class="regionPicker" id="regionPicker">
+      <button class="regionPickerBtn" id="regionPickerBtn" aria-label="Выбрать регион" type="button" aria-haspopup="listbox" aria-expanded="false">
+        <span class="regionPickerFlag" id="regionPickerFlag"><span class="regionFlagIcon regionFlagTR" aria-hidden="true"></span></span>
+        <span class="regionPickerText" id="regionPickerText" data-code="TR">TR</span>
+        <svg class="regionPickerArrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="regionPickerMenu" id="regionPickerMenu" role="listbox" aria-hidden="true">
+        <button class="regionPickerOption" type="button" role="option" data-region="TR"><span class="regionFlagIcon regionFlagTR" aria-hidden="true"></span><span>TR</span></button>
+        <button class="regionPickerOption" type="button" role="option" data-region="UA"><span class="regionFlagIcon regionFlagCIS" aria-hidden="true"></span><span>UA</span></button>
+        <button class="regionPickerOption" type="button" role="option" data-region="PL"><span class="regionFlagIcon regionFlagPL" aria-hidden="true"></span><span>PL</span></button>
+        <button class="regionPickerOption" type="button" role="option" data-region="IN"><span class="regionFlagIcon regionFlagIN" aria-hidden="true"></span><span>IN</span></button>
+        <button class="regionPickerOption" type="button" role="option" data-region="US"><span class="regionFlagIcon regionFlagUS" aria-hidden="true"></span><span>USA</span></button>
+      </div>
+    </div>
+    <select id="region" class="selecColor1 regionNativeSelect" aria-hidden="true" tabindex="-1"><option value="TR" class="colValue">TR</option><option value="UA" class="colValue">UA</option><option value="PL" class="colValue">PL</option><option value="IN" class="colValue">IN</option><option value="US" class="colValue">USA</option></select>
+  </div>
     <div class="headerActions">
       <div class="searchWrap" id="searchWrap">
         <button class="searchToggle" id="searchToggle" type="button" aria-label="Поиск">
@@ -34,6 +51,10 @@
           </div>
         </div>
       </div>
+    <button class="wishToggle" id="wishToggle" type="button" aria-label="Список желаемого">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z"></path></svg>
+      <span class="wishCount" id="wishCount" aria-hidden="true">0</span>
+    </button>
       <button class="cartToggle" id="cartToggle" type="button" aria-label="Корзина">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
           <path d="M7 4H5L4 6v2h2l2.6 8.6c.2.8.9 1.4 1.8 1.4h7.8c.9 0 1.6-.6 1.8-1.4L23 8H7.4L7 6h15V4H7zm3.1 15a1.9 1.9 0 110 3.8 1.9 1.9 0 010-3.8zm9 0a1.9 1.9 0 110 3.8 1.9 1.9 0 010-3.8z"></path>
@@ -41,27 +62,6 @@
         <span class="cartCount" id="cartCount" aria-hidden="true">0</span>
       </button>
     </div>
-  </div>
-  <div class="filters">
-    <div class="colorA">Регион:</div>
-    <div class="regionPicker" id="regionPicker">
-      <button class="regionPickerBtn" id="regionPickerBtn" type="button" aria-haspopup="listbox" aria-expanded="false">
-        <span class="regionPickerFlag" id="regionPickerFlag"><span class="regionFlagIcon regionFlagTR" aria-hidden="true"></span></span>
-        <span class="regionPickerText" id="regionPickerText">Турция</span>
-        <svg class="regionPickerArrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <div class="regionPickerMenu" id="regionPickerMenu" role="listbox" aria-hidden="true">
-        <button class="regionPickerOption" type="button" role="option" data-region="TR"><span class="regionFlagIcon regionFlagTR" aria-hidden="true"></span><span>TR</span></button>
-        <button class="regionPickerOption" type="button" role="option" data-region="UA"><span class="regionFlagIcon regionFlagCIS" aria-hidden="true"></span><span>UA</span></button>
-        <button class="regionPickerOption" type="button" role="option" data-region="PL"><span class="regionFlagIcon regionFlagPL" aria-hidden="true"></span><span>PL</span></button>
-        <button class="regionPickerOption" type="button" role="option" data-region="IN"><span class="regionFlagIcon regionFlagIN" aria-hidden="true"></span><span>IN</span></button>
-      </div>
-    </div>
-    <select id="region" class="selecColor1 regionNativeSelect" aria-hidden="true" tabindex="-1"><option value="TR" class="colValue">TR</option><option value="UA" class="colValue">UA</option><option value="PL" class="colValue">PL</option><option value="IN" class="colValue">IN</option></select>
-    <button class="wishToggle wishToggle--filters" id="wishToggle" type="button" aria-label="Список желаемого">
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z"></path></svg>
-      <span class="wishCount" id="wishCount" aria-hidden="true">0</span>
-    </button>
   </div>
 </div></div>
 
@@ -80,6 +80,7 @@
   </div>
 </div>
 
+<main id="gamePage" class="container detailPage" hidden></main>
 <!--<button class="backToTop" id="backToTop" type="button" aria-label="Наверх">↑</button>-->
 
 <div class="container">
@@ -91,7 +92,7 @@
       </button>
       <div class="sortControl" id="sortControl">
         <button id="sortOpen" class="catalogControlBtn catalogControlBtn--sort" type="button" aria-expanded="false">
-          <span id="sortCurrentLabel">Без сортировки</span>
+          <span id="sortCurrentLabel">По популярности</span>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
         <div id="sortMenu" class="sortMenu" aria-hidden="true"></div>
@@ -177,6 +178,10 @@ if(__isWholesaleStorefront){
   };
 }
 
+const gamePagePath=location.pathname.match(/^\/(?:ps95_optovik\/)?game\/([^/]+)\/?$/);
+const gamePageId=gamePagePath?decodeURIComponent(gamePagePath[1]):null;
+function gameLink(id){return (__isWholesaleStorefront?'/ps95_optovik':'')+'/game/'+encodeURIComponent(id)+'?region='+encodeURIComponent(state.region)}
+if(gamePageId)document.body.classList.add('onGamePage');
 const state={tab:"home",region:"TR",sort:"pop",platform:"",players:"",language:"",genres:[],search:"",page:1,until:"",subPage:"",allDeals:false,discountRates:{TR:[],UA:[],PL:[],IN:[]},topupCards:{TR:[],PL:[],IN:[]},useTurkeyTopupCards:false,useIndiaTopupCards:true,roundStep:50,enabledRegions:{TR:true,UA:true,PL:true,IN:true}};
 
 function shouldScrollToSubsGames(){
@@ -234,7 +239,7 @@ function optimizedPsImageUrl(src, width){
     const host = u.hostname.toLowerCase();
     const isPlayStationImage = host.endsWith("playstation.com") || host.endsWith("playstation.net") || host.includes("playstation");
     if(!isPlayStationImage) return raw;
-    const w = Math.max(80, Math.min(700, Number(width || 322) || 322));
+    const w = Math.max(80, Math.min(1920, Number(width || 322) || 322));
     return `/api/optimized-image?u=${encodeURIComponent(u.href)}&w=${w}`;
   }catch(_e){
     return raw;
@@ -291,7 +296,7 @@ function subsInfoList(items){
 
 function getSortOptionsForTab(tab){
   return [
-    {v:"pop", t:"Без сортировки"},
+    {v:"pop", t:"По популярности"},
     {v:"name_asc", t:"По алфавиту ↑"},
     {v:"name_desc", t:"По алфавиту ↓"},
     {v:"price_asc", t:"По цене ↑"},
@@ -403,6 +408,11 @@ function resetSectionFilters(opts={}){
 }
 
 function setActiveTab(tab, opts={}){
+  if(gamePageId){
+    const qs=new URLSearchParams({tab,region:state.region});
+    if(tab==='search' && state.search)qs.set('q',state.search);
+    location.assign(__storefrontBasePath+'?'+qs);return;
+  }
   const prevTab = state.tab;
   if(prevTab && prevTab !== tab && !opts.keepFilters){
     resetSectionFilters({keepSearch: tab === "search"});
@@ -554,6 +564,13 @@ const HOME_EAPLAY_FEATURES = ["Включает в себя игры от изд
 
 function homeSubCardHtml(id, img, title, price, features=[]){
   const feats = (features||[]).map(t=>`<li>${escapeHtml(t)}</li>`).join("");
+  if(id!=="eaplay"){
+    return `<button class="plusPlan" data-tier="${escapeHtml(id)}" type="button" data-home-sub="${escapeHtml(id)}">
+      <span class="planHead"><span class="planName">${escapeHtml(title)}</span><img src="/img/psplus-logo.png" width="44" height="44" alt="" loading="lazy"></span>
+      <span class="planPrice">${price||''}</span>
+      <span class="planBenefits">${(features||[]).map(t=>'<span>'+escapeHtml(t)+'</span>').join('')}</span>
+    </button>`;
+  }
   return `<button class="homeSubCard" type="button" data-home-sub="${escapeHtml(id)}">
     <img src="${escapeHtml(img)}" alt="${escapeHtml(title)}" loading="lazy" decoding="async">
     <div class="homeSubText">
@@ -618,88 +635,38 @@ function enableFilterHorizontalScroll(scroller){
     }
   }, true);
 }
-function enableHomeDragScroll(scroller){
-  if(!scroller || scroller.dataset.dragScrollReady) return;
-  scroller.dataset.dragScrollReady="1";
-  let startX=0, startLeft=0, lastX=0, lastT=0, velocity=0;
-  let dragging=false, moved=false, raf=0;
-  const dragPower=1.35;
-  const stopMomentum=()=>{ if(raf) cancelAnimationFrame(raf); raf=0; };
-  const startMomentum=()=>{
-    stopMomentum();
-    let v = velocity * 34;
-    const maxV = 72;
-    v = Math.max(-maxV, Math.min(maxV, v));
-    const step=()=>{
-      if(Math.abs(v) < 0.28){ raf=0; return; }
-      scroller.scrollLeft -= v;
-      v *= 0.935;
-      raf=requestAnimationFrame(step);
-    };
-    if(Math.abs(v) > 1.0) raf=requestAnimationFrame(step);
-  };
-
-  scroller.addEventListener("pointerdown", (e)=>{
-    if(e.button !== undefined && e.button !== 0) return;
-    if(e.target && e.target.closest && e.target.closest('button, a, input, select, textarea, [role="button"]')) return;
-    stopMomentum();
-    dragging=true; moved=false;
-    startX=lastX=e.clientX;
-    startLeft=scroller.scrollLeft;
-    lastT=performance.now(); velocity=0;
-    scroller.classList.add("is-dragging");
-    if(e.pointerType === "mouse") e.preventDefault();
+// Touch rails use browser scrolling. Mouse drags and discrete slide gestures
+// capture the pointer only once a horizontal movement has been established.
+function bindHorizontalDrag(element,slide,handleTouch=false){
+  let start=null,dragged=false;
+  element.addEventListener('dragstart',e=>e.preventDefault());
+  element.addEventListener('pointerdown',e=>{
+    if(!e.isPrimary || e.button!==0)return;
+    dragged=false;
+    if(!slide && !handleTouch && e.pointerType!=='mouse')return;
+    start={id:e.pointerId,x:e.clientX,y:e.clientY,left:element.scrollLeft};
   });
-
-  scroller.addEventListener("pointermove", (e)=>{
-    if(!dragging) return;
-    const now=performance.now();
-    const dx=e.clientX-startX;
-    if(Math.abs(dx)>3) moved=true;
-    scroller.scrollLeft=startLeft-(dx*dragPower);
-    const dt=Math.max(1, now-lastT);
-    velocity=((e.clientX-lastX)*dragPower)/dt;
-    lastX=e.clientX; lastT=now;
-    if(moved) e.preventDefault();
+  element.addEventListener('pointermove',e=>{
+    if(!start || start.id!==e.pointerId)return;
+    const dx=e.clientX-start.x,dy=e.clientY-start.y;
+    if(!dragged){
+      if(Math.abs(dy)>8 && Math.abs(dy)>Math.abs(dx)){start=null;return;}
+      if(Math.abs(dx)<8)return;
+      dragged=true;element.setPointerCapture(e.pointerId);
+    }
+    if(!slide)element.scrollLeft=start.left-dx;
   });
-
-  const endDrag=(e, allowTap=false)=>{
-    if(!dragging) return;
-    const wasMoved = moved;
-    dragging=false;
-    scroller.classList.remove("is-dragging");
-
-    if(!wasMoved && allowTap){
-      const banner = e && e.target && e.target.closest ? e.target.closest('.homeBanner[data-home-sub]') : null;
-      if(banner && scroller.contains(banner)){
-        const sub = banner.getAttribute('data-home-sub') || '';
-        const toGames = banner.getAttribute('data-scroll-games') === '1';
-        scroller.dataset.tapNavigated = "1";
-        try{ e.preventDefault(); e.stopPropagation(); }catch(_){ }
-        openSubPage(sub, toGames);
-        setTimeout(()=>{ delete scroller.dataset.tapNavigated; }, 250);
-        return;
-      }
-    }
-
-    if(wasMoved){
-      startMomentum();
-      scroller.dataset.dragMoved="1";
-      setTimeout(()=>{ delete scroller.dataset.dragMoved; }, 180);
-    }
-  };
-  scroller.addEventListener("pointerup", (e)=>endDrag(e, true));
-  scroller.addEventListener("pointercancel", (e)=>endDrag(e, false));
-  scroller.addEventListener("lostpointercapture", (e)=>endDrag(e, false));
-  scroller.addEventListener("click", (e)=>{
-    if(scroller.dataset.dragMoved==="1" || scroller.dataset.tapNavigated==="1"){
-      e.preventDefault();
-      e.stopPropagation();
-    }
-  }, true);
+  element.addEventListener('pointerup',e=>{
+    if(start?.id!==e.pointerId)return;
+    const dx=e.clientX-start.x;
+    if(slide && dragged && Math.abs(dx)>28)slide(dx<0?1:-1);
+    start=null;
+  });
+  element.addEventListener('pointercancel',()=>{start=null;});
+  element.addEventListener('click',e=>{
+    if(dragged && e.detail){e.preventDefault();e.stopPropagation();}
+  },true);
 }
-
-
 function openHomeSection(tab){
   state.search = "";
   state.page = 1;
@@ -762,7 +729,11 @@ async function appendHomeDiscountBanners(hero){
 }
 
 function homeBlockHeader(title, targetTab){
-  return `<div class="homeBlockHead"><h2>${escapeHtml(title)}</h2><button class="homeViewAll" type="button" data-home-view-all="${escapeHtml(targetTab)}">Посмотреть все</button></div>`;
+  return `<div class="homeBlockHead"><h2>${escapeHtml(title)}</h2><div class="homeRowTools">
+    <button class="homeViewAll" type="button" data-home-view-all="${escapeHtml(targetTab)}">Посмотреть все</button>
+    <button type="button" data-row-step="-1" aria-label="${escapeHtml(title)}: прокрутить назад">‹</button>
+    <button type="button" data-row-step="1" aria-label="${escapeHtml(title)}: прокрутить вперёд">›</button>
+    </div></div>`;
 }
 
 
@@ -804,7 +775,7 @@ async function renderHome(){
         <a class="homeBanner homeBanner--deluxe" href="/?tab=subs&sub=deluxe#subs-games" data-home-sub="deluxe" data-scroll-games="1" aria-label="PS Plus Deluxe"><img src="/img/hero-deluxe.jpg" alt="PS Plus Deluxe" loading="lazy" fetchpriority="low" decoding="async"/></a>
         <a class="homeBanner homeBanner--eaplay" href="/?tab=subs&sub=eaplay#subs-games" data-home-sub="eaplay" data-scroll-games="1" aria-label="EA Play"><img src="/img/hero-eaplay.jpg" alt="EA Play" loading="lazy" fetchpriority="low" decoding="async"/></a>
         <a class="homeBanner homeBanner--multiplayer" href="/?tab=multiplayer" data-home-page="multiplayer" aria-label="Игры для нескольких игроков"><img src="/img/hero-multiplayer.jpg" alt="Игры для нескольких игроков" loading="lazy" fetchpriority="low" decoding="async"/></a>
-        ${String(state.region||"TR").toUpperCase()==="UA" ? "" : `<a class="homeBanner homeBanner--topup" href="/?tab=topup" data-home-page="topup" aria-label="Карты пополнения"><img src="${escapeHtml(topupSidebarImage(state.region))}" alt="Карты пополнения" loading="lazy" fetchpriority="low" decoding="async"/></a>`}
+        ${["UA","US"].includes(String(state.region||"TR").toUpperCase()) ? "" : `<a class="homeBanner homeBanner--topup" href="/?tab=topup" data-home-page="topup" aria-label="Карты пополнения"><img src="${escapeHtml(topupSidebarImage(state.region))}" alt="Карты пополнения" loading="lazy" fetchpriority="low" decoding="async"/></a>`}
       </div>
       <div class="homeHeroDots" id="homeHeroDots" aria-hidden="true"></div>
     </section>
@@ -830,41 +801,17 @@ async function renderHome(){
     openMultiplayerPage();
   }));
   grid.querySelectorAll('[data-home-view-all]').forEach(btn=>btn.addEventListener('click',()=>openHomeSection(btn.getAttribute('data-home-view-all')||'home')));
+  grid.querySelectorAll('[data-row-step]').forEach(button=>button.addEventListener('click',()=>{
+    const row=button.closest('.homeBlock').querySelector('.homeRow');
+    row.scrollBy({left:Number(button.dataset.rowStep)*row.clientWidth*.85,
+      behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
+  }));
   const hero=grid.querySelector('#homeHero');
   await appendHomeDiscountBanners(hero);
 
-  // Make top subscription banners clickable even when the horizontal
-  // carousel drag handler captures pointer events.
-  if(hero){
-    let heroTapStart = null;
-    hero.addEventListener('pointerdown', (e)=>{
-      const banner = e.target && e.target.closest ? e.target.closest('.homeBanner[data-home-sub], .homeBanner[data-home-page], .homeBanner[data-discount-until]') : null;
-      if(!banner || !hero.contains(banner)) { heroTapStart = null; return; }
-      heroTapStart = { x:e.clientX, y:e.clientY, banner };
-    }, true);
-    hero.addEventListener('pointerup', (e)=>{
-      if(!heroTapStart) return;
-      const dx = Math.abs(e.clientX - heroTapStart.x);
-      const dy = Math.abs(e.clientY - heroTapStart.y);
-      const banner = heroTapStart.banner;
-      heroTapStart = null;
-      if(dx > 8 || dy > 8) return;
-      e.preventDefault();
-      e.stopPropagation();
-      const discountUntil = banner.getAttribute('data-discount-until') || '';
-      if(discountUntil){
-        openDiscountDatePage(discountUntil);
-      }else if(banner.getAttribute('data-home-page') === 'multiplayer'){
-        openMultiplayerPage();
-      }else if(banner.getAttribute('data-home-page') === 'topup'){
-        openTopupPage();
-      }else{
-        const sub = banner.getAttribute('data-home-sub') || '';
-        const toGames = banner.getAttribute('data-scroll-games') === '1';
-        openSubPage(sub, toGames);
-      }
-    }, true);
-  }
+  hero?.querySelector('[data-home-page="topup"]')?.addEventListener('click',e=>{
+    e.preventDefault();openTopupPage();
+  });
 
   // Top banner carousel: center active slide, bigger active size, autoplay + dots.
   if(hero){
@@ -889,15 +836,10 @@ async function renderHome(){
     };
     const goHero=(dir)=>{ if(!heroSlides.length) return; heroIndex=(heroIndex+dir+heroSlides.length)%heroSlides.length; renderHero(); };
     const restartHero=()=>{ if(heroTimer) clearInterval(heroTimer); heroTimer=setInterval(()=>goHero(1),3000); };
-    let hx=0, hy=0;
-    hero.addEventListener('pointerdown',e=>{ hx=e.clientX; hy=e.clientY; });
-    hero.addEventListener('pointerup',e=>{
-      const dx=e.clientX-hx, dy=e.clientY-hy;
-      if(Math.abs(dx)>35 && Math.abs(dx)>Math.abs(dy)){ goHero(dx<0?1:-1); restartHero(); }
-    });
+    bindHorizontalDrag(hero,dir=>{goHero(dir);restartHero();});
     renderHero(); restartHero();
   }
-  grid.querySelectorAll('.homeRow').forEach(enableHomeDragScroll);
+  grid.querySelectorAll('.homeRow').forEach(row=>bindHorizontalDrag(row));
 
   const qsBase = (extra={}) => {
     const qs = new URLSearchParams({region:state.region, sort:"pop", page:"1"});
@@ -955,10 +897,10 @@ async function renderHome(){
   }));
 
   await Promise.all([
-    fillRow("homeBest", "/api/bestsellers?"+qsBase({limit:15})),
-    fillRow("homeNew", "/api/newreleases?"+qsBase({perPage:15})),
-    fillRow("homePreorders", "/api/preorders?"+qsBase({perPage:15})),
-    fillRow("homeDiscounts", "/api/games?"+qsBase({perPage:15})),
+    fillRow("homeBest", "/api/bestsellers?view=cards&"+qsBase({limit:15})),
+    fillRow("homeNew", "/api/newreleases?view=cards&"+qsBase({perPage:15})),
+    fillRow("homePreorders", "/api/preorders?view=cards&"+qsBase({perPage:15})),
+    fillRow("homeDiscounts", "/api/games?view=cards&"+qsBase({perPage:15})),
   ]);
 }
 
@@ -1012,7 +954,7 @@ async function renderMultiplayerPage(){
     if(state.players) qs.set("players", state.players);
     if(state.language) qs.set("language", state.language);
     if((state.genres||[]).length) qs.set("genres", state.genres.join(","));
-    const j=await fetch("/api/multiplayer?"+qs.toString(),{cache:"no-store"}).then(r=>r.json());
+    const j=await fetch("/api/multiplayer?view=cards&"+qs.toString(),{cache:"no-store"}).then(r=>r.json());
     if(j && (j.total||0)>0 && (j.items||[]).length===0 && state.page>1){
       state.page=Math.max(1, Math.ceil((j.total||0)/(j.perPage||perPage)));
       return renderMultiplayerPage();
@@ -1081,7 +1023,7 @@ async function renderBestsellersPage(){
     if(state.players) qs.set("players", state.players);
     if(state.language) qs.set("language", state.language);
     if((state.genres||[]).length) qs.set("genres", state.genres.join(","));
-    const j=await fetch("/api/bestsellers?"+qs.toString(),{cache:"no-store"}).then(r=>r.json());
+    const j=await fetch("/api/bestsellers?view=cards&"+qs.toString(),{cache:"no-store"}).then(r=>r.json());
     if(j && (j.total||0)>0 && (j.items||[]).length===0 && state.page>1){
       state.page=Math.max(1, Math.ceil((j.total||0)/(j.perPage||perPage)));
       return renderBestsellersPage();
@@ -1348,7 +1290,7 @@ async function getSubscriptionGames(sub){
   if(__subGamesCache[key]) return __subGamesCache[key];
   try{
     const qs = new URLSearchParams({ sub: String(sub||""), region: String(state.region||"TR") });
-    const r = await fetch(`/api/subgames?${qs.toString()}`, { cache:"no-store" });
+    const r = await fetch(`/api/subgames?view=cards&${qs.toString()}`, { cache:"no-store" });
     const j = await r.json();
     const items = Array.isArray(j.items) ? j.items : [];
     __subGamesCache[key] = items;
@@ -1685,6 +1627,7 @@ function initTabsUI(){
   const right=document.querySelector(".tabsArrowRight");
   if(!scroller) return;
 
+  bindHorizontalDrag(scroller,null,true);
   const update=()=>{
     const max = scroller.scrollWidth - scroller.clientWidth;
     const x = scroller.scrollLeft;
@@ -1781,18 +1724,19 @@ function renderQuickCards(items){
     const slot=document.createElement("div");
     slot.className="quickGameCardSlot";
 
-    const card=document.createElement("button");
+    const card=document.createElement("a");
     card.className="quickTkCard";
-    card.type="button";
+    card.href=gameLink(game.id);
     card.setAttribute("aria-label", game.name || "Игра");
 
     const cover = game.cover
       ? `<img src="${escapeHtml(optimizedPsImageUrl(game.cover, 320))}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.style.display='none'">`
       : `<div class="quickTkNoCover">NO COVER</div>`;
     const platform = escapeHtml(game.platform || "PS4 / PS5");
-    const edition = game.edition ? `<div class="quickTkEdition">${escapeHtml(game.edition)}</div>` : ``;
+    const caption = productCaption(game);
+    const edition = caption.edition ? `<div class="quickTkEdition">${escapeHtml(caption.edition)}</div>` : ``;
     const discount = game.discPerc ? `<span class="quickTkDiscount">-${escapeHtml(String(game.discPerc))}%</span>` : ``;
-    const price = escapeHtml(fmtRub(game.finalPriceRub));
+    const price = escapeHtml(gamePriceText(game));
     const isPreorderQuick = !!game.isPreorder || game.__quickSource === "preorders" || game.__cardTab === "preorders";
     const preorderBadge = isPreorderQuick ? `<div class="preorderBadge quickTkPreorder" aria-label="Предзаказ">Предзаказ</div>` : ``;
 
@@ -1802,12 +1746,12 @@ function renderQuickCards(items){
         ${preorderBadge}
         ${cover}
       </div>
-      <div class="quickTkTitle">${escapeHtml(game.name || "")}</div>
+      <div class="quickTkTitle">${escapeHtml(caption.name)}${game.isAddon?'<span class="detailAddonBadge">Аддон</span>':''}</div>
       ${edition}
       <div class="quickTkPriceRow"><span class="quickTkPrice">${price}</span>${discount}</div>
     `;
 
-    card.onclick=()=>openGameModal(game);
+
     slot.appendChild(card);
     quickSearchResultsEl.appendChild(slot);
   });
@@ -1844,23 +1788,26 @@ function initQuickSearchDragScroll(){
     }
   }, true);
 }
+let quickSearchRequest=0;
 async function updateQuickSearchResults(){
+  const request=++quickSearchRequest;
   if(!quickSearchResultsEl || state.tab === "search") return;
   const q=String((document.getElementById("search")||{}).value || "").trim();
   quickSearchResultsEl.innerHTML='<div class="quickLoading">Загрузка...</div>';
   let items=[];
   if(q){
-    items=await fetchQuickList(`/api/search?region=${encodeURIComponent(state.region)}&q=${encodeURIComponent(q)}&page=1&perPage=12`);
+    items=await fetchQuickList(`/api/search?view=cards&region=${encodeURIComponent(state.region)}&q=${encodeURIComponent(q)}&page=1&perPage=12`);
   }else{
     const [pre, news]=await Promise.all([
-      fetchQuickList(`/api/preorders?region=${encodeURIComponent(state.region)}&page=1`),
-      fetchQuickList(`/api/newreleases?region=${encodeURIComponent(state.region)}&page=1`)
+      fetchQuickList(`/api/preorders?view=cards&region=${encodeURIComponent(state.region)}&page=1`),
+      fetchQuickList(`/api/newreleases?view=cards&region=${encodeURIComponent(state.region)}&page=1`)
     ]);
     const preItems=(pre||[]).slice(0,5).map(x=>Object.assign({}, x, {isPreorder:true, __quickSource:"preorders"}));
     const newsItems=(news||[]).slice(0,5).map(x=>Object.assign({}, x, {__quickSource:"new"}));
     items=shuffleQuickItems([...preItems, ...newsItems]);
     __quickSearchPreviewLoaded=true;
   }
+  if(request!==quickSearchRequest || q!==String(searchInputEl.value||"").trim())return;
   if(!items.length){
     quickSearchResultsEl.innerHTML='<div class="quickLoading">Ничего не найдено</div>';
     return;
@@ -1957,9 +1904,9 @@ try{
 }catch(e){}
 
 
-const REGION_LABELS={TR:"TR",UA:"UA",PL:"PL",IN:"IN"};
-const REGION_FLAG_CLASSES={TR:"regionFlagTR",UA:"regionFlagCIS",PL:"regionFlagPL",IN:"regionFlagIN"};
-const REGION_ORDER=["TR","UA","PL","IN"];
+const REGION_LABELS={TR:"Турция",UA:"Украина",PL:"Польша",IN:"Индия",US:"США"};
+const REGION_FLAG_CLASSES={TR:"regionFlagTR",UA:"regionFlagCIS",PL:"regionFlagPL",IN:"regionFlagIN",US:"regionFlagUS"};
+const REGION_ORDER=["TR","UA","PL","IN","US"];
 function applyEnabledRegions(enabled){
   const src=(enabled&&typeof enabled==="object")?enabled:{};
   const normalized={};
@@ -2004,7 +1951,8 @@ function updateRegionPicker(){
   const flag=document.getElementById("regionPickerFlag");
   const text=document.getElementById("regionPickerText");
   if(flag) flag.innerHTML=regionFlagHtml(R);
-  if(text) text.textContent=REGION_LABELS[R]||R;
+  if(text){text.textContent=R==="US"?"USA":R;text.dataset.code=text.textContent;}
+  document.getElementById("regionPickerBtn")?.setAttribute("aria-label","Регион: "+(REGION_LABELS[R]||R));
   document.querySelectorAll(".regionPickerOption").forEach(btn=>{
     const active=String(btn.dataset.region||"").toUpperCase()===R;
     btn.classList.toggle("active", active);
@@ -2042,6 +1990,10 @@ function setRegionValue(region){
   load();
 }
 
+function gamePriceText(game){
+  if(state.region==="US" && !game.finalPriceRub)return game.storePrice>0?formatStoreCurrency(game.storePrice,"US"):"Цена уточняется";
+  return fmtRub(game.finalPriceRub);
+}
 function fmtRub(n){try{return new Intl.NumberFormat("ru-RU").format(n)+" ₽";}catch(e){return n+" ₽";}}
 function formatDateDMY(dateStr) {
   if (!dateStr) return "";
@@ -2133,6 +2085,7 @@ function shouldUseTopupCartCheckout(region){
 }
 function cartCurrencyCode(region){
   const R=String(region||state.region||"TR").toUpperCase();
+  if(R==="US") return "USD";
   if(R==="PL") return "ZL";
   if(R==="IN") return "INR";
   if(R==="TR") return "TL";
@@ -2461,7 +2414,7 @@ function refreshAllBuyButtons(){
 }
 
 function addToCart(game){
-  if(!game || !game.id) return;
+  if(!game || !game.id || (state.region==="US" && !(game.finalPriceRub>0))) return;
   const region = state.region;
   const items = loadCart(region);
   const normalized = normalizeGameForCart(game);
@@ -2494,13 +2447,13 @@ function subBadgeHtml(subVal){
   const s = String(subVal||"").trim().toLowerCase();
   const isEa = (s==="eaplay" || s==="ea_play" || s==="ea");
   const isEssential = (s==="psplus_essential" || s==="ps_plus_essential" || s==="essential");
-  const isExtra = (s==="psplus_extra" || s==="ps_plus_extra" || s==="extra" || s==="psplus");
+  const isExtra = (s==="psplus_extra" || s==="ps_plus_extra" || s==="extra");
   const isDeluxe = (s==="psplus_deluxe" || s==="ps_plus_deluxe" || s==="deluxe");
-  if(!s || (!isEa && !isEssential && !isExtra && !isDeluxe)) return "";
+  if(!s || (!isEa && !isEssential && !isExtra && !isDeluxe && s!=="psplus" && s!=="psplus_premium")) return "";
   const EA_ICON = "/img/ea1.png";
   const PSPLUS_ICON = "/img/psplus1.png";
   const icon = isEa ? EA_ICON : PSPLUS_ICON;
-  const text = isEa ? "Доступна в EaPlay" : (isEssential ? "Доступна в Essential" : (isDeluxe ? "Доступна в Deluxe" : "Доступна в Extra"));
+  const text = s==="psplus" ? "Входит в PlayStation Plus" : s==="psplus_premium" ? "Входит в PlayStation Plus Premium" : isEa ? "Входит в EA Play" : (isEssential ? "Доступна в Essential" : (isDeluxe ? "Доступна в Deluxe" : "Доступна в Extra"));
   return `<div class="cartSub"><img class="subIcon" src="${icon}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.style.display='none'"/><span>${text}</span></div>`;
 }
 
@@ -2548,7 +2501,7 @@ async function renderCart(){
   items.forEach(item=>{
     const row = document.createElement("div");
     row.className = "cartItem";
-    const priceHtml = usesTopup ? formatStoreCurrency(item.storePrice || 0, state.region) : fmtRub(item.finalPriceRub || 0);
+    const priceHtml = usesTopup ? formatStoreCurrency(item.storePrice || 0, state.region) : gamePriceText(item);
     const metaHtml = usesTopup ? "" : `
         <div class="cartMeta">
           <div class="cartDisc">${item.discPerc ? `-${item.discPerc}%` : ""}</div>
@@ -2563,10 +2516,10 @@ async function renderCart(){
       </div>
       <div class="cartItemRight">
         <div class="cartItemTop">
-          <div class="cartItemTitle">${escapeHtml(item.name || "")}</div>
+          <a class="cartItemTitle gameTitleLink" href="${escapeHtml(gameLink(item.id))}">${escapeHtml(productCaption(item).name)}</a>
           <button class="cartRemove" type="button" aria-label="Удалить">×</button>
         </div>
-        <div class="cartEdition">${escapeHtml(item.edition || "Standard Edition")}</div>
+        <div class="cartEdition">${escapeHtml(productCaption(item).edition)}</div>
         ${usesTopup ? "" : subBadgeHtml(item.sub)}
         ${metaHtml}
         <div class="cartPriceRow">
@@ -2600,13 +2553,13 @@ async function renderWishlist(){
     row.innerHTML=`
       <div class="cartItemLeft"><div class="cartCover">${item.cover ? gameCoverImg(item.cover, `onerror="this.style.display='none'"`) : `<div class="noCoverBox">NO COVER</div>`}</div><div class="cartPlatforms">${item.platform || "PS4 / PS5"}</div></div>
       <div class="cartItemRight">
-        <div class="cartItemTop"><div class="cartItemTitle">${item.name || ""}</div><button class="cartRemove" type="button" aria-label="Удалить">×</button></div>
-        <div class="cartEdition">${item.edition || "Standard Edition"}</div>
+        <div class="cartItemTop"><a class="cartItemTitle gameTitleLink" href="${escapeHtml(gameLink(item.id))}">${escapeHtml(productCaption(item).name)}</a><button class="cartRemove" type="button" aria-label="Удалить">×</button></div>
+        <div class="cartEdition">${escapeHtml(productCaption(item).edition)}</div>
         <div class="cartMeta"><div class="cartDisc">${item.discPerc ? `-${item.discPerc}%` : ""}</div><div class="cartUntil">${item.discountedUntil ? escapeHtml(formatDateRuLong(item.discountedUntil)) : ""}</div></div>
-        <div class="cartPriceRow wishPriceRow"><div class="cartPrice">${fmtRub(item.finalPriceRub || 0)}</div><button class="buyBtn wishAddCartBtn" type="button" data-cart-game="${item.id}" data-cart-label="В корзину" data-cart-label-in="В корзине">В корзину</button></div>
+        <div class="cartPriceRow wishPriceRow"><div class="cartPrice">${gamePriceText(item)}</div><button class="buyBtn wishAddCartBtn" type="button" data-cart-game="${item.id}" data-cart-label="В корзину" data-cart-label-in="В корзине">В корзину</button></div>
       </div>`;
     row.querySelector(".cartRemove").onclick=()=>removeFromWishlist(item.id);
-    const addBtn=row.querySelector(".wishAddCartBtn"); setBuyBtnState(addBtn, isInCart(item.id, state.region));
+    const addBtn=row.querySelector(".wishAddCartBtn");if(state.region==="US" && !(item.finalPriceRub>0))addBtn.disabled=true; setBuyBtnState(addBtn, isInCart(item.id, state.region));
     addBtn.onclick=()=>{ if(isInCart(item.id, state.region)) removeFromCart(item.id); else addToCart(item); setBuyBtnState(addBtn, isInCart(item.id, state.region)); };
     body.appendChild(row);
   });
@@ -2639,6 +2592,7 @@ function openWhatsAppMessage(message, baseLink){
 
 async function buyCartWhatsApp(){
   const items = await refreshCartItemsFromServer(state.region);
+  if(state.region==="US" && items.some(item=>!(item.finalPriceRub>0))){alert("Цена в рублях пока недоступна.");return;}
   updateCartCount();
   refreshAllBuyButtons();
   if(!items.length) return;
@@ -2709,22 +2663,32 @@ function buySubscriptionWhatsApp(p){
 
 
 
+function eaPriceHtml(game){
+  if(game.discPerc>0 || !(game.eaStorePrice>0))return '';
+  const amount=game.eaPriceRub>0?fmtRub(game.eaPriceRub):formatStoreCurrency(game.eaStorePrice,state.region);
+  return '<span class="eaMemberPrice">'+escapeHtml(amount)+' с EA Play</span>';
+}
 function buildCard(game, whatsapp, showUntil){
+  if(game.officialUrl){
+    const tile=document.createElement('article');tile.className='card shopGame';
+    tile.innerHTML='<a href="'+escapeHtml(game.officialUrl)+'"><div class="coverWrap">'+(game.cover?gameCoverImg(game.cover,''):'')+'</div><p class="title">'+escapeHtml(game.name||'')+'</p><small>В PS Store ↗</small></a>';
+    return tile;
+  }
   const cardTab = game && game.__cardTab ? String(game.__cardTab) : state.tab;
   const isSearchMode = !!String(state.search || "").trim();
   const isPreorder = (cardTab === "preorders" && !isSearchMode) || !!game.isPreorder;
   const isNewRelease = !isPreorder && (cardTab === "new" || !!game.isNewRelease || game.sourceTab === "new");
   const div=document.createElement("div");
-  div.className = (isPreorder ? "card card--preorder" : "card") + (isNewRelease ? " card--new" : "");
-  const until = (showUntil && game.discountedUntil) ? formatDateDMY(game.discountedUntil) : "";
+  div.className = (isPreorder ? "card shopGame card--preorder" : "card shopGame") + (isNewRelease ? " card--new" : "");
   const inCart = isInCart(game.id, state.region);
   const inWish = isInWishlist(game.id, state.region);
   const preorderBadge = isPreorder ? `<div class="preorderBadge" aria-label="Предзаказ">Предзаказ</div>` : "";
   const newBadge = isNewRelease ? `<div class="newBadge" aria-label="Новинка">Новинка</div>` : "";
   const compareButton = `<button class="compareBtn" type="button" aria-label="Сравнить регионы" title="Сравнить регионы">${subsIcon('compare')}</button>`;
   const showEdition = !!game.__forceShowEdition || cardTab !== "allgames" || !!String(state.search||"").trim();
-  const editionHtml = showEdition && game.edition
-    ? `<div class="cardEdition">${escapeHtml(game.edition)}</div>`
+  const caption = productCaption(game);
+  const editionHtml = showEdition && caption.edition
+    ? `<div class="cardEdition">${escapeHtml(caption.edition)}</div>`
     : "";
 
   // For preorders we keep the same card structure as other pages,
@@ -2732,34 +2696,39 @@ function buildCard(game, whatsapp, showUntil){
   // Release date is shown only in the modal.
   const discountHtml = game.discPerc ? ("-"+game.discPerc+"%") : "";
 
-  const priceRowHtml = isPreorder
-    ? `<div class="row priceRow"><div class="price">${fmtRub(game.finalPriceRub)}</div><div class="discount">${discountHtml}</div></div>`
-    : `<div class="row"><div class="discount">${discountHtml}</div><div class="price">${fmtRub(game.finalPriceRub)}</div></div>`;
+  const priceRowHtml = `<div class="cardPriceLine"><strong class="price">${gamePriceText(game)}</strong>${discountHtml?'<span class="discount">'+escapeHtml(discountHtml)+'</span>':''}</div>`;
 
   div.innerHTML=`
     <div class="coverWrap">
-      <div class="platformStrip">${game.platform||"PS4 / PS5"}</div>
       ${preorderBadge}
       ${newBadge}
+      <span class="platformStrip">${escapeHtml(game.platform||"PS4 / PS5")}</span>
       ${compareButton}
+      <button class="wishBtn ${inWish?"isInWishlist":""}" data-wish-game="${game.id}" type="button" aria-label="В желаемое" aria-pressed="${inWish?"true":"false"}"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z"/></svg></button>
       ${game.cover?gameCoverImg(game.cover, `onerror="this.style.display='none'"`):"<div style='font-weight:900;font-size:12px;opacity:.9'>NO COVER</div>"}
     </div>
     <div class="body-bar1">
-      <p class="title">${game.name||""}</p>
+      <p class="title"><a class="gameTitleLink" href="${escapeHtml(gameLink(game.id))}">${escapeHtml(caption.name)}</a>${game.isAddon?'<span class="detailAddonBadge">Аддон</span>':''}</p>
       ${editionHtml}
       <div class="bottom">
-      ${priceRowHtml}
-      <div class="row cardActions"><button class="buyBtn buyBtn--card ${inCart?"isInCart":""}" data-cart-game="${game.id}" data-cart-label="В корзину" data-cart-label-in="В корзине" type="button" aria-pressed="${inCart?"true":"false"}">${cartButtonHtml(inCart?"В корзине":"В корзину")}</button><button class="wishBtn ${inWish?"isInWishlist":""}" data-wish-game="${game.id}" type="button" aria-label="В желаемое" aria-pressed="${inWish?"true":"false"}"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z"/></svg></button></div>
+      ${priceRowHtml}${eaPriceHtml(game)}
+      <div class="row cardActions"><button class="buyBtn buyBtn--card ${inCart?"isInCart":""}" data-cart-game="${game.id}" data-cart-label="В корзину" data-cart-label-in="В корзине" type="button" aria-pressed="${inCart?"true":"false"}">${cartButtonHtml(inCart?"В корзине":"В корзину")}</button></div>
       </div>
     </div>`;
   const cw = div.querySelector(".coverWrap");
-  if(cw){ cw.style.cursor="pointer"; cw.onclick=()=>openGameModal(game); }
+  if(cw){const a=document.createElement('a');a.href=gameLink(game.id);a.className='coverGameLink';a.setAttribute('aria-label',game.name);cw.append(a);}
+  if(state.region==="US" && !(game.finalPriceRub>0)){
+    const button=div.querySelector(".buyBtn");button.hidden=true;button.disabled=true;
+  }
   div.querySelector(".buyBtn").onclick=(e)=>{
     if(e){ e.preventDefault(); e.stopPropagation(); }
     const nowInCart = isInCart(game.id, state.region);
     if(nowInCart) removeFromCart(game.id);
     else addToCart(game);
   };
+  div.addEventListener("click",e=>{
+    if(!e.target.closest("button,a,input,select") && !window.getSelection()?.toString())location.assign(gameLink(game.id));
+  });
   const compareBtn = div.querySelector(".compareBtn");
   if(compareBtn){ compareBtn.onclick=(e)=>{ e.preventDefault(); e.stopPropagation(); openRegionCompare(game); }; }
   const wishBtn = div.querySelector(".wishBtn");
@@ -2768,23 +2737,23 @@ function buildCard(game, whatsapp, showUntil){
 }
 
 
-const REGION_COMPARE_LABELS={UA:"СНГ",TR:"Турция",PL:"Польша",IN:"Индия"};
+const REGION_COMPARE_LABELS=REGION_LABELS;
 function regionComparePriceHtml(g){
   const disc = Number(g && g.discPerc || 0);
   const old = Number(g && g.oldPriceRub || 0);
   const price = Number(g && g.finalPriceRub || 0);
-  return `<div class="regionComparePriceLine">${disc ? `<span class="regionCompareDiscount">-${disc}%</span>` : ``}<div class="regionComparePrices">${old ? `<span class="regionCompareOld">${escapeHtml(fmtRub(old))}</span>` : ``}<span class="regionComparePrice">${price ? escapeHtml(fmtRub(price)) : '—'}</span></div></div>`;
+  return `<div class="regionComparePriceLine">${disc ? `<span class="regionCompareDiscount">-${disc}%</span>` : ``}<div class="regionComparePrices">${old ? `<span class="regionCompareOld">${escapeHtml(fmtRub(old))}</span>` : ``}<span class="regionComparePrice">${price ? escapeHtml(fmtRub(price)) : (g.region==='US' && g.storePrice>0 ? escapeHtml(formatStoreCurrency(g.storePrice,'US')):'—')}</span></div></div>`;
 }
 function renderRegionCompareItems(items, activeRegion){
-  const order=["UA","TR","PL","IN"].filter(isRegionEnabled);
+  const order=["UA","TR","PL","IN","US"].filter(isRegionEnabled);
   return order.map(R=>{
     const g = (items||[]).find(x=>String(x.region||'').toUpperCase()===R);
     if(!g){
-      return `<div class="regionCompareItem isMissing"><div class="regionCompareRegion">${REGION_COMPARE_LABELS[R]}<span>${R}</span></div><div class="regionCompareMissing">Нет данных</div></div>`;
+      return `<div class="regionCompareItem isMissing"><div class="regionCompareRegion">${REGION_COMPARE_LABELS[R]}<span>${R==="US"?"USA":R}</span></div><div class="regionCompareMissing">Нет данных</div></div>`;
     }
     const active = String(activeRegion||'').toUpperCase()===R;
     return `<div class="regionCompareItem ${active?'isActive':''}">
-      <div class="regionCompareRegion">${REGION_COMPARE_LABELS[R]}<span>${R}</span></div>
+      <div class="regionCompareRegion">${REGION_COMPARE_LABELS[R]}<span>${R==="US"?"USA":R}</span></div>
       <div class="regionCompareEdition">${escapeHtml(gmRuLabel(g.ru))}</div>
       ${regionComparePriceHtml(g)}
     </div>`;
@@ -2936,11 +2905,7 @@ function gmMediaThumbHtml(item, idx){
   const url=String(item&&item.url||'');
   if(!url) return '';
   if(type==='video'){
-    const ytId=gmYoutubeId(url);
-    if(ytId){
-      return `<button class="gmMediaThumb gmMediaThumbVideo" type="button" data-gm-media="${idx}" aria-label="Открыть трейлер"><img src="https://i.ytimg.com/vi/${encodeURIComponent(ytId)}/hqdefault.jpg" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"><span class="gmMediaPlay">▶</span><span class="gmMediaLabel">Трейлер</span></button>`;
-    }
-    return `<button class="gmMediaThumb gmMediaThumbVideo" type="button" data-gm-media="${idx}" aria-label="Открыть трейлер"><video src="${escapeHtml(url)}#t=0.1" muted preload="metadata" playsinline></video><span class="gmMediaPlay">▶</span><span class="gmMediaLabel">Трейлер</span></button>`;
+    return `<button class="gmMediaThumb gmMediaThumbVideo" type="button" data-gm-media="${idx}" aria-label="Открыть трейлер"><span class="gmMediaPlay">▶</span><span class="gmMediaLabel">Трейлер</span></button>`;
   }
   return `<button class="gmMediaThumb" type="button" data-gm-media="${idx}" aria-label="Открыть скриншот"><img src="${escapeHtml(optimizedPsImageUrl(url,420))}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"></button>`;
 }
@@ -2949,8 +2914,8 @@ function gmRenderMedia(game){
   const rail=document.getElementById('gmMediaRail');
   if(!section||!rail) return;
   const raw=Array.isArray(game&&game.mediaGallery)?game.mediaGallery:[];
-  const videos=raw.filter(x=>String(x&&x.type||'').toLowerCase()==='video' && x.url).slice(0,3);
-  const images=raw.filter(x=>String(x&&x.type||'').toLowerCase()==='image' && x.url).slice(0,6);
+  const videos=raw.filter(x=>String(x&&x.type||'').toLowerCase()==='video' && x.url);
+  const images=raw.filter(x=>String(x&&x.type||'').toLowerCase()==='image' && x.url);
   __gmMediaItems=videos.concat(images);
   // Each opened game starts its media gallery from the first item.
   // The same modal/rail DOM node is reused between games, so without this
@@ -2985,7 +2950,7 @@ function gmRenderLightbox(){
       ? `<iframe class="gmMediaYoutube" src="${escapeHtml(ytEmbed)}" title="Трейлер YouTube" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`
       : `<video src="${escapeHtml(item.url)}" controls autoplay playsinline preload="metadata"></video>`;
   }else{
-    stage.innerHTML=`<img src="${escapeHtml(item.url)}" alt="Скриншот" referrerpolicy="no-referrer">`;
+    stage.innerHTML=`<img src="${escapeHtml(optimizedPsImageUrl(item.url,1920))}" alt="Скриншот" referrerpolicy="no-referrer">`;
   }
   if(counter) counter.textContent=`${__gmMediaIndex+1} / ${__gmMediaItems.length}`;
 }
@@ -2998,208 +2963,15 @@ function gmCloseMedia(){
   if(!gameOpen || gameOpen.style.display==='none') document.body.classList.remove('modalOpen');
 }
 
-function openGameModal(game){
-  const overlay=document.getElementById("gameModal");
-  if(!overlay) return;
-  game = game || {};
-
-  const coverWrap=document.getElementById("gmCoverWrap");
-  const plats=document.getElementById("gmPlatforms");
-  const title=document.getElementById("gmTitle");
-  const edition=document.getElementById("gmEdition");
-  const disc=document.getElementById("gmDiscount");
-  const until=document.getElementById("gmUntil");
-  const relEl=document.getElementById("gmRelease");
-  const price=document.getElementById("gmPrice");
-  const oldPrice=document.getElementById("gmOldPrice");
-  const buy=document.getElementById("gmBuyBtn");
-  const descEl=document.getElementById("gmDescription");
-  const readMoreEl=document.getElementById("gmReadMore");
-  const editionsWrap=document.getElementById("gmEditionsList");
-  const editionsSection=document.getElementById("gmEditionsSection");
-  descEl.scrollTop = 0;
-  if(coverWrap){
-    coverWrap.innerHTML = game.cover ? modalCoverImg(game.cover) : `<div class="noCoverBox">NO COVER</div>`;
-  }
-  if(plats) plats.textContent = game.platform || "PS4 / PS5";
-  if(title) title.textContent = game.name || "";
-  if(edition){
-    const platformText = escapeHtml(game.platform || "PS4 / PS5");
-    const editionText = escapeHtml(gmEditionShortText(game));
-    const regionCode = String(state.region || "TR").toUpperCase();
-    edition.innerHTML = `<div class="gmv2PlatformRegionRow"><span class="gmv2InlinePlatform">${platformText}</span><span class="gmv2RegionBadge">${regionFlagHtml(regionCode)}<span>${escapeHtml(regionCode)}</span></span></div><div class="gmv2InlineEdition">${editionText}</div>`;
-  }
-
-  const ruEl=document.getElementById("gmRu");
-  if(ruEl){
-    ruEl.textContent = gmRuLabel(game.ru);
-    ruEl.classList.toggle("hasRu", gmIsRuPositive(game.ru));
-    ruEl.classList.toggle("noRu", !gmIsRuPositive(game.ru));
-    ruEl.classList.toggle("ruUnknown", String(game.ru||'').toLowerCase()==='unknown');
-  }
-
-  const subEl=document.getElementById("gmSub");
-  if(subEl){
-    const s=String(game.sub||"").trim().toLowerCase();
-    const isEa = (s==="eaplay" || s==="ea_play" || s==="ea");
-    const isEssential = (s==="psplus_essential" || s==="ps_plus_essential" || s==="essential");
-    const isExtra = (s==="psplus_extra" || s==="ps_plus_extra" || s==="extra" || s==="psplus");
-    const isDeluxe = (s==="psplus_deluxe" || s==="ps_plus_deluxe" || s==="deluxe");
-    if(!s || (!isEa && !isEssential && !isExtra && !isDeluxe)){
-      subEl.style.display="none";
-      subEl.innerHTML="";
-    }else{
-      const icon = isEa ? "/img/ea1.png" : "/img/psplus1.png";
-      const text = isEa ? "Доступна в EaPlay" : (isEssential ? "Доступна в Essential" : (isDeluxe ? "Доступна в Deluxe" : "Доступна в Extra"));
-      subEl.style.display="flex";
-      subEl.innerHTML = `<img class="subIcon" src="${icon}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.style.display='none'"/><span>${text}</span>`;
-    }
-  }
-
-  gmUpdatePlayersInfo(game);
-  gmRenderMedia(game);
-
-  if(relEl){
-    const hasRel = !!(game && game.isPreorder && isFutureReleaseDate(game.releaseDate));
-    relEl.style.display = hasRel ? "" : "none";
-    relEl.textContent = hasRel ? `Релиз: ${formatDateDMY(game.releaseDate)}` : "";
-  }
-  if(disc) disc.textContent = game.discPerc ? (`-${game.discPerc}%`) : "";
-  if(until) until.textContent = game.discountedUntil ? formatDateRuLong(game.discountedUntil) : "";
-  if(price) price.textContent = fmtRub(game.finalPriceRub);
-  if(oldPrice){
-    oldPrice.style.display = Number(game.oldPriceRub||0) ? "" : "none";
-    oldPrice.textContent = Number(game.oldPriceRub||0) ? fmtRub(game.oldPriceRub) : "";
-  }
-  const promoLine=document.getElementById('gmPromoLine');
-  if(promoLine){
-    const hasPromo = !!(game.discPerc || game.discountedUntil);
-    promoLine.style.display = hasPromo ? '' : 'none';
-  }
-
-  if(descEl && readMoreEl){
-    const descWrap = document.getElementById('gmDescWrap');
-    const desc = String(game.description || '').trim();
-    if(desc){
-      let isOpen = false;
-      const renderDesc = ()=>{
-        if(descWrap) descWrap.style.display = '';
-        descEl.textContent = desc;
-        descEl.classList.toggle('isHidden', !isOpen);
-        descEl.classList.toggle('isExpanded', isOpen);
-        descEl.classList.remove('isFull');
-        if(descWrap){
-          descWrap.classList.remove('isEmpty');
-          descWrap.classList.toggle('isExpanded', isOpen);
-          descWrap.classList.remove('isFull');
-        }
-        readMoreEl.style.display = '';
-        readMoreEl.textContent = isOpen ? 'Скрыть Описание' : 'Читать Описание';
-      };
-      readMoreEl.onclick = ()=>{
-        isOpen = !isOpen;
-        renderDesc();
-      };
-      renderDesc();
-    }else{
-      if(descWrap){
-        descWrap.style.display = 'none';
-        descWrap.classList.add('isEmpty');
-      }
-      descEl.textContent = '';
-      descEl.classList.add('isHidden');
-      readMoreEl.style.display = 'none';
-    }
-  }
-
-  const renderEditions = (editions)=>{
-    if(!editionsWrap || !editionsSection) return;
-    const list = Array.isArray(editions) && editions.length ? editions : [game];
-    editionsSection.style.display = list.length > 1 ? '' : 'none';
-    editionsWrap.innerHTML = list.map(e=>gmRenderEditionItem(e, game.id)).join('');
-    editionsWrap.querySelectorAll('.gmv2Edition[data-gmv2-edition]').forEach(card=>{
-      card.onclick=()=>{
-        const id = card.getAttribute('data-gmv2-edition');
-        const next = list.find(x=>String(x.id||'')===String(id));
-        if(next){
-          next.editions = list;
-          openGameModal(next);
-        }
-      };
-    });
-  };
-
-  if(editionsWrap && editionsSection){
-    renderEditions(Array.isArray(game.editions) && game.editions.length ? game.editions : [game]);
-    if(!game.__editionsLoaded){
-      const conceptId = String(game.conceptId || '').trim();
-      const editionQs = new URLSearchParams({ region: state.region, id: String(game.id || '') });
-      if(conceptId) editionQs.set('conceptId', conceptId);
-      fetch(`/api/game-editions?${editionQs.toString()}`)
-        .then(r=>r.ok?r.json():null)
-        .then(j=>{
-          if(j && Array.isArray(j.items) && j.items.length){
-            const list = j.items;
-            const freshCurrent = list.find(x=>String(x.id||'')===String(game.id||''));
-            const selected = freshCurrent || list[0];
-
-            // The card that opens the modal can be only a lightweight game object.
-            // Use the full edition data immediately, so price/discount/cart block
-            // and the selected edition text are filled before any click in "Другие издания".
-            openGameModal(Object.assign({}, game, selected, { editions:list, __editionsLoaded:true }));
-            return;
-          }
-        })
-        .catch(()=>{});
-    }
-  }
-
-  if(buy){
-    buy.setAttribute("data-cart-game", String(game.id));
-    buy.setAttribute("data-cart-label", "В корзину");
-    buy.setAttribute("data-cart-label-in", "В корзине");
-    setBuyBtnState(buy, isInCart(game.id, state.region));
-    buy.onclick=()=>{
-      const nowInCart = isInCart(game.id, state.region);
-      if(nowInCart) removeFromCart(game.id);
-      else addToCart(game);
-      setBuyBtnState(buy, isInCart(game.id, state.region));
-    };
-  }
-  const gmWish=document.getElementById("gmWishBtn");
-  if(gmWish){
-    gmWish.setAttribute("data-wish-game", String(game.id));
-    setWishBtnState(gmWish, isInWishlist(game.id, state.region));
-    gmWish.onclick=()=>{ toggleWishlist(game); setWishBtnState(gmWish, isInWishlist(game.id, state.region)); };
-  }
-
-  overlay.style.display="flex";
-  document.body.classList.add("modalOpen");
-}
-
-function closeGameModal(){
-  const overlay=document.getElementById("gameModal");
-  if(!overlay) return;
-  overlay.style.display="none";
-  document.body.classList.remove("modalOpen");
-}
-
-// modal wiring
-document.addEventListener("click",(e)=>{
-  const overlay=document.getElementById("gameModal");
-  if(!overlay || overlay.style.display==="none") return;
-  if(e.target===overlay) closeGameModal();
-});
 document.addEventListener("keydown",(e)=>{
   const lb=document.getElementById('gmMediaLightbox');
   const lbOpen=lb && lb.style.display!=="none";
   if(lbOpen && e.key==="ArrowLeft"){ e.preventDefault(); gmStepMedia(-1); return; }
   if(lbOpen && e.key==="ArrowRight"){ e.preventDefault(); gmStepMedia(1); return; }
-  if(e.key==="Escape") { if(lbOpen){ gmCloseMedia(); return; } closeGameModal(); closeRegionCompare(); }
+  if(e.key==="Escape") { if(lbOpen){ gmCloseMedia(); return; } closeRegionCompare(); }
 });
 document.addEventListener("DOMContentLoaded",()=>{
-  const btn=document.getElementById("gameModalClose");
-  if(btn) btn.onclick=closeGameModal;
+
   const lb=document.getElementById('gmMediaLightbox');
   const lbc=document.getElementById('gmMediaLbClose');
   const lbp=document.getElementById('gmMediaLbPrev');
@@ -3296,7 +3068,7 @@ async function renderDiscountOverview(){
   // Carousel data (11 games total across all discount blocks)
   try{
     const qs=new URLSearchParams({tab:"discounts",region:state.region,page:"1",sort:state.sort,perPage:"11"});
-    const j=await fetch(`/api/games?${qs.toString()}`).then(r=>r.json());
+    const j=await fetch(`/api/games?view=cards&${qs.toString()}`).then(r=>r.json());
     const items=(j && j.items) ? j.items : [];
     const viewport=document.getElementById("allDealsTrack");
     if(viewport){
@@ -3351,49 +3123,7 @@ async function renderDiscountOverview(){
       if(leftBtn) leftBtn.onclick=()=>moveBy(-getPerView());
       if(rightBtn) rightBtn.onclick=()=>moveBy(getPerView());
 
-      // Touch swipe
-      let startX=0, startT=0, startIndex=0, dragging=false;
-      const onStart = (clientX)=>{
-        dragging=true;
-        startX=clientX;
-        startT=Date.now();
-        startIndex=index;
-        inner.style.transition='none';
-      };
-      const onMove = (clientX)=>{
-        if(!dragging) return;
-        const perView=getPerView();
-        const gap=getNum(viewport,'--gap');
-        const firstItem=inner.querySelector('.allDealsItem');
-        const itemW=firstItem ? firstItem.getBoundingClientRect().width : 0;
-        const step=itemW+gap;
-        const dx = clientX - startX;
-        inner.style.transform = `translate3d(${-(startIndex*step) + dx}px,0,0)`;
-      };
-      const onEnd = (clientX)=>{
-        if(!dragging) return;
-        dragging=false;
-        inner.style.transition='';
-        const dx = clientX - startX;
-        const dt = Date.now()-startT;
-        const abs = Math.abs(dx);
-        // if quick swipe or large drag => move one card
-        if(abs > 60 || (dt < 250 && abs > 30)){
-          index = startIndex + (dx<0 ? 1 : -1);
-        }else{
-          index = startIndex;
-        }
-        update();
-      };
-
-      viewport.addEventListener('touchstart',(e)=>{ if(e.touches&&e.touches[0]) onStart(e.touches[0].clientX); }, {passive:true});
-      viewport.addEventListener('touchmove',(e)=>{ if(e.touches&&e.touches[0]) onMove(e.touches[0].clientX); }, {passive:true});
-      viewport.addEventListener('touchend',(e)=>{ const t=e.changedTouches&&e.changedTouches[0]; onEnd(t?t.clientX:startX); }, {passive:true});
-
-      // Mouse drag (desktop)
-      viewport.addEventListener('mousedown',(e)=>{ onStart(e.clientX); }, {passive:true});
-      window.addEventListener('mousemove',(e)=>{ onMove(e.clientX); }, {passive:true});
-      window.addEventListener('mouseup',(e)=>{ if(dragging) onEnd(e.clientX); }, {passive:true});
+      bindHorizontalDrag(viewport,moveBy);
 
       // Keep it responsive
       inner.style.transition = 'transform .35s ease';
@@ -3507,7 +3237,7 @@ async function load(){
   // Apply active tab UI (do not reset page when loading)
   const knownTabs = new Set(["home","preorders","new","discounts","allgames","subs","topup","bestsellers","multiplayer","search"]);
   if(!knownTabs.has(state.tab)) state.tab="home";
-  setActiveTab(state.tab, {keepPage:true,keepUntil:true});
+  if(!gamePageId)setActiveTab(state.tab, {keepPage:true,keepUntil:true});
 
   if(meta){
     state.whatsapp = (meta.settings && meta.settings.whatsappLink) || state.whatsapp || "https://wa.me/+79659556300";
@@ -3518,6 +3248,7 @@ async function load(){
     state.roundStep = Number((meta.settings && meta.settings.roundStep) || state.roundStep || 50);
   }
 
+  if(gamePageId){await renderGamePage();return;}
   if(state.tab==="search"){
     setSearchOpen(true, {page:true});
   }
@@ -3642,19 +3373,19 @@ async function load(){
   // Choose API: when search is active -> global search across all games + preorders (subscriptions excluded).
   let apiPath;
   if(state.tab==="search" || (state.search||"").trim()){
-    apiPath = "/api/search?";
+    apiPath = "/api/search?view=cards&";
     // When searching globally, do not restrict by discount date, "all deals" or subscription page.
     qs.delete("until"); qs.delete("all"); qs.delete("sub");
   }else if(state.tab==="allgames"){
-    apiPath = "/api/allgames?";
+    apiPath = "/api/allgames?view=cards&";
   }else if(state.tab==="preorders"){
-    apiPath = "/api/preorders?";
+    apiPath = "/api/preorders?view=cards&";
   }else if(state.tab==="new"){
-    apiPath = "/api/newreleases?";
+    apiPath = "/api/newreleases?view=cards&";
   }else if(state.tab==="subs"){
-    apiPath = "/api/subgames?";
+    apiPath = "/api/subgames?view=cards&";
   }else{
-    apiPath = "/api/games?";
+    apiPath = "/api/games?view=cards&";
   }
   const j=await fetchJson(apiPath+qs.toString(), {cache:"no-store"}, 18000, 1);
 
@@ -3869,7 +3600,7 @@ document.addEventListener("DOMContentLoaded",()=>{
 
   const knownTabs2 = new Set(["home","preorders","new","discounts","allgames","subs","bestsellers","multiplayer","search"]);
   if(!knownTabs2.has(state.tab)) state.tab="home";
-  setActiveTab(state.tab,{keepPage:true});
+  if(!gamePageId)setActiveTab(state.tab,{keepPage:true});
   initTabsUI();
   updateCartCount();
   updateWishCount();
@@ -3889,6 +3620,7 @@ document.addEventListener("keydown",(e)=>{
 });
 
 function showCatalogLoadError(err){
+  if(gamePageId){const host=document.getElementById('gamePage');host.hidden=false;host.textContent='Не удалось загрузить страницу игры. ';const retry=document.createElement('button');retry.textContent='Повторить';retry.onclick=startCatalogLoad;host.append(retry);return}
   try{ console.error("Playstore95 catalog load failed:", err); }catch(_e){}
   const grid=document.getElementById("grid");
   const pager=document.getElementById("pager");
@@ -3905,61 +3637,6 @@ function startCatalogLoad(){ load().catch(showCatalogLoadError); }
 if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", startCatalogLoad);
 else startCatalogLoad();
 </script>
-<div id="gameModal" class="modalOverlay gameModalOverlayV2" style="display:none">
-  <div class="gameModalV2" role="dialog" aria-modal="true" aria-label="Карточка игры">
-    <!--<div class="gmv2Drag" aria-hidden="true"></div>-->
-    <button class="gmv2Close" id="gameModalClose" aria-label="Закрыть" type="button">×</button>
-
-    <div class="gmv2Top">
-      <div class="gmv2Left">
-        <div class="gmv2Cover" id="gmCoverWrap"></div>
-        <div class="gmv2Platform" id="gmPlatforms"></div>
-      </div>
-
-      <div class="gmv2Right">
-        <div class="gmv2Title" id="gmTitle"></div>
-        <div class="gmv2EditionText" id="gmEdition"></div>
-        <div class="gmv2Badges">
-          <div class="gmv2Ru" id="gmRu"></div>
-          <div class="gmv2Sub" id="gmSub" style="display:none"></div>
-        </div>
-        <div class="gmv2Release" id="gmRelease" style="display:none"></div>
-      </div>
-    </div>
-
-    <div class="gmv2DescWrap" id="gmDescWrap" style="display:none">
-      <div class="gmv2ReadActions" id="gmReadActions">
-        <button class="gmv2ReadMore" id="gmReadMore" type="button">Читать Описание</button>
-      </div>
-      <div class="gmv2Description isHidden" id="gmDescription"></div>
-    </div>
-
-    <div class="gmv2BuyPanel">
-      <div class="gmv2PromoLine" id="gmPromoLine">
-        <div class="gmv2PromoLeft"><div class="gmv2Discount" id="gmDiscount"></div><div class="gmv2Until" id="gmUntil"></div></div>
-        <div class="gmv2PriceBox"><div class="gmv2Price" id="gmPrice"></div><div class="gmv2OldPrice" id="gmOldPrice"></div></div>
-      </div>
-      <div class="gmv2BuyRow">
-        <button class="gmv2Wish" id="gmWishBtn" type="button" aria-label="В желаемое" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z"/></svg></button>
-        <div class="gmv2PlayersInfo" id="gmPlayersInfo"><span class="gmv2PlayersIcons"><span class="gmv2PlayerAvatar" aria-hidden="true"></span></span><span class="gmv2PlayersText">1 игрок</span></div>
-        <button class="gmv2CartBtn" id="gmBuyBtn" type="button" aria-pressed="false">В корзину</button>
-      </div>
-    </div>
-
-    <section class="gmv2MediaSection" id="gmMediaSection" style="display:none">
-      <div class="gmv2MediaRail" id="gmMediaRail"></div>
-    </section>
-
-    <section class="gmv2EditionsSection" id="gmEditionsSection" style="display:none">
-      <div class="gmv2SectionHead">
-        <h3>Другие издания</h3>
-        <!--<button class="gmv2Compare" type="button">⚖ Сравнить издания</button>-->
-      </div>
-      <div class="gmv2EditionsList" id="gmEditionsList"></div>
-    </section>
-  </div>
-</div>
-
 <div id="gmMediaLightbox" class="gmMediaLightbox" style="display:none" aria-hidden="true">
   <button class="gmMediaLbClose" id="gmMediaLbClose" type="button" aria-label="Закрыть">×</button>
   <button class="gmMediaLbNav gmMediaLbPrev" id="gmMediaLbPrev" type="button" aria-label="Назад">‹</button>
