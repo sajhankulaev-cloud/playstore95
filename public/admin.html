@@ -139,8 +139,10 @@ button{ color:#0f172a !important; }
 <main class="main">
 
 <div class="adminCard" id="import">
+
+
   <div style="font-weight:950;font-size:16px;">Добавить игру по ссылке (PS Store)</div>
-  <div class="small">Вставь ссылку на страницу игры PS Store (с <b>/product/...</b>). Импорт пытается взять: название, обложку, скидку%, дату конца, цену.</div>
+  <div class="small">Ссылка на игру или издание PS Store. Импортируются сведения об игре, медиа, издания, дополнения и предложения для TR, UA, PL, IN и USA.</div>
   <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;align-items:flex-end;">
     <div style="flex:1;min-width:280px;">
       <div class="small">Ссылка</div>
@@ -191,7 +193,7 @@ button{ color:#0f172a !important; }
         <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px;">
           <div style="flex:1;min-width:180px;">
             <div class="small">Русский (TR)</div>
-            <select id="impRuTR" class="select" style="width:100%;">
+            <select id="impRuTR" class="select" style="width:100%;"><option value="unknown">Не указано в PS Store</option>
               <option value="none" selected>🇷🇺 Отсутствует</option>
               <option value="text">🇷🇺 Текст</option>
               <option value="voice">🇷🇺 Озвучка</option>
@@ -199,7 +201,7 @@ button{ color:#0f172a !important; }
           </div>
           <div style="flex:1;min-width:180px;">
             <div class="small">Русский (UA)</div>
-            <select id="impRuUA" class="select" style="width:100%;">
+            <select id="impRuUA" class="select" style="width:100%;"><option value="unknown">Не указано в PS Store</option>
               <option value="none" selected>🇷🇺 Отсутствует</option>
               <option value="text">🇷🇺 Текст</option>
               <option value="voice">🇷🇺 Озвучка</option>
@@ -250,7 +252,7 @@ button{ color:#0f172a !important; }
             <div class="small">Цена (PLN)</div>
             <input id="impPlPrice" class="input" type="number" step="0.01"/>
             <div class="small" style="margin-top:8px;">Русский</div>
-            <select id="impRuPLCard" class="select" style="width:100%;">
+            <select id="impRuPLCard" class="select" style="width:100%;"><option value="unknown">Не указано в PS Store</option>
               <option value="none" selected>🇷🇺 Отсутствует</option>
               <option value="text">🇷🇺 Текст</option>
               <option value="voice">🇷🇺 Озвучка</option>
@@ -261,7 +263,7 @@ button{ color:#0f172a !important; }
             <div class="small">Цена (INR)</div>
             <input id="impInPrice" class="input" type="number" step="0.01"/>
             <div class="small" style="margin-top:8px;">Русский</div>
-            <select id="impRuINCard" class="select" style="width:100%;">
+            <select id="impRuINCard" class="select" style="width:100%;"><option value="unknown">Не указано в PS Store</option>
               <option value="none" selected>🇷🇺 Отсутствует</option>
               <option value="text">🇷🇺 Текст</option>
               <option value="voice">🇷🇺 Озвучка</option>
@@ -281,7 +283,7 @@ button{ color:#0f172a !important; }
 
 <div style="margin-top:16px;border-top:1px solid #e5e7eb;padding-top:14px;">
   <div style="font-weight:950;font-size:14px;">Добавить в «Предзаказы»</div>
-  <div class="small">Импорт по ссылке PS Store (с <b>/product/...</b>). Берём: обложку, название, edition, платформу, подписку, русский (TR/UA), цены (TL/UAH) <b>и дату релиза</b>.</div>
+  <div class="small">Ссылка на игру или издание PS Store. Импортируются сведения об игре, медиа, издания, дополнения и предложения для TR, UA, PL, IN и USA.</div>
 
   <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;align-items:flex-end;">
     <div style="flex:1;min-width:280px;">
@@ -443,7 +445,7 @@ button{ color:#0f172a !important; }
 
 <div style="margin-top:16px;border-top:1px solid #e5e7eb;padding-top:14px;">
     <div style="font-weight:950;font-size:14px;">Добавить в «Всё игры»</div>
-    <div class="small">Импорт по ссылке PS Store (с <b>/product/...</b>). Берём: обложку, название, edition, платформу, подписку, русский (TR/UA), цены (TL/UAH). Процент и дату скидки не используем.</div>
+    <div class="small">Ссылка на игру или издание PS Store. Импортируются сведения об игре, медиа, издания, дополнения и предложения для TR, UA, PL, IN и USA.</div>
 
     <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;align-items:flex-end;">
       <div style="flex:1;min-width:280px;">
@@ -520,7 +522,7 @@ button{ color:#0f172a !important; }
           <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px;">
             <div style="flex:1;min-width:180px;">
               <div class="small">Русский (TR)</div>
-              <select id="allRuTR" class="select" style="width:100%;">
+              <select id="allRuTR" class="select" style="width:100%;"><option value="unknown">Не указано в PS Store</option>
                 <option value="none" selected>🇷🇺 Отсутствует</option>
                 <option value="text">🇷🇺 Текст</option>
                 <option value="voice">🇷🇺 Озвучка</option>
@@ -528,7 +530,7 @@ button{ color:#0f172a !important; }
             </div>
             <div style="flex:1;min-width:180px;">
               <div class="small">Русский (UA)</div>
-              <select id="allRuUA" class="select" style="width:100%;">
+              <select id="allRuUA" class="select" style="width:100%;"><option value="unknown">Не указано в PS Store</option>
                 <option value="none" selected>🇷🇺 Отсутствует</option>
                 <option value="text">🇷🇺 Текст</option>
                 <option value="voice">🇷🇺 Озвучка</option>
@@ -560,7 +562,7 @@ button{ color:#0f172a !important; }
               <div class="small">Цена (PLN)</div>
               <input id="allPlPrice" class="input" type="number" step="0.01"/>
               <div class="small" style="margin-top:8px;">Русский</div>
-              <select id="allRuPLCard" class="select" style="width:100%;">
+              <select id="allRuPLCard" class="select" style="width:100%;"><option value="unknown">Не указано в PS Store</option>
                 <option value="none" selected>🇷🇺 Отсутствует</option>
                 <option value="text">🇷🇺 Текст</option>
                 <option value="voice">🇷🇺 Озвучка</option>
@@ -571,7 +573,7 @@ button{ color:#0f172a !important; }
               <div class="small">Цена (INR)</div>
               <input id="allInPrice" class="input" type="number" step="0.01"/>
               <div class="small" style="margin-top:8px;">Русский</div>
-              <select id="allRuINCard" class="select" style="width:100%;">
+              <select id="allRuINCard" class="select" style="width:100%;"><option value="unknown">Не указано в PS Store</option>
                 <option value="none" selected>🇷🇺 Отсутствует</option>
                 <option value="text">🇷🇺 Текст</option>
                 <option value="voice">🇷🇺 Озвучка</option>
@@ -599,13 +601,6 @@ button{ color:#0f172a !important; }
     <input id="gamesSearch" class="input" style="min-width:260px" placeholder="Поиск по названию"/>
     <button class="btnGhost" id="refreshGames">Обновить</button>
     <button class="btnGhost" id="refreshDiscountsFromPS">Обновить скидки (PS Store)</button>
-    <button class="btnGhost" id="refreshNewReleases">Обновить «Новинки»</button>
-    <button class="btnGhost" id="backfillGenres">Заполнить жанры</button>
-    <button class="btnGhost" id="backfillDescriptions">Обновить описание</button>
-    <button class="btnGhost" id="updatePlPrices">Обновить цены PL</button>
-    <button class="btnGhost" id="updateInPrices">Обновить цены IN</button>
-    <button class="btnGhost" id="cleanDescriptions">Очистить мусор описаний</button>
-    <button class="btnDark" id="fillMissingAllGames">Дополнить трейлеры и скриншоты</button>
     <span class="small" id="fillMissingStatus"></span>
     <span class="small" id="newReleasesStatus"></span>
     <span class="small" id="gamesCount"></span>
@@ -648,16 +643,17 @@ button{ color:#0f172a !important; }
 </details>
 
 
-  <!-- === Список «Всё игры» (внутри блока «Игры на сайте») === -->
+  <!-- === Каталог игр и аддонов (внутри блока «Игры на сайте») === -->
 <details class="allDiscounts" style="margin-top:12px;">
   <summary>
     <div>
-      <div class="allDiscountsTitle">Список «Всё игры»</div>
+      <div class="allDiscountsTitle">Каталог игр и аддонов</div>
       <div class="allDiscountsMeta"><span id="allGamesCount"></span></div>
     </div>
     <div class="allDiscountsChevron">▼</div>
   </summary>
   <div style="padding:12px 14px;border-top:1px solid #e5e7eb;">
+<label>Тип позиции <select id="catalogKind" class="select"><option value="game">Игры</option><option value="addon">Аддоны</option></select></label>
 <div id="allGamesList" style="margin-top:12px;"></div>
   </div>
 </details>
@@ -667,7 +663,7 @@ button{ color:#0f172a !important; }
 <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
 <div><div style="font-weight:950;font-size:16px;">Курсы по диапазонам</div><div class="small">Обычный курс • Округление вверх.</div></div>
 <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-<select id="regionSel" class="select"><option value="TR">Турция (TR)</option><option value="UA">Украина (UA)</option><option value="PL">Польша (PL)</option><option value="IN">Индия (IN)</option></select>
+<select id="regionSel" class="select"><option value="TR">Турция (TR)</option><option value="UA">Украина (UA)</option><option value="PL">Польша (PL)</option><option value="IN">Индия (IN)</option><option value="US">США (USD)</option></select>
 <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;"><input id="mainAdjustValue" class="input" type="number" step="0.01" min="0" placeholder="0.10" style="width:90px;"><button class="btnGhost" id="mainIncrease" type="button">+ Повысить</button><button class="btnGhost" id="mainDecrease" type="button">− Понизить</button></div>
 <button class="btnGhost" id="addRow" type="button">+ Диапазон</button><button class="btnDark" id="saveRates" type="button">Сохранить</button>
 </div></div>
@@ -743,7 +739,7 @@ button{ color:#0f172a !important; }
     <a class="btnGhost" href="/ps95_optovik" target="_blank" style="text-decoration:none;">Открыть оптовый сайт</a>
   </div>
   <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px;">
-    <select id="wholesaleRegionSel" class="select"><option value="TR">Турция (TR)</option><option value="UA">Украина (UA)</option><option value="PL">Польша (PL)</option><option value="IN">Индия (IN)</option></select>
+    <select id="wholesaleRegionSel" class="select"><option value="TR">Турция (TR)</option><option value="UA">Украина (UA)</option><option value="PL">Польша (PL)</option><option value="IN">Индия (IN)</option><option value="US">США (USD)</option></select>
     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;"><input id="wholesaleAdjustValue" class="input" type="number" step="0.01" min="0" placeholder="0.10" style="width:90px;"><button class="btnGhost" id="wholesaleIncrease" type="button">+ Повысить</button><button class="btnGhost" id="wholesaleDecrease" type="button">− Понизить</button></div>
     <button class="btnGhost" id="addWholesaleRateRow" type="button">+ Диапазон</button>
     <button class="btnDark" id="saveWholesaleRates" type="button">Сохранить</button>
@@ -796,7 +792,7 @@ button{ color:#0f172a !important; }
     <label style="display:flex;align-items:center;gap:7px;font-weight:800;"><input type="checkbox" id="regionEnabledTR"> Турция (TR)</label>
     <label style="display:flex;align-items:center;gap:7px;font-weight:800;"><input type="checkbox" id="regionEnabledUA"> Украина (UA)</label>
     <label style="display:flex;align-items:center;gap:7px;font-weight:800;"><input type="checkbox" id="regionEnabledPL"> Польша (PL)</label>
-    <label style="display:flex;align-items:center;gap:7px;font-weight:800;"><input type="checkbox" id="regionEnabledIN"> Индия (IN)</label>
+    <label style="display:flex;align-items:center;gap:7px;font-weight:800;"><input type="checkbox" id="regionEnabledIN"> Индия (IN)</label><label style="display:flex;align-items:center;gap:7px;font-weight:800;"><input type="checkbox" id="regionEnabledUS"> США (USA)</label>
   </div>
 </div></div>
 
@@ -1192,7 +1188,7 @@ async function saveWholesaleSubsPrices(){
 async function loadSettings(){const j=await fetch(`/api/admin/settings`).then(r=>r.json());
 document.getElementById("roundStep").value=String(j.roundStep||50);document.getElementById("wa").value=j.whatsappLink||"";const cb=document.getElementById("useTurkeyTopupCards");if(cb) cb.checked=!!j.useTurkeyTopupCards;const cbIn=document.getElementById("useIndiaTopupCards");if(cbIn) cbIn.checked=!!j.useIndiaTopupCards;
 const enabled=(j.enabledRegions&&typeof j.enabledRegions==="object")?j.enabledRegions:{TR:true,UA:true,PL:true,IN:true};
-for(const R of ["TR","UA","PL","IN"]){const el=document.getElementById(`regionEnabled${R}`);if(el) el.checked=enabled[R]!==false;}
+for(const R of ["TR","UA","PL","IN","US"]){const el=document.getElementById(`regionEnabled${R}`);if(el) el.checked=enabled[R]!==false;}
 }
 async function saveSettings(){const roundStep=document.getElementById("roundStep").value;
 const whatsappLink=document.getElementById("wa").value.trim();
@@ -1200,7 +1196,7 @@ const cb=document.getElementById("useTurkeyTopupCards");
 const useTurkeyTopupCards=cb?!!cb.checked:false;
 const cbIn=document.getElementById("useIndiaTopupCards");
 const useIndiaTopupCards=cbIn?!!cbIn.checked:true;
-const enabledRegions={};for(const R of ["TR","UA","PL","IN"]){const el=document.getElementById(`regionEnabled${R}`);enabledRegions[R]=!!(el&&el.checked);}
+const enabledRegions={};for(const R of ["TR","UA","PL","IN","US"]){const el=document.getElementById(`regionEnabled${R}`);enabledRegions[R]=!!(el&&el.checked);}
 if(!Object.values(enabledRegions).some(Boolean)){alert("Нужно оставить включённым хотя бы один регион.");return;}
 const r=await fetch(`/api/admin/settings`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({roundStep,whatsappLink,useTurkeyTopupCards,useIndiaTopupCards,enabledRegions})});
 const j=await r.json().catch(()=>({ok:false}));
@@ -1295,6 +1291,12 @@ function bannerFileToDataUrl(file){
   });
 }
 
+function eaMark(game){
+  return Object.values(game.eaRegions||{}).some(Boolean)?'<small>EA Play −10%</small>':'';
+}
+function eaControls(game){
+  return '<fieldset><legend>Скидка 10% с EA Play</legend>'+['TR','UA','PL','IN','US'].map(r=>'<label><input type="checkbox" data-ea-region="'+r+'" '+(game.eaRegions?.[r]?'checked':'')+'> '+(r==='US'?'USA':r)+'</label>').join(' ')+'</fieldset>';
+}
 function renderGames(){
   const q=(document.getElementById("gamesSearch").value||"").trim().toLowerCase();
   const wrap=document.getElementById("gamesGroups");
@@ -1419,7 +1421,7 @@ function renderGames(){
     for(const g of slice){
       const tr=document.createElement("tr");
       const escCell = (v)=>String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-      tr.innerHTML = `<td>${escCell(g.id)}</td><td>${escCell(g.name||"")}</td><td style="white-space:nowrap;">${escCell(g.edition||"")}</td><td>${escCell(g.platform||"")}</td><td style="display:flex;gap:8px;flex-wrap:wrap;"><button class="btnDark" data-act="edit">Редактировать</button><button class="btnGhost" data-act="del">Удалить</button></td>`;
+      tr.innerHTML = `<td>${escCell(g.id)}</td><td>${escCell(g.name||"")} ${eaMark(g)} <small>${(g.discountRegions||[]).map(r=>r==="US"?"USA":r).join(" / ")}</small></td><td style="white-space:nowrap;">${escCell(g.edition||"")}</td><td>${escCell(g.platform||"")}</td><td style="display:flex;gap:8px;flex-wrap:wrap;"><button class="btnDark" data-act="edit">Редактировать</button><button class="btnGhost" data-act="del">Удалить</button></td>`;
       tr.querySelector("button[data-act=edit]").onclick=()=>openDiscountEdit(g.id, tr);
       tr.querySelector("button[data-act=del]").onclick=async ()=>{
         if(!confirm(`Удалить "${g.name}"?`)) return;
@@ -1585,7 +1587,7 @@ async function openDiscountEdit(id, anchorTr){
           <div class="small" style="opacity:.85;">ID: ${g.id||''}</div>
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-          <button class="btnDark" data-act="save">Сохранить</button>
+          ${eaControls(g)}<button class="btnDark" data-act="save">Сохранить</button>
           <button class="btnGhost" data-act="fill-media">Обновить трейлеры и скриншоты</button>
           <button class="btnGhost" data-act="cancel">Отмена</button>
           <span class="small" data-el="status"></span>
@@ -1705,6 +1707,7 @@ async function openDiscountEdit(id, anchorTr){
   row.querySelector('button[data-act="save"]').onclick = async ()=>{
     setStatus('Сохранение...');
     const payload = {
+      eaChanges: Object.fromEntries([...row.querySelectorAll('[data-ea-region]')].filter(e=>e.checked!==e.defaultChecked).map(e=>[e.dataset.eaRegion,e.checked])),
       name: (row.querySelector('[data-f="name"]').value||'').trim(),
       platform: row.querySelector('select[data-f="platform"]').value,
       edition: (row.querySelector('[data-f="edition"]').value||'').trim(),
@@ -1728,8 +1731,8 @@ async function openDiscountEdit(id, anchorTr){
           sub: row.querySelector('select[data-f="sub"]').value || '',
           ru: row.querySelector('#inl_ru_ua').value || 'none'
         },
-        PL: { salePrice: Number(row.querySelector('[data-f="plPrice"]')?.value||0), discPerc: 0, discountedUntil: null, ru: row.querySelector('#inl_ru_pl')?.value || row.querySelector('#inl_ru_tr').value || 'none', sub: row.querySelector('select[data-f="sub"]').value || '' },
-        IN: { salePrice: Number(row.querySelector('[data-f="inPrice"]')?.value||0), discPerc: 0, discountedUntil: null, ru: row.querySelector('#inl_ru_in')?.value || row.querySelector('#inl_ru_tr').value || 'none', sub: row.querySelector('select[data-f="sub"]').value || '' }
+        PL: { salePrice: Number(row.querySelector('[data-f="plPrice"]')?.value||0), ru: row.querySelector('#inl_ru_pl')?.value || row.querySelector('#inl_ru_tr').value || 'none', sub: row.querySelector('select[data-f="sub"]').value || '' },
+        IN: { salePrice: Number(row.querySelector('[data-f="inPrice"]')?.value||0), ru: row.querySelector('#inl_ru_in')?.value || row.querySelector('#inl_ru_tr').value || 'none', sub: row.querySelector('select[data-f="sub"]').value || '' }
       }
     };
 
@@ -1804,21 +1807,6 @@ async function loadNewReleasesStatus(){
   }
 }
 
-document.getElementById('refreshNewReleases').onclick = async ()=>{
-  const el = document.getElementById('newReleasesStatus');
-  if(el) el.textContent = 'Новинки: обновление...';
-  try{
-    const r = await fetch('/api/admin/newreleases/refresh', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({}) });
-    const j = await r.json().catch(()=>({ok:false,error:'bad_json'}));
-    if(!r.ok || !j.ok){
-      if(el) el.textContent = 'Новинки: не удалось обновить';
-      return;
-    }
-    await loadNewReleasesStatus();
-  }catch(_e){
-    if(el) el.textContent = 'Новинки: не удалось обновить';
-  }
-};
 
 
 async function fetchRuDescription(productId, conceptId){
@@ -1917,13 +1905,14 @@ function playersSelectHtml(value){
   return `<select class="select" data-f="players" style="width:100%;">${opts.map(o=>`<option value="${o}" ${o===v?'selected':''}>${o}</option>`).join('')}</select>`;
 }
 function setMetaFields(prefix, tr, ua){
-  const p = normalizePlayersChoice(pickMeta(tr, ua, 'players'));
+  const raw = pickMeta(tr, ua, 'players');
+  const p = raw || 'Не указано';
   const pe = document.getElementById(prefix + 'Players');
-  if(pe) pe.value = p;
+  if(pe){if(!Array.from(pe.options).some(o=>o.value===p))pe.add(new Option(p,p));pe.value=p;}
 }
 function readMetaFields(prefix){
   return {
-    players: normalizePlayersChoice(document.getElementById(prefix + 'Players')?.value || '')
+    players: document.getElementById(prefix + 'Players')?.value || null
   };
 }
 
@@ -1933,7 +1922,8 @@ async function doImport(){
   document.getElementById("importStatus").textContent="Импорт...";
   const j=await fetch("/api/admin/import",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url, discountMode:true})}).then(r=>r.json());
   if(!j.ok){document.getElementById("importStatus").textContent="Ошибка: "+(j.error||"");return;}
-  document.getElementById("importHttp").textContent = `HTTP TR:${j.status.TR} UA:${j.status.UA}`;
+  window.impPsSnapshot=j.game; showPsPreview("imp",j.game);
+  document.getElementById("importHttp").textContent = `${Object.entries(j.status).map(([r,status])=>(r==='US'?'USA':r)+' '+(status||'—')).join(' · ')}`;
   if(j.parsed?.TR?.blocked || j.parsed?.UA?.blocked){alert("PS Store заблокировал импорт (captcha/blocked). Попробуй другой VPN/сервер.");}
 
   const pid=(j.productId||"");
@@ -1971,10 +1961,10 @@ async function doImport(){
   const ruInEl = document.getElementById("impRuIN");
   const ruPlCardEl = document.getElementById("impRuPLCard");
   const ruInCardEl = document.getElementById("impRuINCard");
-  if(ruPlEl) ruPlEl.value = ruTR;
-  if(ruInEl) ruInEl.value = ruTR;
-  if(ruPlCardEl) ruPlCardEl.value = ruTR;
-  if(ruInCardEl) ruInCardEl.value = ruTR;
+  if(ruPlEl) ruPlEl.value = j.parsed?.PL?.ru || "unknown";
+  if(ruInEl) ruInEl.value = j.parsed?.IN?.ru || "unknown";
+  if(ruPlCardEl) ruPlCardEl.value = j.parsed?.PL?.ru || "unknown";
+  if(ruInCardEl) ruInCardEl.value = j.parsed?.IN?.ru || "unknown";
 
   // Подписка единая для TR/UA: если игра в подписке в Турции, то и в Украине.
   const subTR = (tr.sub || "");
@@ -2001,8 +1991,9 @@ if(cover){
   // Дату окончания скидки берём из ручного поля админки (как было раньше).
   // Если ручная дата не задана — оставляем пусто.
   const mu = (document.getElementById("manualUntil")?.value || "").trim();
-  document.getElementById("impTrUntil").value = mu;
-  document.getElementById("impUaUntil").value = mu;
+  document.getElementById("impTrUntil").value = mu || tr.discountedUntil?.slice(0,10) || "";
+  document.getElementById("impUaUntil").value = mu || ua.discountedUntil?.slice(0,10) || "";
+  rememberImportFields("importResult");
   document.getElementById("importResult").style.display="block";
   document.getElementById("importStatus").textContent="Готово. Проверь и нажми 'Добавить'.";
 }
@@ -2037,14 +2028,14 @@ async function addGame(){
       },
       PL:{
         salePrice:Number(document.getElementById("impPlPrice")?.value||0),
-        discPerc:Number(window.__impPlDiscPerc || document.getElementById("impTrDisc")?.value || 0),
+        discPerc:Number(window.__impPlDiscPerc ?? 0),
         discountedUntil:manualUntil,
         ru: (document.getElementById("impRuPLCard")?.value || document.getElementById("impRuPL")?.value || document.getElementById("impRuTR")?.value || "none"),
         sub: (document.getElementById("impSubTR")?.value || "")
       },
       IN:{
         salePrice:Number(document.getElementById("impInPrice")?.value||0),
-        discPerc:Number(window.__impInDiscPerc || document.getElementById("impTrDisc")?.value || 0),
+        discPerc:Number(window.__impInDiscPerc ?? 0),
         discountedUntil:manualUntil,
         ru: (document.getElementById("impRuINCard")?.value || document.getElementById("impRuIN")?.value || document.getElementById("impRuTR")?.value || "none"),
         sub: (document.getElementById("impSubTR")?.value || "")
@@ -2052,6 +2043,7 @@ async function addGame(){
     }
   };
   document.getElementById("importStatus").textContent="Добавление...";
+  if(window.impPsSnapshot?.id===g.id)applyImportFields("imp",g,window.impPsSnapshot);
   const j=await fetch(`/api/admin/games/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(g)}).then(r=>r.json());
   if(j.ok){
     document.getElementById("importStatus").textContent="Добавлено. Всего игр: "+j.count;
@@ -2073,7 +2065,8 @@ async function doImportPreorder(){
   document.getElementById("preImportHttp").textContent="";
   const j=await fetch("/api/admin/import",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url, ruSeparate:true})}).then(r=>r.json());
   if(!j.ok){document.getElementById("preImportStatus").textContent="Ошибка: "+(j.error||"");return;}
-  document.getElementById("preImportHttp").textContent = `HTTP TR:${j.status.TR} UA:${j.status.UA}`;
+  window.prePsSnapshot=j.game; showPsPreview("pre",j.game);
+  document.getElementById("preImportHttp").textContent = `${Object.entries(j.status).map(([r,status])=>(r==='US'?'USA':r)+' '+(status||'—')).join(' · ')}`;
   if(j.parsed?.TR?.blocked || j.parsed?.UA?.blocked){alert("PS Store заблокировал импорт (captcha/blocked). Попробуй другой VPN/сервер.");}
 
   const pidTR = (j.productIds && j.productIds.TR) ? String(j.productIds.TR) : (j.productId||"");
@@ -2091,7 +2084,7 @@ async function doImportPreorder(){
   document.getElementById("preGenres").value = (tr.genres || ua.genres || "");
   document.getElementById("preVr2").checked = false;
   document.getElementById("preName").value=name||"";
-  await fillDescriptionTextarea("preDescription", pidUA || pidTR, (tr.conceptId || ua.conceptId || ""), "preImportStatus");
+  document.getElementById("preDescription").value=j.game?.description||"";
 
   const plat = (tr.platform) || (ua.platform) || "";
   const platEl = document.getElementById("prePlatform");
@@ -2112,10 +2105,10 @@ async function doImportPreorder(){
   // RU default: unknown (until release)
   document.getElementById("preRuTR").value = (tr.ru || "unknown");
   document.getElementById("preRuUA").value = (ua.ru || "unknown");
-  if(document.getElementById("preRuPL")) document.getElementById("preRuPL").value = (tr.ru || "unknown");
-  if(document.getElementById("preRuIN")) document.getElementById("preRuIN").value = (tr.ru || "unknown");
-  if(document.getElementById("preRuPLCard")) document.getElementById("preRuPLCard").value = (tr.ru || "unknown");
-  if(document.getElementById("preRuINCard")) document.getElementById("preRuINCard").value = (tr.ru || "unknown");
+  if(document.getElementById("preRuPL")) document.getElementById("preRuPL").value = (j.parsed?.PL?.ru || "unknown");
+  if(document.getElementById("preRuIN")) document.getElementById("preRuIN").value = (j.parsed?.IN?.ru || "unknown");
+  if(document.getElementById("preRuPLCard")) document.getElementById("preRuPLCard").value = (j.parsed?.PL?.ru || "unknown");
+  if(document.getElementById("preRuINCard")) document.getElementById("preRuINCard").value = (j.parsed?.IN?.ru || "unknown");
 
   // subscription unified
   document.getElementById("preSub").value = (tr.sub || "");
@@ -2142,6 +2135,7 @@ async function doImportPreorder(){
   if(document.getElementById("preInPrice")) document.getElementById("preInPrice").value = ind.salePrice ?? "";
   if(document.getElementById("preMediaGallery")) document.getElementById("preMediaGallery").value = mediaGalleryToText((ua.mediaGallery&&ua.mediaGallery.length)?ua.mediaGallery:tr.mediaGallery);
 
+  rememberImportFields("preImportResult");
   document.getElementById("preImportResult").style.display="block";
   document.getElementById("preImportStatus").textContent="Готово. Проверь и нажми 'Добавить'.";
 }
@@ -2180,6 +2174,7 @@ async function addPreorder(){
     }
   };
 
+  if(window.prePsSnapshot?.id===payload.id)applyImportFields("pre",payload,window.prePsSnapshot);
   if(!payload.id || !payload.name){
     alert("ID (TR/UA) и название обязательны");
     return;
@@ -2326,7 +2321,7 @@ function renderPreorders(){
     const edition = g.edition ? String(g.edition) : '';
     html += `<tr>`;
     html += `<td style="min-width:260px;">${esc(showId)}</td>`;
-    html += `<td>${esc(g.name||'')}</td>`;
+    html += `<td>${esc(g.name||'')} ${eaMark(g)}</td>`;
     html += `<td style="white-space:nowrap;">${esc(edition)}</td>`;
     html += `<td>${esc(g.platform||'')}</td>`;
     html += `<td style="display:flex;gap:8px;flex-wrap:wrap;">`;
@@ -2430,7 +2425,7 @@ async function openPreorderEdit(id, anchorTr){
           <div class="small" style="opacity:.85;">ID записи: ${g.id||''}</div>
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-          <button class="btnDark" data-act="save">Сохранить</button>
+          ${eaControls(g)}<button class="btnDark" data-act="save">Сохранить</button>
           <button class="btnGhost" data-act="fill-preorder">Обновить трейлеры и скриншоты</button>
           <button class="btnGhost" data-act="cancel">Отмена</button>
           <span class="small" data-el="status"></span>
@@ -2580,6 +2575,7 @@ async function openPreorderEdit(id, anchorTr){
     const rd = (row.querySelector('[data-f="releaseDate"]').value||'').trim();
 
     const payload = {
+      eaChanges: Object.fromEntries([...row.querySelectorAll('[data-ea-region]')].filter(e=>e.checked!==e.defaultChecked).map(e=>[e.dataset.eaRegion,e.checked])),
       name: (row.querySelector('[data-f="name"]').value||'').trim(),
       platform: row.querySelector('select[data-f="platform"]').value,
       edition: (row.querySelector('[data-f="edition"]').value||'').trim(),
@@ -2641,7 +2637,8 @@ async function doImportAllGames(){
   document.getElementById("allImportHttp").textContent="";
   const j=await fetch("/api/admin/import",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url, ruSeparate:true})}).then(r=>r.json());
   if(!j.ok){document.getElementById("allImportStatus").textContent="Ошибка: "+(j.error||"");return;}
-  document.getElementById("allImportHttp").textContent = `HTTP TR:${j.status.TR} UA:${j.status.UA}`;
+  window.allPsSnapshot=j.game; showPsPreview("all",j.game);
+  document.getElementById("allImportHttp").textContent = `${Object.entries(j.status).map(([r,status])=>(r==='US'?'USA':r)+' '+(status||'—')).join(' · ')}`;
   if(j.parsed?.TR?.blocked || j.parsed?.UA?.blocked){alert("PS Store заблокировал импорт (captcha/blocked). Попробуй другой VPN/сервер.");}
 
   const pidTR = (j.productIds && j.productIds.TR) ? String(j.productIds.TR) : (j.productId||"");
@@ -2655,7 +2652,7 @@ async function doImportAllGames(){
   document.getElementById("allGenres").value = (j.parsed?.TR?.genres || j.parsed?.UA?.genres || "");
   document.getElementById("allVr2").checked = false;
   document.getElementById("allName").value=name||"";
-  await fillDescriptionTextarea("allDescription", pidUA || pidTR, (j.parsed?.TR?.conceptId || j.parsed?.UA?.conceptId || ""), "allImportStatus");
+  document.getElementById("allDescription").value=j.game?.description||"";
 
   // Platform auto-fill (same as скидки)
   const plat = (j.parsed?.TR?.platform) || (j.parsed?.UA?.platform) || "";
@@ -2682,10 +2679,10 @@ async function doImportAllGames(){
   // RU per region
   document.getElementById("allRuTR").value = (tr.ru || "none");
   document.getElementById("allRuUA").value = (ua.ru || "none");
-  if(document.getElementById("allRuPL")) document.getElementById("allRuPL").value = (tr.ru || "none");
-  if(document.getElementById("allRuIN")) document.getElementById("allRuIN").value = (tr.ru || "none");
-  if(document.getElementById("allRuPLCard")) document.getElementById("allRuPLCard").value = (tr.ru || "none");
-  if(document.getElementById("allRuINCard")) document.getElementById("allRuINCard").value = (tr.ru || "none");
+  if(document.getElementById("allRuPL")) document.getElementById("allRuPL").value = (j.parsed?.PL?.ru || "unknown");
+  if(document.getElementById("allRuIN")) document.getElementById("allRuIN").value = (j.parsed?.IN?.ru || "unknown");
+  if(document.getElementById("allRuPLCard")) document.getElementById("allRuPLCard").value = (j.parsed?.PL?.ru || "unknown");
+  if(document.getElementById("allRuINCard")) document.getElementById("allRuINCard").value = (j.parsed?.IN?.ru || "unknown");
 
   // subscription unified
   document.getElementById("allSub").value = (tr.sub || "");
@@ -2705,6 +2702,7 @@ async function doImportAllGames(){
   if(document.getElementById("allPlPrice")) document.getElementById("allPlPrice").value = j.parsed?.PL?.salePrice ?? "";
   if(document.getElementById("allInPrice")) document.getElementById("allInPrice").value = j.parsed?.IN?.salePrice ?? "";
 
+  rememberImportFields("allImportResult");
   document.getElementById("allImportResult").style.display="block";
   document.getElementById("allImportStatus").textContent="Готово. Проверь и нажми 'Добавить'.";
 }
@@ -2757,6 +2755,7 @@ async function addAllGame(){
     }
   };
 
+  if(window.allPsSnapshot?.id===item.id)applyImportFields("all",item,window.allPsSnapshot);
   if(!item.id || !item.name){
     alert("ID (TR/UA) и название обязательны");
     return;
@@ -2781,13 +2780,16 @@ async function loadAllGamesList(){
 }
 
 
+document.getElementById('catalogKind').onchange=()=>{window.__allGamesPage=1;renderAllGames()};
 function renderAllGames(){
   const wrap = document.getElementById('allGamesList');
   if(!wrap) return;
 
   // one search for admin: use общий поиск "Игры на сайте"
   const q = (document.getElementById('gamesSearch').value||'').trim().toLowerCase();
-  const rows = (window.__allgames||[]).filter(g=>!q || String(g.name||'').toLowerCase().includes(q));
+  const subset=(window.__allgames||[]).filter(g=>Boolean(g.isAddon)===(document.getElementById('catalogKind').value==='addon'));
+  document.getElementById('allGamesCount').textContent='Позиций: '+subset.length;
+  const rows=subset.filter(g=>!q || String(g.name||'').toLowerCase().includes(q));
 
   const PAGE_SIZE = 30;
   if(typeof window.__allGamesPage !== 'number') window.__allGamesPage = 1;
@@ -2817,7 +2819,7 @@ function renderAllGames(){
     const showId = pidTR || pidUA || (g.id||'');
     html += `<tr>`;
     html += `<td style="min-width:260px;">${esc(showId)}</td>`;
-    html += `<td>${esc(g.name||'')}</td>`;
+    html += `<td>${esc(g.name||'')} ${eaMark(g)}</td>`;
     html += `<td style="white-space:nowrap;">${esc(g.edition||'')}</td>`;
     html += `<td>${esc(g.platform||'')}</td>`;
     html += `<td style="display:flex;gap:8px;flex-wrap:wrap;">`;
@@ -2912,7 +2914,7 @@ async function openAllGameEdit(id, anchorTr){
           <div class="small" style="opacity:.85;">ID записи: ${g.id||''}</div>
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-          <button class="btnDark" data-act="save">Сохранить</button>
+          ${eaControls(g)}<button class="btnDark" data-act="save">Сохранить</button>
           <button class="btnGhost" data-act="fill">Дополнить трейлеры и скриншоты</button>
           <button class="btnGhost" data-act="cancel">Отмена</button>
           <span class="small" data-el="status"></span>
@@ -3047,6 +3049,7 @@ async function openAllGameEdit(id, anchorTr){
     const newIdIN = (row.querySelector('[data-f="idIN"]')?.value||'').trim();
 
     const payload = {
+      eaChanges: Object.fromEntries([...row.querySelectorAll('[data-ea-region]')].filter(e=>e.checked!==e.defaultChecked).map(e=>[e.dataset.eaRegion,e.checked])),
       name: (row.querySelector('[data-f="name"]').value||'').trim(),
       platform: row.querySelector('select[data-f="platform"]').value,
       edition: (row.querySelector('[data-f="edition"]').value||'').trim(),
@@ -3245,19 +3248,6 @@ const __makeDiscountScreensBtn=document.getElementById('makeDiscountScreens'); i
       y.addEventListener('change', ()=>{ x.value = y.value; });
     }
   }
-  const srcs = [
-    ['impRuTR','impRuPL','impRuIN','impRuPLCard','impRuINCard'],
-    ['preRuTR','preRuPL','preRuIN','preRuPLCard','preRuINCard'],
-    ['allRuTR','allRuPL','allRuIN','allRuPLCard','allRuINCard']
-  ];
-  for(const [src,...targets] of srcs){
-    const sEl = document.getElementById(src);
-    if(sEl){
-      sEl.addEventListener('change', ()=>{
-        for(const tid of targets){ const t = document.getElementById(tid); if(t) t.value = sEl.value; }
-      });
-    }
-  }
 })();
 
 document.getElementById("regionSel").onchange=e=>loadRates(e.target.value);
@@ -3299,4 +3289,4 @@ loadUntil();
     _mu.addEventListener("change", saveUntil);
     _mu.addEventListener("blur", saveUntil);
   }
-</script></body></html>
+</script><script src="/ps-batch.js"></script></body></html>
