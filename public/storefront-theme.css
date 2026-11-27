@@ -1,0 +1,313 @@
+/* Shared by the retail and wholesale storefronts. */
+:root {
+  color-scheme: dark;
+  --bg: #121212;
+  --card: #1b1b1b;
+  --control: #282828;
+  --border: #383838;
+  --text: #faf8f6;
+  --muted: #b9b4b1;
+  --accent: #ff934d;
+  --danger: #ff5662;
+  --action: linear-gradient(105deg, #e95a05, #db293d);
+  --selected: #3b2921;
+}
+
+/* Legacy storefront rules include ID selectors and important declarations. */
+@layer storefront {
+  html, body { background: var(--bg) !important; color: var(--text) !important; }
+  body { font-family: Arial, Helvetica, sans-serif !important; }
+  body::before { content: none !important; }
+  ::selection { color: white; background: #944118; }
+  :focus-visible { outline: 2px solid var(--accent) !important; outline-offset: 2px; }
+  .topbar { background: rgba(18,18,18,.96) !important; border-bottom: 1px solid var(--border); }
+  .brand, .brandText { color: var(--text) !important; -webkit-text-fill-color: var(--text) !important; }
+  .brandWholesaleLabel { color: var(--accent) !important; }
+  .brandIcon { filter: grayscale(1) brightness(0) invert(1); }
+
+  /* Content surfaces and dialogs */
+  :is(.card,.gameCard,.cartDrawer,.wishDrawer,.filterDrawer,.quickSearchBox,.quickTkCard,
+      .sortMenu,.regionPickerMenu,.siteTabsShell,.subsCard,.subOfferCard,.subsInfoBox,
+      .topupHero,.homeBlock,.homeSubCard,.homeSubTabs,.topupProductCard,.homeFooter,.regionCompareCard,.regionCompareItem,
+      .discountBannerCard,.cartTopupSection,.wishToast,.cartItem,.subsGamesBlock,.homeSubsBlock,
+      .productPanel,.infoPanel,.detailPurchase,.emptyBox) {
+    background: var(--card) !important;
+    color: var(--text) !important;
+    border-color: var(--border) !important;
+    box-shadow: none !important;
+  }
+  :is(.cartFoot,.cartHead,.cartBody,.filterDrawerFooter,.quickSearchHead,.cartTopupInfoBox,
+      .cartTopupCardRow,.cartTopupImageWrap,.topupProductImageWrap) {
+    background: var(--card) !important; color: var(--text) !important; border-color:var(--border) !important;
+  }
+
+  /* Controls keep their original positions and icon geometry. */
+  :is(.cartToggle,.searchToggle,.wishToggle,.searchInput,.searchClose,.quickSearchGo,.siteTab,
+      .tabsArrow,.regionPickerBtn,.catalogControlBtn,.pagerBtn,.discountTabBtn,.btnGhost,
+      .sectionBackBtn,.filterClose,.filterClearBtn,.filterChip,.cartClearBtn,.cartClose,.cartRemove,
+      .wishBtn,.compareBtn,.regionCompareClose,.backToTop,.detailWish,.mediaHeading button,
+      .cartTopupInfoToggle,.homeHeroNav,.homeViewAll) {
+    background:var(--control) !important; color:var(--text) !important;
+    border-color:var(--border) !important; box-shadow:none !important;
+  }
+  :is(.regionPickerOption,.sortMenuItem,.homeSubTabs button) { color:var(--text) !important; }
+  :is(.regionPickerOption,.sortMenuItem,.siteTab,.regionPickerBtn,.searchToggle,.cartToggle,.wishToggle,
+      .pagerBtn,.homeViewAll,.detailWish,.mediaHeading button):hover,
+  :is(.regionPickerOption,.sortMenuItem).active,.filterChip:has(input:checked),
+  .detailWish[aria-pressed=true],.wishBtn.isInWishlist {
+    background:var(--selected) !important; color:var(--accent) !important; border-color:var(--accent) !important;
+  }
+  :is(.buyBtn,.cartBuyBtn,.filterApplyBtn,.siteTab.isActive,.pagerBtn.active,.discountTabBtn.active,
+      .homeSubTabs button.active) {
+    background:var(--action) !important; color:white !important; border-color:transparent !important; box-shadow:none !important;
+  }
+  .buyBtn.isInCart { background:var(--selected) !important; color:var(--accent) !important; border-color:var(--accent) !important; }
+  .searchInput::placeholder { color:var(--muted) !important; }
+  :is(.platformStrip,.regionComparePlatform,.cartPlatforms,.regionCompareSub) {background:#333 !important;color:white !important;}
+  :is(.discount,.quickTkDiscount,.regionCompareDiscount,.cartDisc,.preorderBadge,.newBadge,.detailAddonBadge) {
+    background:var(--action) !important; color:white !important;
+  }
+  :is(.brandText,.siteTab,.catalogControlBtn,.filterChip,.sectionBackBtn,.buyBtn,.detailTitle h1,.detailSection h2) {
+    text-shadow:none !important;
+  }
+
+  /* Text over plain surfaces. Banner artwork keeps its own colors. */
+  :is(h1,h2,h3,.title,.gameTitleLink,.price,.cartPrice,.cartTitle,.cartItemTitle,.cartTotalValue,.colorA,
+      .quickSearchTitle,.quickTkTitle,.quickTkPrice,.regionCompareTitle,.regionComparePrice,.regionCompareRegion,
+      .subsName,.subOfferTitle,.subOfferPrice,.subOfferPriceNew,.subsPageTitle,.subsGamesTitle,.subsInfoTitle,
+      .homeSubName,.homeSubPrice,.homeBlockHead,.topupProductNominal,.topupProductPrice,
+      .bannerCaption,.discountBannerCaption,.wishToastTitle,.cartTopupTitle,.cartTopupNominal,.cartTopupRub) {
+    color:var(--text) !important;
+  }
+  :is(.cardEdition,.resultsCount,.resultsSortLabel,.cartHint,.cartEdition,.cartRegion,.cartMeta,.cartTotalLabel,
+      .cartEmpty,.until,.cardUntil,.quickTkEdition,.quickLoading,.filterGroupTitle,.homeSubFeatures,.homeFooterLink,
+      .subsInfoText,.subsGamesCount,.subsLoading,.regionCompareKicker,.regionCompareEdition,.regionCompareDiscountDate,
+      .regionCompareLoading,.cartTopupInfoText,.cartTopupQty,.homeLoading,.detailBack,.cartTopupLeftover) {
+    color:var(--muted) !important;
+  }
+  .detailExpand,.homeFooterLink:hover { color:var(--accent) !important; }
+  .search-is-open .searchInputRow {background:var(--card) !important;}
+  .siteTab.isActive::after {background:transparent !important;}
+  .homeSubFeatures li::before {background:var(--accent) !important;}
+  .homeBanner {background-color:var(--card) !important;}
+  .dateIcon,.regionCompareRegion span,.allDealsViewAll {color:var(--accent) !important;}
+  .allDealsArrow {background:var(--control) !important;color:var(--text) !important;}
+  .discount:empty {background:transparent !important;}
+  .homeHeroDots button { background:#555 !important; }
+  .homeHeroDots button.active,.homeHeroDots button.is-active { background:var(--accent) !important; }
+  .detailProduct { background:var(--control) !important; }
+  .detailProduct:hover,.detailProduct[aria-current=page] { border-color:var(--accent) !important; }
+}
+
+.detailProduct { aspect-ratio:1; }
+.detailProduct img { width:100%;height:100%;object-fit:cover; }
+.detailProduct div {
+  position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;
+  background:linear-gradient(transparent 25%,rgba(0,0,0,.92));padding:18px;color:white;
+}
+
+@layer storefront {
+  .discountBannerCaption,.cartTopupQty,.gmMediaPlay {
+    background:var(--control) !important;
+    color:var(--text) !important;
+  }
+  .cartTopupNominalTotal,.cartTopupInfoArrow {color:var(--text) !important;}
+  .cartTopupInfoIcon,.filterChip input:checked {background:var(--action) !important;}
+  .filterChip input:not(:checked) {background:#414141 !important;}
+  .regionCompareItem.isActive {border-color:var(--accent) !important;}
+}
+@media (max-width:560px) {
+  .homeHeroWrap {margin-inline:-10px;}
+}
+
+/* Store masthead and section navigation */
+@layer storefront {
+  .topbar {background:linear-gradient(100deg,#201b19,#161515 34%,#171717) !important;}
+  .brandNumber {color:#ff8946 !important;-webkit-text-fill-color:#ff8946 !important;}
+  .topbar .regionPickerBtn,.topbar .wishToggle,.topbar .cartToggle,.topbar .searchToggle {
+    background:#222120 !important;border:1px solid #393532 !important;border-radius:12px !important;
+  }
+  .topbar .regionPickerBtn:hover,.topbar .wishToggle:hover,.topbar .cartToggle:hover,.topbar .searchToggle:hover {
+    color:#ffad79 !important;border-color:#8c5231 !important;background:#312520 !important;
+  }
+  .navContainer .siteTabsShell {background:transparent !important;border-bottom:1px solid #342e2b !important;}
+  .navContainer .siteTab,.navContainer .siteTab:hover,.navContainer .siteTab.isActive {
+    background:transparent !important;box-shadow:none !important;border:0 !important;
+  }
+  .navContainer .siteTab {color:#c6c1bd !important;}
+  .navContainer .siteTab:hover,.navContainer .siteTab.isActive {color:#fff4ea !important;}
+  .navContainer .siteTab.isActive::after {
+    content:"";display:block !important;position:absolute;bottom:0;left:10px;right:10px;
+    transform:none;width:auto;height:3px;opacity:1;background:var(--action) !important;border-radius:3px;
+  }
+}
+.topbar .topbarInner {padding-block:12px;}
+.topbar .topbarHeader {display:flex;gap:16px;align-items:center;justify-content:flex-start;}
+.topbar .filters {margin:0;flex-wrap:nowrap;}
+.topbar .filters .colorA {display:none;}
+.topbar .headerActions {margin-left:auto;gap:8px;}
+.topbar .brand {gap:8px;flex-shrink:0;white-space:nowrap;}
+.topbar .regionPickerBtn {height:40px;min-height:40px;padding:0 12px;}
+.topbar .wishToggle,.topbar .cartToggle {width:40px;height:40px;margin:0;flex-shrink:0;}
+.navContainer .siteTabsShell {padding:0;margin-top:0;border-radius:0;}
+.navContainer .siteTabs {justify-content:flex-start;gap:14px;padding:0;}
+.navContainer .siteTab {position:relative;padding:15px 10px;line-height:1.2;font-size:15px;font-weight:600;border-radius:0;}
+.navContainer {padding-top:0;padding-bottom:0;}
+body[data-tab="search"] .topbar .filters {margin:0;}
+@media(max-width:760px){
+  .topbar .topbarHeader,.topbar .headerActions {gap:5px;}
+  .topbar .brand {font-size:clamp(15px,3.8vw,20px);gap:4px;}
+  .topbar .brandIcon {width:21px;height:21px;}
+  .topbar .regionPickerBtn {min-width:0;padding:0 7px;gap:4px;}
+  .topbar .regionPickerArrow {width:12px;}
+  .navContainer .siteTabs {gap:4px;}
+  .navContainer .siteTab {font-size:14px;padding:13px 9px;}
+  .navContainer .tabsArrow {display:none;}
+}
+@media(max-width:640px){.topbar .topbarInner {padding:10px;}body[data-tab="search"] .headerActions {flex:1;min-width:0;}}
+.navContainer .siteTab.isActive::after {
+  bottom:0;left:10px;right:10px;width:auto;height:3px;transform:none;
+}
+@media(min-width:641px) and (max-width:820px) {
+  @layer storefront {
+    body:not([data-tab="search"]) .topbar :is(.searchWrap,.searchPanel,.searchInputRow,.searchInput) {
+      width:clamp(158px,27vw,220px) !important;max-width:clamp(158px,27vw,220px) !important;
+    }
+    body:not([data-tab="search"]) .topbar .searchWrap {flex-basis:clamp(158px,27vw,220px) !important;}
+  }
+}
+@media(max-width:380px){
+  .topbar .regionPickerArrow {display:none;}
+  .topbar .topbarHeader,.topbar .headerActions {gap:4px;}
+
+}
+@font-face {
+  font-family:Orbitron;
+  src:url('/fonts/orbitron-latin.woff2') format('woff2');
+  font-weight:400 900;
+  font-display:swap;
+}
+
+.detailAccess{margin:12px 0 0;color:var(--muted);font-size:14px;line-height:1.5}
+.detailAccess strong{display:block;color:var(--accent);font-weight:600}
+@media(min-width:821px){
+  .topbar .filters {border-left:1px solid #35312f;padding-left:16px;}
+  .topbar .headerActions {flex:1;min-width:0;}
+  .topbar .wishToggle {margin-left:auto;}
+  .topbar .searchWrap {margin-left:auto;}
+}
+@media(min-width:1050px){
+  .topbar .topbarInner {padding-block:16px;}
+  .topbar .topbarHeader {position:relative;min-height:44px;}
+  body:not([data-tab="search"]) .topbar .searchWrap {position:absolute;left:max(478px,calc(50% - 150px));margin:0;}
+}
+@media(max-width:640px){
+  .topbar .regionPickerText {font-size:0;}
+  .topbar .regionPickerText::after {content:attr(data-code);font-size:12px;}
+}
+
+/* Cover art remains the focus at both catalog and carousel widths. */
+.shopGame {min-width:0;isolation:isolate;border-radius:16px;}
+.shopGame .coverWrap {aspect-ratio:1;overflow:hidden;background:#252322;}
+.shopGame .coverWrap img {width:100%;height:100%;object-fit:cover;}
+.shopGame .platformStrip {top:8px;left:8px;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;min-height:32px;padding:5px 6px;border-radius:8px;white-space:nowrap;font:700 14px/1.2 Arial,sans-serif;letter-spacing:.01em;}
+.shopGame .coverWrap .wishBtn,.shopGame .compareBtn {
+  position:absolute;right:8px;z-index:3;width:40px;height:40px;min-width:40px;min-height:40px;
+  padding:0;border-radius:50%;display:grid;place-items:center;
+}
+.shopGame .coverWrap .wishBtn {top:8px;}
+.shopGame .coverWrap .compareBtn {top:auto;bottom:8px;}
+.shopGame .wishBtn svg,.shopGame .compareBtn svg {width:23px;height:23px;}
+.shopGame .body-bar1 {padding:12px;gap:5px;}
+.shopGame .title,.homeRow .shopGame .title {font:650 clamp(15px,1.35vw,18px)/1.28 Arial,sans-serif;letter-spacing:-.02em;min-height:2.56em;margin:0;}
+.shopGame .cardEdition {font-size:12px;line-height:1.35;margin:0;overflow-wrap:anywhere;}
+.shopGame .bottom {padding-top:9px;margin-top:auto;}
+.shopGame .cardPriceLine {display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px;}
+.shopGame .cardPriceLine .price {font-size:clamp(17px,1.6vw,22px);letter-spacing:-.04em;font-weight:650;white-space:nowrap;}
+.shopGame .cardPriceLine .discount {font-size:11px;padding:3px 6px;border-radius:5px;}
+.shopGame .cardActions {margin-bottom:0;}
+.shopGame .cardActions .buyBtn {min-height:38px;border-radius:9px;font:650 13px/1.1 Arial,sans-serif;}
+.shopGame .cardActions .btnCartIcon {width:17px;height:17px;flex-basis:17px;}
+@layer storefront {
+  .shopGame .coverWrap :is(.platformStrip,.compareBtn,.wishBtn) {background:#252321 !important;border:1px solid #716b65 !important;color:#fffaf6 !important;box-shadow:0 2px 5px #0006 !important;}
+  .shopGame .coverWrap .wishBtn.isInWishlist {color:#ffad79 !important;border-color:#ffad79 !important;}
+  .homePage :is(.homeBlock,.homeSubsBlock) {background:transparent !important;border:0 !important;}
+  .homeBlockHead .homeViewAll {color:var(--muted) !important;background:transparent !important;}
+  .shopGame .cardPriceLine .discount {background:#492a22 !important;color:#ffab82 !important;}
+}
+.homePage :is(.homeBlock,.homeSubsBlock) {padding:0;margin:clamp(30px,4vw,60px) 0;border-radius:0;}
+.homeBlockHead .homeViewAll {border:0;padding:8px 2px;font-size:14px;}
+.homeBlockHead .homeViewAll::after {content:' ›';color:var(--accent);}
+.homePage :is(.homeBlockHead,.homeSubsHead) {display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px;}
+.homePage :is(.homeBlockHead,.homeSubsHead) h2 {font:650 clamp(22px,2.65vw,34px)/1.12 Arial,sans-serif;letter-spacing:-.045em;margin:0;}
+.homeRow {gap:14px;touch-action:pan-x pan-y pinch-zoom;scrollbar-width:thin;scrollbar-color:#49413b transparent;}
+.homeRow .shopGame {flex:0 0 clamp(188px,19vw,240px);}
+.homePage .homeSubTabs {margin:0;width:min(100%,320px);padding:3px;}
+.homeSubTabs button {min-height:34px;}
+#homeSubsList {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;}
+.plusPlan {--tone:#c8ced5;min-width:0;display:flex;flex-direction:column;gap:14px;text-align:left;
+  background:linear-gradient(155deg,color-mix(in srgb,var(--tone) 13%,#1b1919),#1b1919 64%);
+  border:1px solid #413c39;border-top:3px solid var(--tone);border-radius:15px;padding:clamp(15px,2vw,25px);cursor:pointer;color:var(--text);}
+.plusPlan[data-tier=extra]{--tone:#f2c45c;}.plusPlan[data-tier=deluxe]{--tone:#d8a775;}
+.plusPlan:hover,.plusPlan:focus-visible {border-color:var(--tone);}
+.planHead {display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.planHead img {width:36px;height:36px;object-fit:contain;}
+.planName {font-size:clamp(16px,1.6vw,21px);font-weight:600;letter-spacing:-.025em;}
+.planPrice {font-size:clamp(22px,2.4vw,32px);font-weight:650;line-height:1.1;letter-spacing:-.045em;}
+.planBenefits {display:grid;gap:9px;padding-top:14px;border-top:1px solid #ffffff20;color:#ccc6c1;font:14px/1.4 Arial,sans-serif;}
+.planBenefits>span {display:flex;gap:9px;}.planBenefits>span::before {content:'✓';color:var(--tone);}
+.homeHero,.allDealsTrack {touch-action:pan-y pinch-zoom;}
+@media(max-width:700px){
+ .homeRow .shopGame {flex-basis:clamp(170px,46vw,216px);}
+ .homePage .homeSubsHead {align-items:flex-start;flex-direction:column;gap:12px;}
+ #homeSubsList {grid-template-columns:1fr;gap:10px;}
+ .plusPlan {display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;padding:15px;}
+ .planHead {justify-content:flex-start;flex-direction:row-reverse;justify-self:start;}
+ .planHead img {width:24px;height:24px;}.planBenefits {grid-column:1/-1;width:100%;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 12px;font-size:12px;}
+}
+.homeRowTools {display:flex;align-items:center;gap:6px;}
+.homeRowTools [data-row-step] {border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:50%;width:34px;height:34px;cursor:pointer;font:20px/1 Arial;}
+.homeRowTools .homeViewAll {margin-right:8px;}
+.homeRowTools [data-row-step]:hover {color:var(--accent);border-color:var(--accent);}
+.planPrice .subOfferPriceOld {font-size:.63em;text-decoration:line-through;color:var(--muted);margin-right:8px;}
+@media(max-width:700px){.homeRowTools [data-row-step]{display:none;}.homeRowTools .homeViewAll{margin-right:0;}}
+
+/* Compact catalog tiles: artwork, platform and actions, then offer details. */
+@layer storefront {
+  .shopGame.card {background:transparent !important;border-color:transparent !important;}
+  .shopGame .cardActions .buyBtn {min-height:32px !important;width:auto !important;flex:0 1 auto !important;font-size:12px !important;padding:6px 12px !important;}
+}
+.shopGame.card {border-radius:0;}
+.shopGame .coverWrap {aspect-ratio:4/5;border-radius:10px;}
+.homePage .homeRow .shopGame {flex-basis:clamp(166px,15.5vw,210px);}
+.shopGame .body-bar1 {padding:8px 1px 3px;gap:4px;}
+.shopGame .title,.homePage .homeRow .shopGame .title {font-size:14px;line-height:1.26;min-height:2.52em;}
+.shopGame .cardEdition {font-size:11px;}
+.shopGame .bottom {padding-top:5px;}
+.shopGame .cardPriceLine {margin-bottom:7px;}
+.shopGame .cardPriceLine .price {font-size:17px;}
+.shopGame .cardActions .btnCartIcon {width:14px;height:14px;flex-basis:14px;}
+
+.navContainer .siteTabs {
+  min-width:0;max-width:100%;overflow-x:auto;overflow-y:hidden;
+  flex-wrap:nowrap;scroll-behavior:auto;touch-action:pan-y pinch-zoom;
+  overscroll-behavior-x:contain;user-select:none;
+}
+.navContainer .siteTab {flex:0 0 auto;touch-action:pan-y pinch-zoom;}
+
+
+.brandShort {display:none;}
+@media(max-width:420px){
+  .topbar .brandFull {display:none;}
+  .topbar .brandShort {display:inline;}
+  .topbar .brand {font-size:23px;gap:5px;line-height:1;}
+  .topbar .brandIcon {width:22px;height:22px;}
+}
+.regionFlagUS{background:repeating-linear-gradient(#bd3947 0 7.69%,#fff 7.69% 15.38%);}
+.regionFlagUS::before{content:"";display:block;width:45%;height:54%;background:#28437b;}
+.shopGame .buyBtn[hidden]{display:none!important;}
+
+.eaMemberPrice {display:block;width:fit-content;margin:4px 0 8px;padding:3px 8px;border-radius:5px;background:#31251e;color:#ffbb86;font:600 13px/1.4 Arial,sans-serif;}
+.homePage > :nth-child(even of .homeBlock,.homeSubsBlock) {position:relative;isolation:isolate;padding-block:clamp(20px,3vw,44px);}
+.homePage > :nth-child(even of .homeBlock,.homeSubsBlock)::before {content:"";position:absolute;z-index:-1;inset-block:0;left:50%;width:max(100%,calc(100vw - 32px));transform:translateX(-50%);border-radius:12px;background:#1b1b1c;pointer-events:none;}
+body[data-tab="home"] {overflow-x:clip;}
